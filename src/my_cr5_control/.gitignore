@@ -1,0 +1,55 @@
+build/
+install/
+log/
+.vscode/
+.claude/
+__pycache__/
+*.py[cod]
+
+# ROS / benchmark runtime logs
+*.log
+paper_workspace/**/logs/
+paper_workspace/formal_results/run_logs/
+project_archive/test_results/logs/
+test_results/logs/
+
+# Raw result warehouses are local/regenerable; paper-facing snapshots live in
+# paper_workspace/formal_results.
+test_results/benchmarks/
+test_results/exports/
+test_results/models/
+test_results/operations/
+project_archive/test_results/
+
+# Intermediate formal rerun attempts. Keep current formal evidence visible:
+# - q2_unified_formal_stable_core_20260503_135832
+# - q2_ablation_formal_20260511_104104
+# - q2_ablation_formal_direct_only_completion_20260511_111548
+# - q2_formal_20260324 historical package
+paper_workspace/formal_results/q2_*_dry_*/
+paper_workspace/formal_results/q2_*_smoke_*/
+paper_workspace/formal_results/q2_ablation_light_*/
+paper_workspace/formal_results/q2_ablation_light_v2_*/
+paper_workspace/formal_results/q2_unified_formal_20260503_133251/
+paper_workspace/formal_results/q2_unified_formal_20260503_133700/
+paper_workspace/formal_results/q2_unified_formal_dry_*/
+paper_workspace/formal_results/q2_unified_formal_isolated_*/
+paper_workspace/formal_results/q2_ablation_light_P0_2_ANALYSIS.md
+
+# LaTeX generated files
+paper_workspace/manuscript/latex/build/
+*.aux
+*.bcf
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+
+# Raw captures and bulky generated demos
+*.xwd
+test_results/operations/rrtstar_connect_reproduction/*.gif
+project_archive/test_results/operations/rrtstar_connect_reproduction/*.gif
+
+# Local reference PDFs are not source artifacts
+paper_workspace/references/*.pdf

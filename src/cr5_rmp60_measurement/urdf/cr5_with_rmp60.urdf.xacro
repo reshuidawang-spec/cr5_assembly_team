@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="cr5_robot">
+  <xacro:arg name="tool_parent" default="Link6"/>
+  <xacro:arg name="tool_prefix" default="rmp60"/>
+  <xacro:arg name="tool_axis_sign" default="1"/>
+  <xacro:arg name="mount_xyz" default="0 0 0"/>
+  <xacro:arg name="mount_rpy" default="0 0 0"/>
+  <xacro:arg name="adapter_length" default="0.0494"/>
+  <xacro:arg name="adapter_radius" default="0.030"/>
+  <xacro:arg name="probe_body_length" default="0.076"/>
+  <xacro:arg name="probe_body_radius" default="0.0315"/>
+  <xacro:arg name="stylus_length" default="0.083870898"/>
+  <xacro:arg name="stylus_radius" default="0.0015"/>
+  <xacro:arg name="stylus_ball_radius" default="0.001"/>
+
+  <xacro:include filename="$(find dobot_rviz)/urdf/cr5_robot.urdf"/>
+  <xacro:include filename="/home/zhu/dobot_ws/src/cr5_rmp60_measurement/urdf/rmp60_probe_module.xacro"/>
+
+  <xacro:rmp60_probe_module
+    parent="$(arg tool_parent)"
+    prefix="$(arg tool_prefix)"
+    axis_sign="$(arg tool_axis_sign)"
+    mount_xyz="$(arg mount_xyz)"
+    mount_rpy="$(arg mount_rpy)"
+    adapter_length="$(arg adapter_length)"
+    adapter_radius="$(arg adapter_radius)"
+    probe_body_length="$(arg probe_body_length)"
+    probe_body_radius="$(arg probe_body_radius)"
+    stylus_length="$(arg stylus_length)"
+    stylus_radius="$(arg stylus_radius)"
+    stylus_ball_radius="$(arg stylus_ball_radius)"/>
+</robot>

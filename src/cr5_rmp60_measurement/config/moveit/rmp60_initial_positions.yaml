@@ -1,0 +1,10 @@
+# Initial positions for the CR5 + RMP60 MoveIt fake ros2_control system.
+# Keep this away from the all-zero wrist pose because the mounted stylus can
+# overlap the wrist collision geometry there.
+initial_positions:
+  joint1: 0.0
+  joint2: 0.4337
+  joint3: -1.4695
+  joint4: -0.2602
+  joint5: 1.7175
+  joint6: 0.0

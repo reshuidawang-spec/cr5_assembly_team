@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="680" viewBox="0 0 1180 680">
+  <defs>
+    <style>
+      .title{font:700 28px Arial,"Noto Sans CJK SC",sans-serif;fill:#111827}
+      .label{font:600 18px Arial,"Noto Sans CJK SC",sans-serif;fill:#111827}
+      .text{font:15px Arial,"Noto Sans CJK SC",sans-serif;fill:#374151}
+      .small{font:13px Arial,"Noto Sans CJK SC",sans-serif;fill:#4b5563}
+      .box{fill:#f8fafc;stroke:#334155;stroke-width:2;rx:8}
+      .box2{fill:#eef6ff;stroke:#2563eb;stroke-width:2;rx:8}
+      .box3{fill:#f0fdf4;stroke:#16a34a;stroke-width:2;rx:8}
+      .box4{fill:#fff7ed;stroke:#ea580c;stroke-width:2;rx:8}
+      .arrow{stroke:#334155;stroke-width:2.4;fill:none;marker-end:url(#arrow)}
+      .dash{stroke:#64748b;stroke-width:2;stroke-dasharray:7 6;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect width="1180" height="680" fill="#ffffff"/>
+  <text x="34" y="48" class="title">图1  工业机器人五向测针标定误差补偿系统结构</text>
+
+  <rect x="60" y="105" width="210" height="120" class="box2"/>
+  <text x="90" y="140" class="label">CR5 工业机器人</text>
+  <text x="88" y="172" class="text">法兰位姿 F_i, R_i</text>
+  <text x="88" y="198" class="text">MovL / 触发停止</text>
+
+  <rect x="60" y="295" width="210" height="120" class="box2"/>
+  <text x="86" y="330" class="label">RMP60 + 五向测针</text>
+  <text x="88" y="362" class="text">z, x_pos, x_neg</text>
+  <text x="88" y="388" class="text">y_pos, y_neg</text>
+
+  <rect x="60" y="485" width="210" height="105" class="box2"/>
+  <text x="104" y="520" class="label">20 mm 标准球</text>
+  <text x="92" y="552" class="text">C_s, R_s = 10 mm</text>
+
+  <rect x="360" y="80" width="220" height="100" class="box"/>
+  <text x="407" y="115" class="label">触发采集模块</text>
+  <text x="388" y="146" class="text">分支 / 位姿 / 方向</text>
+
+  <rect x="360" y="220" width="220" height="100" class="box"/>
+  <text x="407" y="255" class="label">几何先验模块</text>
+  <text x="388" y="286" class="text">p_b0, R_p, 测杆包络</text>
+
+  <rect x="360" y="360" width="220" height="100" class="box"/>
+  <text x="407" y="395" class="label">路径安全模块</text>
+  <text x="388" y="426" class="text">碰撞裕度 / 非目标接触</text>
+
+  <rect x="660" y="75" width="230" height="100" class="box3"/>
+  <text x="711" y="110" class="label">分支标定模块</text>
+  <text x="686" y="141" class="text">C_s 与 p_b 联合求解</text>
+
+  <rect x="660" y="215" width="230" height="100" class="box3"/>
+  <text x="711" y="250" class="label">异常识别模块</text>
+  <text x="694" y="281" class="text">残差 / 过行程 / 碰撞</text>
+
+  <rect x="660" y="355" width="230" height="100" class="box3"/>
+  <text x="699" y="390" class="label">GPR 残差补偿</text>
+  <text x="690" y="421" class="text">均值补偿 + 方差输出</text>
+
+  <rect x="660" y="495" width="230" height="100" class="box3"/>
+  <text x="720" y="530" class="label">主动补采</text>
+  <text x="692" y="561" class="text">不确定度 + 可观测性</text>
+
+  <rect x="970" y="155" width="160" height="110" class="box4"/>
+  <text x="1000" y="190" class="label">在线补偿</text>
+  <text x="995" y="222" class="text">P_raw - μ_GP</text>
+  <text x="995" y="248" class="text">置信门控</text>
+
+  <rect x="970" y="390" width="160" height="105" class="box4"/>
+  <text x="1004" y="425" class="label">测量输出</text>
+  <text x="998" y="457" class="text">P_corrected</text>
+  <text x="998" y="482" class="text">U(x), 版本追溯</text>
+
+  <path d="M270 160 L360 130" class="arrow"/>
+  <path d="M270 355 L360 130" class="arrow"/>
+  <path d="M270 538 L360 130" class="arrow"/>
+  <path d="M580 130 L660 125" class="arrow"/>
+  <path d="M580 270 L660 125" class="arrow"/>
+  <path d="M580 410 L660 265" class="arrow"/>
+  <path d="M890 125 L970 210" class="arrow"/>
+  <path d="M890 405 L970 210" class="arrow"/>
+  <path d="M1050 265 L1050 390" class="arrow"/>
+  <path d="M775 455 L775 495" class="dash"/>
+  <path d="M660 545 C520 610 360 560 270 415" class="dash"/>
+  <text x="395" y="620" class="small">闭环：不确定度高或可观测性不足时，生成下一组标准球触碰姿态</text>
+</svg>

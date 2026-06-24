@@ -1,0 +1,65 @@
+planning_plugin: ompl_interface/OMPLPlanner
+start_state_max_bounds_error: 0.1
+jiggle_fraction: 0.05
+request_adapters: >-
+  default_planner_request_adapters/AddTimeOptimalParameterization
+  default_planner_request_adapters/ResolveConstraintFrames
+  default_planner_request_adapters/FixWorkspaceBounds
+  default_planner_request_adapters/FixStartStateBounds
+  default_planner_request_adapters/FixStartStateCollision
+  default_planner_request_adapters/FixStartStatePathConstraints
+
+planner_configs:
+  RRTConnect:
+    type: geometric::RRTConnect
+    range: 0.0
+  RRTstar:
+    type: geometric::RRTstar
+    range: 0.0
+    goal_bias: 0.05
+    delay_collision_checking: 1
+  FMT:
+    type: geometric::FMT
+    num_samples: 1000
+    radius_multiplier: 1.1
+    nearest_k: 1
+    cache_cc: 1
+    heuristics: 0
+    extended_fmt: 1
+  BFMT:
+    type: geometric::BFMT
+    num_samples: 1000
+    radius_multiplier: 1.0
+    nearest_k: 1
+    balanced: 0
+    optimality: 1
+    heuristics: 1
+    cache_cc: 1
+    extended_fmt: 1
+  LBTRRT:
+    type: geometric::LBTRRT
+    range: 0.0
+    goal_bias: 0.05
+    epsilon: 0.4
+  PRMstar:
+    type: geometric::PRMstar
+  BITstar:
+    type: geometric::BITstar
+  InformedRRTstar:
+    type: geometric::InformedRRTstar
+    range: 0.0
+    goal_bias: 0.05
+    delay_collision_checking: 1
+
+cr5_group:
+  planner_configs:
+    - RRTConnect
+    - RRTstar
+    - FMT
+    - BFMT
+    - LBTRRT
+    - PRMstar
+    - BITstar
+    - InformedRRTstar
+  projection_evaluator: joints(joint1,joint2)
+  longest_valid_segment_fraction: 0.005

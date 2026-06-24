@@ -1,0 +1,38 @@
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Personal assistant / agent configs
+.claude/
+.agents/
+.codex/
+
+# Large binary data (experimental results)
+src/*/data/20*/
+src/*/data/260*/
+
+# Papers and manuscripts (not code)
+paper_workspace/
+test_results/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# ROS2 bag files
+*.db3

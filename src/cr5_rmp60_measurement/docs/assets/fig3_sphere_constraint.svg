@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="620" viewBox="0 0 980 620">
+  <defs>
+    <style>
+      .title{font:700 26px Arial,"Noto Sans CJK SC",sans-serif;fill:#111827}
+      .label{font:600 18px Arial,"Noto Sans CJK SC",sans-serif;fill:#111827}
+      .text{font:15px Arial,"Noto Sans CJK SC",sans-serif;fill:#374151}
+      .small{font:13px Arial,"Noto Sans CJK SC",sans-serif;fill:#4b5563}
+      .std{fill:#dbeafe;stroke:#1d4ed8;stroke-width:3}
+      .probe{fill:#fee2e2;stroke:#b91c1c;stroke-width:3}
+      .line{stroke:#334155;stroke-width:2.5;fill:none}
+      .dash{stroke:#64748b;stroke-width:2;stroke-dasharray:8 6;fill:none}
+      .arrow{stroke:#16a34a;stroke-width:3;fill:none;marker-end:url(#arrow)}
+      .box{fill:#f8fafc;stroke:#334155;stroke-width:1.8;rx:8}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10z" fill="#16a34a"/>
+    </marker>
+  </defs>
+  <rect width="980" height="620" fill="#ffffff"/>
+  <text x="34" y="48" class="title">图3  标准球方向约束与距离约束</text>
+
+  <circle cx="610" cy="300" r="120" class="std"/>
+  <circle cx="610" cy="300" r="4" fill="#1d4ed8"/>
+  <text x="626" y="305" class="label">C_s</text>
+  <text x="682" y="238" class="text">标准球 R_s</text>
+  <line x1="610" y1="300" x2="720" y2="250" class="line"/>
+
+  <circle cx="390" cy="390" r="45" class="probe"/>
+  <circle cx="390" cy="390" r="4" fill="#b91c1c"/>
+  <text x="274" y="394" class="label">F_i + R_i p_b</text>
+  <text x="347" y="454" class="text">红宝石球 R_p</text>
+
+  <line x1="390" y1="390" x2="610" y2="300" class="line"/>
+  <path d="M390 390 L585 310" class="arrow"/>
+  <text x="455" y="330" class="label">a_i</text>
+  <text x="448" y="374" class="text">R_s + R_p</text>
+
+  <line x1="390" y1="390" x2="250" y2="270" class="dash"/>
+  <rect x="125" y="180" width="210" height="92" class="box"/>
+  <text x="150" y="214" class="label">法兰触发位姿</text>
+  <text x="150" y="244" class="text">T_i = [R_i, F_i]</text>
+
+  <rect x="675" y="455" width="250" height="115" class="box"/>
+  <text x="700" y="488" class="label">方向约束</text>
+  <text x="700" y="520" class="text">C_s = F_i + R_i p_b</text>
+  <text x="700" y="546" class="text">      + a_i(R_s + R_p)</text>
+
+  <rect x="75" y="455" width="300" height="115" class="box"/>
+  <text x="100" y="488" class="label">距离约束粗标定</text>
+  <text x="100" y="520" class="text">||F_i + R_i p_b - C_s||</text>
+  <text x="100" y="546" class="text">= R_s + R_p</text>
+
+  <path d="M610 300 C545 210 470 210 390 390" class="dash"/>
+  <text x="390" y="200" class="small">方向可靠时使用方向约束；人工粗采时可先使用距离约束求初值。</text>
+</svg>

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620">
+  <defs>
+    <style>
+      .title{font:700 26px Arial,"Noto Sans CJK SC",sans-serif;fill:#111827}
+      .label{font:600 18px Arial,"Noto Sans CJK SC",sans-serif;fill:#111827}
+      .text{font:15px Arial,"Noto Sans CJK SC",sans-serif;fill:#374151}
+      .box{fill:#f8fafc;stroke:#334155;stroke-width:2;rx:8}
+      .blue{fill:#eef6ff;stroke:#2563eb;stroke-width:2;rx:8}
+      .green{fill:#f0fdf4;stroke:#16a34a;stroke-width:2;rx:8}
+      .orange{fill:#fff7ed;stroke:#ea580c;stroke-width:2;rx:8}
+      .arrow{stroke:#334155;stroke-width:2.4;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect width="1120" height="620" fill="#ffffff"/>
+  <text x="34" y="48" class="title">图6  分支感知高斯过程残差补偿模型</text>
+
+  <rect x="60" y="115" width="230" height="320" class="blue"/>
+  <text x="112" y="150" class="label">输入特征 x_i</text>
+  <text x="92" y="195" class="text">branch_i</text>
+  <text x="92" y="230" class="text">法兰位置 F_i</text>
+  <text x="92" y="265" class="text">法兰姿态 R_i</text>
+  <text x="92" y="300" class="text">接近方向 a_i</text>
+  <text x="92" y="335" class="text">停止过行程 o_i</text>
+  <text x="92" y="370" class="text">碰撞裕度 margin_i</text>
+
+  <rect x="380" y="95" width="320" height="365" class="green"/>
+  <text x="455" y="132" class="label">GPR 残差模型</text>
+  <rect x="420" y="170" width="240" height="58" class="box"/>
+  <text x="442" y="205" class="text">位置核 k_p(F,F')</text>
+  <rect x="420" y="245" width="240" height="58" class="box"/>
+  <text x="442" y="280" class="text">姿态核 k_R(R,R')</text>
+  <rect x="420" y="320" width="240" height="58" class="box"/>
+  <text x="442" y="355" class="text">方向核 k_a(a,a')</text>
+  <rect x="420" y="395" width="240" height="58" class="box"/>
+  <text x="442" y="430" class="text">分支核 k_b(b,b')</text>
+
+  <rect x="790" y="120" width="250" height="120" class="orange"/>
+  <text x="840" y="156" class="label">补偿量输出</text>
+  <text x="825" y="194" class="text">μ_GP(x) = [μx, μy, μz]</text>
+  <text x="825" y="220" class="text">P_corr = P_raw - μ_GP</text>
+
+  <rect x="790" y="320" width="250" height="120" class="orange"/>
+  <text x="840" y="356" class="label">不确定度输出</text>
+  <text x="825" y="394" class="text">Σ_GP(x)</text>
+  <text x="825" y="420" class="text">U = trace(Σ_GP)</text>
+
+  <path d="M290 275 L380 275" class="arrow"/>
+  <path d="M700 205 L790 180" class="arrow"/>
+  <path d="M700 350 L790 380" class="arrow"/>
+
+  <rect x="160" y="505" width="790" height="65" class="box"/>
+  <text x="195" y="545" class="label">训练目标：用鲁棒几何标定后的残差 e_i 训练小样本概率模型，并在在线测量时同时输出补偿值与可信度。</text>
+</svg>

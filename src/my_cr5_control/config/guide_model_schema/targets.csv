@@ -1,0 +1,6 @@
+target_name,target_kind,online_supported,description
+candidate_viable,raw,1,guide succeeds without budget hit
+candidate_fast,raw,1,guide succeeds faster than fast-solve threshold
+candidate_preferred,raw,1,guide is preferred over direct by handcrafted rule
+candidate_direct_rescue,derived,1,guide rescues direct failure or budget-hit into non-budget success
+candidate_budget_rescue,derived,1,guide rescues direct budget-hit into non-budget success

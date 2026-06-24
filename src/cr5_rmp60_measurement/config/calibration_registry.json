@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-06-21",
+  "units": {
+    "length": "mm",
+    "angle": "deg"
+  },
+  "coordinate_frame": "base_link",
+  "active_standard_sphere_id": "standard_sphere_20mm_setup_202606",
+  "standard_spheres": {
+    "standard_sphere_20mm_setup_202606": {
+      "status": "accepted",
+      "canonical_fit_json": "data/2026.6.16/yneg_near_fourth_refit_20260616.json",
+      "sphere_center_mm": [
+        -401.8971761006165,
+        126.48848592818706,
+        89.57111951578374
+      ],
+      "sphere_radius_mm": 10.0,
+      "probe_radius_mm": 1.0,
+      "euler_sequence": "xyz",
+      "quality": {
+        "rows": 10,
+        "rank": 6,
+        "condition": 7.655193768821384,
+        "rms_residual_mm": 0.05542868944142287,
+        "max_residual_mm": 0.10372947045591265
+      },
+      "usage": "Use sphere_center_mm for every stylus in this unchanged fixture setup. The local_ball_offset_mm in the same fit belongs only to stylus_reference_full_01."
+    }
+  },
+  "styli": {
+    "stylus_reference_full_01": {
+      "display_name": "完成10点绝对标定的参考侧针",
+      "historical_labels": ["y_neg"],
+      "branch": "reference_historical_y_neg",
+      "sphere_id": "standard_sphere_20mm_setup_202606",
+      "status": "calibrated_identity_not_physically_mapped",
+      "allowed_for_auto": false,
+      "canonical_fit_json": "data/2026.6.16/yneg_near_fourth_refit_20260616.json",
+      "local_ball_offset_mm": [
+        -29.4542183291367,
+        22.55915128710946,
+        174.93867342127314
+      ],
+      "quality": {
+        "rows": 10,
+        "rank": 6,
+        "rms_residual_mm": 0.05542868944142287,
+        "max_residual_mm": 0.10372947045591265
+      },
+      "note": "球心可信，但在当前五针实体上的确切针号尚未重新确认；禁止仅按历史 y_neg 名称调用。"
+    },
+    "stylus_cross_y_neg_20260617": {
+      "display_name": "2026-06-17手动12点中的y_neg实体侧针",
+      "historical_labels": ["y_neg", "cross_probe"],
+      "branch": "y_neg",
+      "sphere_id": "standard_sphere_20mm_setup_202606",
+      "status": "auto_calibrated",
+      "allowed_for_auto": true,
+      "canonical_fit_json": "data/2026.6.21/y_neg_auto_calibrated_fit_20260621.json",
+      "local_ball_offset_mm": [
+        -30.65070976670566,
+        -22.24271298559857,
+        174.8500025813552
+      ],
+      "quality": {
+        "rows": 5,
+        "rejected_rows": 0,
+        "normal_pairwise_min_deg": 0.8304588794658242,
+        "normal_pairwise_max_deg": 4.87191192636803,
+        "rms_residual_mm": 0.019444527438989195,
+        "max_residual_mm": 0.030451996575742865
+      },
+      "source_contacts": [
+        "data/2026.6.21/full_auto_y_neg_registered_20260621/contacts.csv#rows=1-5"
+      ]
+    },
+    "stylus_cross_z_20260623": {
+      "display_name": "2026-06-23自动验证中的z轴针",
+      "historical_labels": ["z", "five_branch_probe"],
+      "branch": "z",
+      "sphere_id": "standard_sphere_20mm_setup_202606",
+      "status": "auto_calibrated",
+      "allowed_for_auto": true,
+      "canonical_fit_json": "data/2026.6.23/full_auto_z_validation_20260623/measurement_fit.json",
+      "fit_result_selector": {"branch": "z"},
+      "local_ball_offset_mm": [
+        -0.023752625367795054,
+        0.24215276401702787,
+        209.27089775384175
+      ],
+      "quality": {
+        "rows": 5,
+        "rejected_rows": 0,
+        "rms_residual_mm": 0.022989664601787176,
+        "max_residual_mm": 0.03472192069378594
+      },
+      "source_contacts": [
+        "data/2026.6.23/full_auto_z_validation_20260623/contacts.csv#rows=1-5"
+      ],
+      "note": "已由真实关节状态 MoveIt 预检后的5点z轴自动标定替代。"
+    },
+    "stylus_needle3_x_neg_20260617": {
+      "display_name": "用户编号针3",
+      "historical_labels": ["needle3", "x_neg"],
+      "branch": "x_neg",
+      "sphere_id": "standard_sphere_20mm_setup_202606",
+      "status": "needs_more_orientations",
+      "allowed_for_auto": false,
+      "canonical_fit_json": "data/2026.6.17/needle3_model_based_local_fit.json",
+      "fit_result_selector": {"branch": "x_neg"},
+      "local_ball_offset_mm": [
+        -10.917104490286352,
+        35.36473214000138,
+        175.33680972623722
+      ],
+      "quality": {
+        "rows": 2,
+        "rms_residual_mm": 0.05843248282454931
+      },
+      "note": "两个触点姿态几乎相同，残差小不代表三维offset已充分约束。"
+    },
+    "stylus_cross_x_pos_20260617": {
+      "display_name": "手动12点固定球心求解的x_pos侧针",
+      "historical_labels": ["x_pos", "cross_probe"],
+      "branch": "x_pos",
+      "sphere_id": "standard_sphere_20mm_setup_202606",
+      "status": "auto_calibrated",
+      "allowed_for_auto": true,
+      "canonical_fit_json": "data/2026.6.21/full_auto_x_pos_validation_20260621/measurement_fit.json",
+      "fit_result_selector": {"branch": "x_pos"},
+      "local_ball_offset_mm": [-21.926125803581673, 29.92168644059958, 174.43887145008003],
+      "quality": {"rows": 5, "rejected_rows": 0, "rms_residual_mm": 0.028966817541383128, "max_residual_mm": 0.04135434326179627},
+      "source_contacts": ["data/2026.6.21/full_auto_x_pos_validation_20260621/contacts.csv#rows=1-5"],
+      "note": "已由真实关节状态 MoveIt 预检后的5点自动标定替代。"
+    },
+    "stylus_cross_y_pos_20260617": {
+      "display_name": "手动12点固定球心求解的y_pos侧针",
+      "historical_labels": ["y_pos", "cross_probe"],
+      "branch": "y_pos",
+      "sphere_id": "standard_sphere_20mm_setup_202606",
+      "status": "auto_calibrated",
+      "allowed_for_auto": true,
+      "canonical_fit_json": "data/2026.6.21/full_auto_y_pos_validation_20260621/measurement_fit.json",
+      "fit_result_selector": {"branch": "y_pos"},
+      "local_ball_offset_mm": [31.888504123656787, 22.27219568353413, 172.14905584683493],
+      "quality": {"rows": 5, "rejected_rows": 0, "rms_residual_mm": 0.0585446994172531, "max_residual_mm": 0.0834961531686522},
+      "source_contacts": ["data/2026.6.21/full_auto_y_pos_validation_20260621/contacts.csv#rows=1-5"],
+      "note": "已由真实关节状态 MoveIt 预检后的5点自动标定替代。"
+    },
+    "stylus_cross_x_neg_invalid_20260617": {
+      "display_name": "手动12点中的x_neg混杂数据",
+      "historical_labels": ["x_neg", "cross_probe"],
+      "branch": "x_neg",
+      "sphere_id": "standard_sphere_20mm_setup_202606",
+      "status": "invalid_mixed_rows",
+      "allowed_for_auto": false,
+      "canonical_fit_json": "data/2026.6.17/manual_teach_cross_12pts_branch_seeds/cross_probe_x_neg_manual_seed.json",
+      "local_ball_offset_mm": [-5.821507, -19.296927, 168.488645],
+      "quality": {"rows": 3, "rms_sample_spread_mm": 37.76235345355035},
+      "note": "三行不能由同一个固定球心offset解释，不可用于规划或碰撞模型。"
+    },
+    "stylus_cross_x_neg_20260617": {
+      "display_name": "手动12点第5/6行约束的x_neg侧针",
+      "historical_labels": ["x_neg", "cross_probe"],
+      "branch": "x_neg",
+      "sphere_id": "standard_sphere_20mm_setup_202606",
+      "status": "auto_calibrated",
+      "allowed_for_auto": true,
+      "canonical_fit_json": "data/2026.6.21/full_auto_x_neg_validation_20260621/measurement_fit.json",
+      "fit_result_selector": {"branch": "x_neg"},
+      "local_ball_offset_mm": [22.12609571291309, -31.31651942060922, 173.76388167447166],
+      "quality": {"rows": 5, "rejected_rows": 0, "rms_residual_mm": 0.18598898057508295, "max_residual_mm": 0.30086958882235987},
+      "source_contacts": ["data/2026.6.21/full_auto_x_neg_validation_20260621/contacts.csv#rows=1-5"],
+      "note": "已由真实关节状态 MoveIt 预检后的5点自动标定替代；残差高于其他侧针，后续可复测验证。"
+    }
+  },
+  "deprecated_artifacts": [
+    {
+      "path": "data/2026.6.21/x_neg_fixed_center_early_trigger_fit_20260621.json",
+      "status": "superseded_validation_seed",
+      "replacement": "data/2026.6.21/x_neg_fixed_center_validated_fit_20260621.json",
+      "reason": "第二次受控搜索正常HIT，形成四约束冗余解。"
+    },
+    {
+      "path": "data/2026.6.21/x_neg_two_contact_prior_seed_20260621.json",
+      "status": "superseded_search_seed",
+      "replacement": "data/2026.6.21/x_neg_fixed_center_early_trigger_fit_20260621.json",
+      "reason": "首次受控搜索的EARLY_TRIGGER_START提供了第三个独立距离约束。"
+    },
+    {
+      "path": "data/2026.6.21/y_neg_fixed_center_distance_fit_20260621.json",
+      "status": "superseded_coarse_fit",
+      "replacement": "data/2026.6.21/y_neg_auto_calibrated_fit_20260621.json",
+      "reason": "已由真实关节状态 MoveIt 预检后的5点自动标定替代。"
+    },
+    {
+      "path": "data/2026.6.21/y_neg_current_pose_touch_seed.json",
+      "status": "superseded",
+      "replacement": "data/2026.6.21/y_neg_auto_calibrated_fit_20260621.json",
+      "reason": "单个投影触点不能确定三维ruby offset。"
+    },
+    {
+      "path": "data/2026.6.17/manual_teach_cross_12pts.json",
+      "status": "seed_generation_only",
+      "reason": "使用人为方向投影；branch结果不能作为绝对法向标定。"
+    },
+    {
+      "path": "data/2026.6.17/manual_teach_five_branch_offsets.json",
+      "status": "seed_generation_only",
+      "reason": "每针只有一个触点，只能做身份/近似位置记录。"
+    },
+    {
+      "path": "data/cross_probe_sphere_calibration_low_overtravel_20260601.json",
+      "status": "relative_gauge_coupled",
+      "reason": "近固定姿态数据使球心和各针offset规范自由度耦合；不得作为绝对球心。"
+    }
+  ]
+}

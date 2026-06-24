@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>my_cr5_control</name>
+  <version>0.0.0</version>
+  <description>CR5 Robot Control Package</description>
+  <maintainer email="zhu@todo.todo">zhu</maintainer>
+  <license>TODO: License declaration</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>ament_index_cpp</depend>
+  <depend>rclcpp</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>interactive_markers</depend>
+  <depend>geometric_shapes</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>libqt5-core</depend>
+  <depend>libqt5-widgets</depend>
+  <depend>qtbase5-dev</depend>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>cr5_moveit</exec_depend>
+  <exec_depend>cr_robot_ros2</exec_depend>
+  <exec_depend>cra_description</exec_depend>
+  <exec_depend>dobot_moveit</exec_depend>
+  <exec_depend>dobot_msgs_v4</exec_depend>
+  <exec_depend>dobot_rviz</exec_depend>
+  <exec_depend>moveit_configs_utils</exec_depend>
+  <exec_depend>python3-matplotlib</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
