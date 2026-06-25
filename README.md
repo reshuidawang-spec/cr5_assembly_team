@@ -18,7 +18,7 @@
 
 ### 低压配电柜多工艺柔性装配产线
 
-项目以低压配电柜装配为典型场景，构建包含 3 台 CR5 机械臂、多个工位和 3 类以上工艺任务的柔性产线仿真系统。
+项目以低压配电柜装配为典型场景，构建包含 3 台 CR5 机械臂、多个工位和 3 类以上工艺任务的柔性产线仿真系统。工作空间布局、零部件清单和采购建议详见 [docs/WORKSPACE_DESIGN.md](docs/WORKSPACE_DESIGN.md)。
 
 | 机械臂 | 主要职责 | 典型动作 |
 |---|---|---|
@@ -71,7 +71,9 @@ cr5_assembly_team/
 ├── .gitignore                        # ROS2 / Python / IDE 忽略规则
 ├── docs/                             # 方案、接口、分工与答辩材料
 │   ├── PROJECT_PLAN.md               # 两个月并行开发计划
-│   └── INTERFACES.md                 # 订单、任务、调度、日志接口规范
+│   ├── INTERFACES.md                 # 订单、任务、调度、日志接口规范
+│   ├── WORKSPACE_DESIGN.md           # 工作空间布局、零部件清单、采购建议
+│   └── TEAM_WORKFLOW.md              # 团队协作规范与分支策略
 ├── src/
 │   └── DOBOT_6Axis_ROS2_V4/          # DOBOT 官方六轴机械臂 ROS2 驱动
 └── data/                             # 建议存放订单样例、日志与实验结果
