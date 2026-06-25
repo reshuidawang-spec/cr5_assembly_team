@@ -73,9 +73,7 @@ cr5_assembly_team/
 │   ├── PROJECT_PLAN.md               # 两个月并行开发计划
 │   └── INTERFACES.md                 # 订单、任务、调度、日志接口规范
 ├── src/
-│   ├── DOBOT_6Axis_ROS2_V4/          # DOBOT 官方六轴机械臂 ROS2 驱动
-│   ├── my_cr5_control/               # 自定义运动规划与控制研究
-│   └── cr5_rmp60_measurement/        # 测针测量与标定工具
+│   └── DOBOT_6Axis_ROS2_V4/          # DOBOT 官方六轴机械臂 ROS2 驱动
 └── data/                             # 建议存放订单样例、日志与实验结果
 ```
 
