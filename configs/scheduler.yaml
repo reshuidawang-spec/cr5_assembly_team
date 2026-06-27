@@ -1,0 +1,49 @@
+# 调度参数配置
+
+scheduler:
+  # 调度策略: fifo / priority / dynamic
+  strategy: dynamic
+
+  # 是否启用区域锁避碰
+  region_lock: true
+
+  # 急单优先级阈值（priority >= 此值视为急单）
+  urgent_threshold: 5
+
+  # 故障重分配：是否允许跨机械臂类型分配
+  cross_type_reassign: false
+
+  # 共享区域配置
+  areas:
+    feed_area:
+      lock_required: false
+      max_robots: 1
+    assembly_area:
+      lock_required: true
+      max_robots: 1
+    screw_area:
+      lock_required: true
+      max_robots: 1
+    inspect_area:
+      lock_required: false
+      max_robots: 1
+    sort_area:
+      lock_required: true
+      max_robots: 1
+    rework_area:
+      lock_required: false
+      max_robots: 1
+    shared_transfer_area:
+      lock_required: true
+      max_robots: 2
+
+# 效能对比实验参数
+experiment:
+  baseline:
+    description: "固定顺序调度"
+    strategy: fifo
+    region_lock: false
+  proposed:
+    description: "动态优先级 + 区域锁 + 急单重调度"
+    strategy: dynamic
+    region_lock: true

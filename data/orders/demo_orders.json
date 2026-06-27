@@ -1,0 +1,23 @@
+[
+  {
+    "order_id": "A001",
+    "product_type": "A",
+    "priority": 1,
+    "quantity": 1,
+    "due_time": 120
+  },
+  {
+    "order_id": "B001",
+    "product_type": "B",
+    "priority": 2,
+    "quantity": 1,
+    "due_time": 160
+  },
+  {
+    "order_id": "C_URGENT",
+    "product_type": "C",
+    "priority": 5,
+    "quantity": 1,
+    "due_time": 90
+  }
+]

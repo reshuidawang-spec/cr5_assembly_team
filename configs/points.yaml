@@ -1,0 +1,71 @@
+# 场景点位表 —— 2号同学在 CoppeliaSim 中必须按此命名
+# 3号机械臂控制模块按此点位生成运动目标
+# 4号调度模块按此点位生成任务 target_point
+
+P_FEED_01:
+  robot: R1
+  area: feed_area
+  action: feed
+  description: "上料点1 — 柜体底板放置位"
+
+P_ASSEMBLY_01:
+  robot: R2
+  area: assembly_area
+  action: assemble
+  description: "元件装配点1"
+
+P_ASSEMBLY_02:
+  robot: R2
+  area: assembly_area
+  action: assemble
+  description: "元件装配点2"
+
+P_SCREW_01:
+  robot: R3
+  area: screw_area
+  action: screw
+  description: "螺丝锁付点1"
+
+P_SCREW_02:
+  robot: R3
+  area: screw_area
+  action: screw
+  description: "螺丝锁付点2"
+
+P_INSPECT_01:
+  robot: R3
+  area: inspect_area
+  action: inspect
+  description: "质量检测点"
+
+P_UNLOAD_01:
+  robot: R1
+  area: unload_area
+  action: unload
+  description: "成品下料点"
+
+# ---- R4 分拣区域 ----
+P_GOOD_01:
+  robot: R4
+  area: sort_area
+  action: sort_good
+  description: "良品下料区"
+
+P_DEFECT_01:
+  robot: R4
+  area: sort_area
+  action: sort_defect
+  description: "不良品暂存区"
+
+P_REWORK_01:
+  robot: R4
+  area: rework_area
+  action: rework
+  description: "不良品返修拆解区（可选扩展）"
+
+# ---- 共享区域 ----
+P_SHARED_TRANSFER:
+  robots: [R1, R2, R3, R4]
+  area: shared_transfer_area
+  lock_required: true
+  description: "共享过渡区 — 多臂需申请区域锁"

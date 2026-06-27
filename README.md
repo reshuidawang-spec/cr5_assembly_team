@@ -24,7 +24,8 @@
 |---|---|---|
 | R1 上料定位机械臂 | 柜体底板/安装板搬运与定位 | 抓取、搬运、放置、回零 |
 | R2 元件装配机械臂 | 电气元件抓取与安装 | 取料、定位、装配 |
-| R3 锁付检测机械臂 | 螺丝锁付与质量检测 | 移动到锁付点、检测点扫描 |
+| R3 锁付检测机械臂 | 螺丝锁付与质量检测 | 移动到锁付点、检测点扫描，返回 OK/NG |
+| R4 分拣返修机械臂 | 良品/不良品分拣，空闲返修拆解 | 根据 R3 检测结果分拣至良品区/不良品区 |
 
 支持的演示场景：
 
@@ -67,19 +68,82 @@
 ```text
 cr5_assembly_team/
 ├── README.md                         # 项目总说明
-├── requirements.txt                  # Python 算法与数据分析依赖
+├── requirements.txt                  # Python 依赖
 ├── .gitignore                        # ROS2 / Python / IDE 忽略规则
-├── docs/                             # 方案、接口、分工与答辩材料
-│   ├── PROJECT_PLAN.md               # 两个月并行开发计划
-│   ├── INTERFACES.md                 # 订单、任务、调度、日志接口规范
-│   ├── WORKSPACE_DESIGN.md           # 工作空间布局、零部件清单、采购建议
-│   └── TEAM_WORKFLOW.md              # 团队协作规范与分支策略
-├── src/
-│   └── DOBOT_6Axis_ROS2_V4/          # DOBOT 官方六轴机械臂 ROS2 驱动
-└── data/                             # 建议存放订单样例、日志与实验结果
+├── run_demo.py                       # 一键启动入口
+│
+├── app/                              # 软件集成模块（5号）
+│   ├── main_app.py                   # 主界面（tkinter GUI）
+│   └── dashboard.py                  # 数据看板与图表
+│
+├── interfaces/                       # 抽象接口定义（所有成员遵循）
+│   ├── types.py                      # 共享数据类型（Order, Task, TaskResult, RobotState）
+│   ├── order_interface.py            # IOrderParser 接口
+│   ├── scheduler_interface.py        # IScheduler 接口
+│   ├── robot_interface.py            # IRobotExecutor 接口
+│   └── sim_interface.py              # ISimBridge 接口
+│
+├── mock/                             # Mock 假实现（开发阶段使用）
+│   ├── mock_order_parser.py
+│   ├── mock_scheduler.py
+│   ├── mock_robot_executor.py
+│   └── mock_sim_bridge.py
+│
+├── scheduler/                         # 订单解析与调度模块（4号实现）
+│   ├── order_parser.py
+│   ├── task_generator.py
+│   ├── scheduler.py
+│   └── state_manager.py
+│
+├── robot_control/                     # 机械臂控制模块（3号实现）
+│   ├── robot_executor.py
+│   ├── gripper_control.py
+│   ├── screw_control.py
+│   └── motion_control.py
+│
+├── sim_bridge/                        # 仿真通信模块（2号/3号实现）
+│   ├── coppelia_client.py
+│   └── scene_objects.py
+│
+├── configs/                           # 配置文件
+│   ├── points.yaml                    # 场景点位表
+│   ├── robots.yaml                    # 机械臂配置（含 R4）
+│   ├── product_types.yaml             # 产品工艺配置
+│   └── scheduler.yaml                 # 调度参数
+│
+├── data/                              # 数据文件
+│   ├── orders/demo_orders.json        # 示例订单
+│   ├── logs/                          # 运行日志
+│   └── results/                       # 实验结果
+│
+├── docs/                              # 方案文档
+│   ├── PROJECT_PLAN.md
+│   ├── INTERFACES.md
+│   ├── WORKSPACE_DESIGN.md
+│   └── TEAM_WORKFLOW.md
+│
+└── src/
+    └── DOBOT_6Axis_ROS2_V4/           # DOBOT 官方 ROS2 驱动
 ```
 
 > 注：`build/`、`install/`、`log/` 等 ROS2 编译产物不应提交到仓库。
+
+### 4.1 模块分工与接口
+
+| 模块 | 负责同学 | 实现接口 | 当前状态 |
+|------|---------|---------|---------|
+| 软件集成 (app/) | 5号 | 维护 main_app.py，调用各模块 | GUI 可用 |
+| 订单调度 (scheduler/) | 4号 | IOrderParser, IScheduler | Mock 占位 |
+| 机械臂控制 (robot_control/) | 3号 | IRobotExecutor | Mock 占位 |
+| 仿真通信 (sim_bridge/) | 2号/3号 | ISimBridge | Mock 占位 |
+| 场景搭建 | 2号 | configs/points.yaml | 点位表已定义 |
+
+### 4.2 开发流程
+
+1. **先跑通 Mock 闭环**：`python3 run_demo.py` 启动 GUI，用假数据验证完整链路
+2. **按接口开发**：每个同学在对应目录实现 `interfaces/` 中定义的抽象接口
+3. **替换 Mock**：在 `app/main_app.py` 的 `set_modules()` 中注入真实实现
+4. **每周集成**：所有模块合并到主分支，验证 `run_demo.py` 可运行
 
 ---
 

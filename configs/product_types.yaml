@@ -1,0 +1,104 @@
+# 产品工艺配置 —— 4号调度模块按此生成任务
+
+A:
+  name: "A 型配电柜"
+  processes:
+    - process: feed
+      area: feed_area
+      point: P_FEED_01
+      available_robots: [R1]
+      duration: 6
+    - process: assemble
+      area: assembly_area
+      point: P_ASSEMBLY_01
+      available_robots: [R2]
+      duration: 12
+    - process: screw
+      area: screw_area
+      point: P_SCREW_01
+      available_robots: [R3]
+      duration: 10
+    - process: inspect
+      area: inspect_area
+      point: P_INSPECT_01
+      available_robots: [R3]
+      duration: 5
+  component_count: 3
+  screw_count: 6
+  inspection_points: 2
+
+B:
+  name: "B 型配电柜"
+  processes:
+    - process: feed
+      area: feed_area
+      point: P_FEED_01
+      available_robots: [R1]
+      duration: 7
+    - process: assemble
+      area: assembly_area
+      point: P_ASSEMBLY_01
+      available_robots: [R2]
+      duration: 16
+    - process: screw
+      area: screw_area
+      point: P_SCREW_01
+      available_robots: [R3]
+      duration: 14
+    - process: inspect
+      area: inspect_area
+      point: P_INSPECT_01
+      available_robots: [R3]
+      duration: 6
+  component_count: 5
+  screw_count: 10
+  inspection_points: 3
+
+C:
+  name: "C 型配电柜"
+  processes:
+    - process: feed
+      area: feed_area
+      point: P_FEED_01
+      available_robots: [R1]
+      duration: 8
+    - process: assemble
+      area: assembly_area
+      point: P_ASSEMBLY_01
+      available_robots: [R2]
+      duration: 20
+    - process: screw
+      area: screw_area
+      point: P_SCREW_01
+      available_robots: [R3]
+      duration: 16
+    - process: inspect
+      area: inspect_area
+      point: P_INSPECT_01
+      available_robots: [R3]
+      duration: 7
+  component_count: 6
+  screw_count: 12
+  inspection_points: 4
+
+# R4 分拣工序（所有产品共有，在检测之后）
+post_inspection:
+  - process: sort_good
+    area: sort_area
+    point: P_GOOD_01
+    available_robots: [R4]
+    duration: 4
+    condition: "inspect_result == OK"
+  - process: sort_defect
+    area: sort_area
+    point: P_DEFECT_01
+    available_robots: [R4]
+    duration: 4
+    condition: "inspect_result == NG"
+  # 可选扩展
+  - process: rework
+    area: rework_area
+    point: P_REWORK_01
+    available_robots: [R4]
+    duration: 15
+    condition: "robot_idle_and_defect_exists"
