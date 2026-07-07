@@ -1,39 +1,52 @@
-# 机械臂配置
+# 机械臂配置 — Compact Multi-CR5 Collaborative Cell
+# 坐标与 test2.txt 对齐
 
 robots:
   R1:
     name: "上料定位机械臂"
     model: DOBOT CR5
-    position: [0.3, -0.5, 0]
+    model_file: cr5_robot_fixed.urdf
+    position: [-1.75, 0.95, 0]
+    base_object: R1_Base
     home_pose: [0, 0, 0, 0, 0, 0]
-    capabilities: [feed, unload, pick_and_place]
+    home_point: R1_Home
+    capabilities: [feed, pick_and_place]
     end_effector: gripper
-    work_area: [feed_area, unload_area]
+    work_area: [box_area, assembly_area]
 
   R2:
     name: "元件装配机械臂"
     model: DOBOT CR5
-    position: [0.3, 0.5, 0]
+    model_file: cr5_robot_fixed.urdf
+    position: [-1.75, -0.30, 0]
+    base_object: R2_Base
     home_pose: [0, 0, 0, 0, 0, 0]
+    home_point: R2_Home
     capabilities: [assemble, pick_and_place]
     end_effector: small_gripper
-    work_area: [assembly_area]
+    work_area: [electronics_area, assembly_area]
 
   R3:
     name: "锁付检测机械臂"
     model: DOBOT CR5
-    position: [0.8, 0, 0]
+    model_file: cr5_robot_fixed.urdf
+    position: [1.05, 0.40, 0]
+    base_object: R3_Base
     home_pose: [0, 0, 0, 0, 0, 0]
+    home_point: R3_Home
     capabilities: [screw, inspect]
     end_effector: screwdriver_and_camera
-    work_area: [screw_area, inspect_area]
+    work_area: [inspection_screw_area]
 
   R4:
-    name: "分拣返修机械臂"
+    name: "分拣机械臂"
     model: DOBOT CR5
-    position: [1.1, 0, 0]
+    model_file: cr5_robot_fixed.urdf
+    position: [1.30, -0.65, 0]
+    base_object: R4_Base
     home_pose: [0, 0, 0, 0, 0, 0]
-    capabilities: [sort_good, sort_defect, rework]
+    home_point: R4_Home
+    capabilities: [sort_good, sort_defect]
     end_effector: gripper
-    work_area: [sort_area, rework_area]
-    note: "根据 R3 检测结果分拣良品/不良品，空闲时可拆解不良品返修"
+    work_area: [inspection_area, sort_area]
+    note: "检测完成后分拣，合格→成品传送带(Y)，不合格→缺陷品传送带(X)"

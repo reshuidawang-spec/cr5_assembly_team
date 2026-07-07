@@ -1,71 +1,97 @@
-# 场景点位表 —— 2号同学在 CoppeliaSim 中必须按此命名
-# 3号机械臂控制模块按此点位生成运动目标
-# 4号调度模块按此点位生成任务 target_point
+# 场景点位表 — Compact Multi-CR5 Collaborative Cell
+# 2号同学在 CoppeliaSim 中必须按此命名
+# 3号/4号按此点位生成运动目标和调度任务
+# 坐标与 test2.txt 对齐
 
+# ---- R1 (CR5) 箱体上料 ----
 P_FEED_01:
   robot: R1
-  area: feed_area
+  area: box_area
   action: feed
-  description: "上料点1 — 柜体底板放置位"
+  position: [-2.55, 0.55, 0.45]
+  description: "箱体抓取点 — Box_Area 上方"
 
+# ---- R2 (CR5) 电子元件安装 ----
 P_ASSEMBLY_01:
   robot: R2
-  area: assembly_area
+  area: electronics_area
   action: assemble
-  description: "元件装配点1"
+  position: [-1.25, 0.65, 0.42]
+  description: "PCB取料点 — Electronics_Area 上方"
 
 P_ASSEMBLY_02:
   robot: R2
   area: assembly_area
   action: assemble
-  description: "元件装配点2"
+  position: [-0.75, -0.35, 0.52]
+  description: "PCB安装点 — Assembly_Area 夹具上方"
 
+# ---- R3 (CR5) 检测+锁付 ----
 P_SCREW_01:
   robot: R3
   area: screw_area
   action: screw
-  description: "螺丝锁付点1"
+  position: [1.90, 0.64, 0.28]
+  description: "螺钉取料点 — Screw_Tray(2.05,0.70) 上方"
 
 P_SCREW_02:
   robot: R3
-  area: screw_area
+  area: inspection_screw_area
   action: screw
-  description: "螺丝锁付点2"
+  position: [0.45, 0.10, 0.62]
+  description: "锁付位 — Inspection_Platform 上方（4个Screw_Point中心）"
 
 P_INSPECT_01:
   robot: R3
-  area: inspect_area
+  area: inspection_screw_area
   action: inspect
-  description: "质量检测点"
+  position: [0.45, 0.10, 0.60]
+  description: "视觉检测点 — Camera 下方 Inspection_Platform"
 
+# ---- R4 (CR5) 分拣 ----
 P_UNLOAD_01:
-  robot: R1
-  area: unload_area
+  robot: R4
+  area: inspection_area
   action: unload
-  description: "成品下料点"
+  position: [0.45, 0.10, 0.52]
+  description: "成品取件点 — 从检测平台取出产品"
 
-# ---- R4 分拣区域 ----
 P_GOOD_01:
   robot: R4
   area: sort_area
   action: sort_good
-  description: "良品下料区"
+  position: [1.35, -1.05, 0.48]
+  description: "良品下料 — Conveyor_Good 起点"
 
 P_DEFECT_01:
   robot: R4
   area: sort_area
   action: sort_defect
-  description: "不良品暂存区"
+  position: [2.15, -0.55, 0.48]
+  description: "不良品下料 — Conveyor_Defect 起点"
 
 P_REWORK_01:
   robot: R4
   area: rework_area
   action: rework
-  description: "不良品返修拆解区（可选扩展）"
+  position: [3.75, -0.55, 0.48]
+  description: "返修区 — Conveyor_Defect 终点"
+
+# ---- 传送带 ----
+P_CONVEYOR_START:
+  area: conveyor_good
+  position: [1.35, -1.05, 0.36]
+  description: "成品传送带起点"
+
+P_CONVEYOR_END:
+  area: conveyor_good
+  position: [1.35, -3.25, 0.36]
+  description: "成品传送带终点"
 
 # ---- 共享区域 ----
 P_SHARED_TRANSFER:
   robots: [R1, R2, R3, R4]
   area: shared_transfer_area
   lock_required: true
-  description: "共享过渡区 — 多臂需申请区域锁"
+  position: [-0.10, -0.12, 0.55]
+  description: "中间交接区 — 两台圆形工作台之间"
