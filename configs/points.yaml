@@ -1,7 +1,6 @@
-# 场景点位表 — Compact Multi-CR5 Collaborative Cell
-# 2号同学在 CoppeliaSim 中必须按此命名
-# 3号/4号按此点位生成运动目标和调度任务
-# 坐标与 test2.txt 对齐
+# 四臂 Mock 原型点位表（尚未与 scenes/ 五臂 CR5A 场景统一）
+# 不应据此在 FiveCR5A_Cell 中创建对象；五臂场景目标点见
+# scenes/main_cell_generator.lua 与 docs/SCENE_BUILDING_GUIDE.md。
 
 # ---- R1 (CR5) 箱体上料 ----
 P_FEED_01:

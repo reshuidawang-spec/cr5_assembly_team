@@ -34,7 +34,7 @@ _PRODUCT_PROCESSES = {
     },
 }
 
-# 检测后 R4 分拣（根据检测结果）
+# 检测后 R4 分拣（根据检测结果动态生成；Mock 原型使用四臂角色模型）
 _SORT_PROCESSES = {
     ProcessType.SORT_GOOD: ("sort_area", "P_GOOD_01", ["R4"], 4),
     ProcessType.SORT_DEFECT: ("sort_area", "P_DEFECT_01", ["R4"], 4),
@@ -86,25 +86,6 @@ class MockScheduler(IScheduler):
                 )
                 tasks.append(task)
                 prev_id = task.task_id
-
-            # 为检测任务附加 R4 分拣任务
-            inspect_task_id = prev_id
-            for sort_process in [ProcessType.SORT_GOOD, ProcessType.SORT_DEFECT]:
-                area, point, robots, duration = _SORT_PROCESSES[sort_process]
-                sort_task = Task(
-                    task_id=self._next_task_id(),
-                    order_id=order.order_id,
-                    product_type=order.product_type,
-                    process=sort_process.value,
-                    target_area=area,
-                    target_point=point,
-                    available_robots=list(robots),
-                    duration=duration,
-                    predecessors=[inspect_task_id],
-                    priority=order.priority,
-                    status=TaskStatus.PENDING.value,
-                )
-                tasks.append(sort_task)
 
         return tasks
 
@@ -180,13 +161,29 @@ class MockScheduler(IScheduler):
                 )
                 if pred_done:
                     task.status = TaskStatus.PENDING.value
-        # 如果检测结果为 NG，触发 sort_defect
-        if result.quality_result == "NG":
-            for task in tasks:
-                if (
-                    task.process == ProcessType.SORT_GOOD.value
-                    and task.order_id == result.task_id
-                ):
-                    task.status = TaskStatus.PENDING.value  # 跳过良品分拣，执行不良品分拣
+        # 检测完成后，只按实际结果生成一条分拣任务。不能在订单生成时
+        # 同时创建 sort_good 和 sort_defect，否则同一产品会被分拣两次。
+        if result.status == TaskStatus.FINISHED.value and result.quality_result in {"OK", "NG"}:
+            inspected_task = next((task for task in tasks if task.task_id == result.task_id), None)
+            if inspected_task and inspected_task.process == ProcessType.INSPECT.value:
+                sort_process = (
+                    ProcessType.SORT_GOOD
+                    if result.quality_result == "OK"
+                    else ProcessType.SORT_DEFECT
+                )
+                area, point, robots, duration = _SORT_PROCESSES[sort_process]
+                tasks.append(Task(
+                    task_id=self._next_task_id(),
+                    order_id=inspected_task.order_id,
+                    product_type=inspected_task.product_type,
+                    process=sort_process.value,
+                    target_area=area,
+                    target_point=point,
+                    available_robots=list(robots),
+                    duration=duration,
+                    predecessors=[inspected_task.task_id],
+                    priority=inspected_task.priority,
+                    status=TaskStatus.PENDING.value,
+                ))
         self._notify()
         return tasks

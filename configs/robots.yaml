@@ -1,5 +1,5 @@
-# 机械臂配置 — Compact Multi-CR5 Collaborative Cell
-# 坐标与 test2.txt 对齐
+# 四臂 Mock 原型配置（尚未与 scenes/ 五臂 CR5A 场景统一）
+# 五臂场景的基座与目标点以 scenes/main_cell_generator.lua 为准。
 
 robots:
   R1:

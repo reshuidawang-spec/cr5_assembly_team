@@ -1,8 +1,8 @@
 # 工序自适，群臂协同
 ## 面向多工艺柔性产线的多机械臂自主调度与效能优化系统
 
-> CR5 Assembly Team — 江科大学生参赛项目仓库  
-> 面向低压配电柜、新能源箱变等电气装备柔性制造场景，构建“**四机械臂 + 多工序 + 动态订单 + 检测分拣闭环**”的自主调度、协同避碰与效能优化系统。
+> CR5 Assembly Team — 江科大学生参赛项目仓库。
+> 当前可用仿真资产是“**五台 CR5A + 小型电控箱装配 + 检测后分拣**”CoppeliaSim 场景；Python 主控仍是独立可运行的四臂 Mock 原型，尚未与该场景接通。
 
 ---
 
@@ -34,16 +34,16 @@ R1 上料 → R2 装配 → R3 锁付/检测 → R4 分拣/可选返修
 
 ### 低压配电柜多工艺柔性装配产线
 
-项目以低压配电柜装配为典型场景，构建包含 **4 台 CR5 机械臂**、多个工位和 4 类以上工艺任务的柔性产线仿真系统。工作空间布局、零部件清单和采购建议详见 [docs/WORKSPACE_DESIGN.md](docs/WORKSPACE_DESIGN.md)。
+仓库中目前有两条尚未合并的工作线，不能视为同一套已经跑通的系统：
 
-| 机械臂 | 主要职责 | 典型动作 |
+| 工作线 | 实际内容 | 状态 |
 |---|---|---|
-| R1 上料定位机械臂 | 柜体底板/安装板搬运与定位 | 抓取、搬运、放置、回零 |
-| R2 元件装配机械臂 | 电气元件抓取与安装 | 取料、定位、装配 |
-| R3 锁付检测机械臂 | 螺丝锁付与质量检测 | 移动到锁付点、检测点扫描，返回 OK/NG |
-| R4 分拣返修机械臂 | 良品/不良品分拣，空闲时可选返修拆解 | 根据 R3 检测结果分拣至良品区/不良品区 |
+| 五臂 CoppeliaSim 场景 | 五台 CR5A、小型电控箱、供料/装配/检测锁付/双传送带；R5 负责 OK/NG 分拣 | 场景文件、生成脚本与 ROS2 命令桥接脚本已在仓库；尚未在本次检查中完成 CoppeliaSim 实机运行验证，也未接入 Python 主控 |
+| Python Mock 原型 | 订单解析、固定工艺链、Mock 执行器和 tkinter 界面 | `--headless` 已验证可运行；使用 R1–R4 抽象角色，非真实 ROS2/CoppeliaSim 控制 |
 
-R1-R3 构成基础装配闭环，R4 构成检测结果驱动的质量分拣闭环。R4 的返修拆解为拓展功能，优先实现良品/不良品分流。
+原有四臂低压配电柜规划和采购建议保留在 [docs/WORKSPACE_DESIGN.md](docs/WORKSPACE_DESIGN.md)，作为待整合的方案记录，不代表当前五臂场景的已实现状态。
+
+五臂场景的职责以 [docs/SCENE_BUILDING_GUIDE.md](docs/SCENE_BUILDING_GUIDE.md) 为准：R1 箱体/端子排，R2 PCB，R3 控制模块/转移，R4 锁付，R5 根据检测结果分拣至合格或缺陷传送带。该场景目前提供对象、目标点和命令接口，不提供自动逆解、路径规划、物理抓取或避碰。
 
 支持的演示场景：
 
@@ -152,11 +152,11 @@ cr5_assembly_team/
 
 | 模块 | 负责同学 | 实现接口 | 当前状态 |
 |------|---------|---------|---------|
-| 软件集成 (app/) | 5号 | 维护 main_app.py，调用各模块 | GUI 可用 |
-| 订单调度 (scheduler/) | 4号 | IOrderParser, IScheduler | Mock 占位 |
-| 机械臂控制 (robot_control/) | 3号 | IRobotExecutor | Mock 占位 |
-| 仿真通信 (sim_bridge/) | 2号/3号 | ISimBridge | Mock 占位 |
-| 场景搭建 | 2号 | configs/points.yaml | 点位表已定义，需落到 CoppeliaSim |
+| 软件集成 (app/) | 5号 | 维护 main_app.py，调用各模块 | tkinter 界面可启动；默认仅注入 Mock 模块 |
+| 订单调度 (scheduler/) | 4号 | IOrderParser, IScheduler | 真实模块未实现；Mock 闭环已验证，检测后仅动态生成一条分拣任务 |
+| 机械臂控制 (robot_control/) | 3号 | IRobotExecutor | Mock 占位，未接入 ROS2/MoveIt2 |
+| 仿真通信 (sim_bridge/) | 2号/3号 | ISimBridge | Mock 占位，未接入 CoppeliaSim Remote API |
+| 场景搭建 | 2号 | 五臂 Lua 脚本与 `.ttt` 场景 | 已提交场景资产；`configs/` 中四臂点位表尚未与其统一 |
 
 ### 4.2 开发流程
 
@@ -236,13 +236,15 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-### 6.4 运行 Mock 闭环
+### 6.4 运行已验证的 Mock 闭环
 
 ```bash
 python3 run_demo.py
 # 或无界面模式
 python3 run_demo.py --headless
 ```
+
+`--real` 目前仍会回退到 Mock 模式；它不是连接五臂场景的启动方式。
 
 ### 6.5 RViz 验证
 
