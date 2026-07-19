@@ -1,0 +1,262 @@
+# Assembly component and work-step model used by the scheduler-side simulator.
+# It is aligned with the Five CR5A electrical control box scene.
+
+product_family: low_voltage_control_box
+
+model_scope:
+  geometry_model_required: false
+  process_model_required: true
+  note: "这里建立的是装配过程模型，不是三维几何模型。调度侧关心元件、依赖、工步、资源、时间和共享区域。"
+
+components:
+  box_shell:
+    name: "箱体壳"
+    scene_object: Assembly_ControlBox_Product_Shell
+    install_process: box_feed
+    install_robot: R1
+    install_level: 1
+    granularity: "main_component"
+    dependencies: []
+    description: "配电柜/电控箱基础壳体，所有后续元件都安装在箱体内部或箱体夹具上。"
+
+  pcb_board:
+    name: "PCB板"
+    scene_object: Assembly_ControlBox_Product_PCB
+    install_process: pcb_install
+    install_robot: R2
+    install_level: 2
+    granularity: "main_component"
+    dependencies: [box_shell]
+    description: "R2 将 PCB 板安装到箱体内，是控制模块和端子排安装的基础。"
+
+  pcb_holes:
+    name: "PCB定位孔"
+    scene_object: Assembly_ControlBox_Product_PCB_Hole_1~4
+    install_process: pcb_install
+    install_robot: R2
+    install_level: 3
+    granularity: "detail_feature"
+    dependencies: [pcb_board]
+    description: "用于表达 PCB 安装定位检查，不单独生成机械臂搬运动作。"
+
+  pcb_electronic_parts:
+    name: "PCB板载元件"
+    scene_object: Assembly_ControlBox_Product_PCB_Main_Chip/Connector/Capacitor
+    install_process: pcb_install
+    install_robot: R2
+    install_level: 3
+    granularity: "detail_feature"
+    dependencies: [pcb_board]
+    description: "芯片、连接器、电容等板载细节，用于后续检测和装配完整性描述。"
+
+  control_module_body:
+    name: "控制模块本体"
+    scene_object: Assembly_ControlBox_Product_Control_Module_Body
+    install_process: module_install
+    install_robot: R3
+    install_level: 4
+    granularity: "main_component"
+    dependencies: [pcb_holes, pcb_electronic_parts]
+    description: "R3 安装控制模块本体，安装位置在 PCB 上方。"
+
+  control_module_label:
+    name: "控制模块标签"
+    scene_object: Assembly_ControlBox_Product_Control_Module_Label
+    install_process: module_install
+    install_robot: R3
+    install_level: 5
+    granularity: "detail_feature"
+    dependencies: [control_module_body]
+    description: "控制模块上的标签细节，用于视觉识别和检测说明。"
+
+  terminal_block_body:
+    name: "端子排本体"
+    scene_object: Assembly_ControlBox_Product_Terminal_Block_Body
+    install_process: terminal_install
+    install_robot: R1
+    install_level: 6
+    granularity: "main_component"
+    dependencies: [control_module_body]
+    description: "R1 将端子排安装到箱体内，是后续锁付动作的对象。"
+
+  terminal_slots:
+    name: "端子排接线槽"
+    scene_object: Assembly_ControlBox_Product_Terminal_Block_Slot_1~4
+    install_process: terminal_install
+    install_robot: R1
+    install_level: 7
+    granularity: "detail_feature"
+    dependencies: [terminal_block_body]
+    description: "端子排内部接线槽细节，用于表达更细的装配和检测对象。"
+
+  terminal_screw_head:
+    name: "端子排主螺钉头"
+    scene_object: Assembly_ControlBox_Product_Terminal_Block_Main_ScrewHead
+    install_process: terminal_install
+    install_robot: R1
+    install_level: 8
+    granularity: "fastening_target"
+    dependencies: [terminal_block_body]
+    description: "端子排自带的锁付目标，随端子排安装进入产品，R4 在后续锁付工序中作用于该目标。"
+
+operations:
+  transfer_to_inspection:
+    name: "转移完整装配体到检测区"
+    robot: R3
+    level: 9
+    dependencies: [terminal_slots, terminal_screw_head]
+
+  inspect:
+    name: "固定相机检测"
+    robot: CAMERA
+    level: 10
+    dependencies: [transfer_to_inspection]
+
+  screw:
+    name: "端子螺钉锁付"
+    robot: R4
+    level: 11
+    dependencies: [inspect]
+
+  sort_good:
+    name: "合格品分拣"
+    robot: R5
+    level: 12
+    dependencies: [screw]
+
+  sort_defect:
+    name: "缺陷品分拣"
+    robot: R5
+    level: 12
+    dependencies: [screw]
+
+worksteps:
+  box_feed:
+    - code: box_pick_app
+      label: "R1 到达箱体抓取接近点"
+      point: R1_BOX_PICK_APP
+      ratio: 0.20
+    - code: box_pick_tcp
+      label: "R1 抓取箱体壳"
+      point: R1_BOX_PICK_TCP
+      ratio: 0.20
+    - code: box_place_app
+      label: "R1 搬运至装配夹具接近点"
+      point: R1_BOX_PLACE_APP
+      ratio: 0.30
+    - code: box_place_tcp
+      label: "R1 放置箱体壳到装配夹具"
+      point: R1_BOX_PLACE_TCP
+      ratio: 0.30
+
+  pcb_install:
+    - code: pcb_pick
+      label: "R2 抓取 PCB 板"
+      point: R2_PCB_PICK_TCP
+      ratio: 0.28
+    - code: pcb_align
+      label: "R2 对准 PCB 定位孔"
+      point: R2_PCB_PLACE_APP
+      ratio: 0.24
+    - code: pcb_place
+      label: "R2 安装 PCB 板"
+      point: R2_PCB_PLACE_TCP
+      ratio: 0.36
+    - code: pcb_feature_check
+      label: "确认 PCB 板载元件朝向"
+      point: R2_PCB_PLACE_TCP
+      ratio: 0.12
+
+  module_install:
+    - code: module_pick
+      label: "R3 抓取控制模块本体"
+      point: R3_MODULE_PICK_TCP
+      ratio: 0.28
+    - code: module_align
+      label: "R3 对准控制模块安装位置"
+      point: R3_MODULE_PLACE_APP
+      ratio: 0.24
+    - code: module_place
+      label: "R3 安装控制模块本体"
+      point: R3_MODULE_PLACE_TCP
+      ratio: 0.36
+    - code: module_label_check
+      label: "确认控制模块标签方向"
+      point: R3_MODULE_PLACE_TCP
+      ratio: 0.12
+
+  terminal_install:
+    - code: terminal_pick
+      label: "R1 抓取端子排本体"
+      point: R1_TERMINAL_PICK_TCP
+      ratio: 0.28
+    - code: terminal_align
+      label: "R1 对准端子排安装位置"
+      point: R1_TERMINAL_PLACE_APP
+      ratio: 0.24
+    - code: terminal_place
+      label: "R1 安装端子排本体"
+      point: R1_TERMINAL_PLACE_TCP
+      ratio: 0.36
+    - code: terminal_slot_check
+      label: "确认端子排接线槽朝向"
+      point: R1_TERMINAL_PLACE_TCP
+      ratio: 0.12
+
+  transfer_to_inspection:
+    - code: product_pick
+      label: "R3 从装配夹具抓取完整装配体"
+      point: R3_PRODUCT_PICK_TCP
+      ratio: 0.35
+    - code: product_transfer
+      label: "R3 转移到检测平台"
+      point: R3_PRODUCT_PLACE_INSPECTION_APP
+      ratio: 0.35
+    - code: product_place
+      label: "R3 放置完整装配体"
+      point: R3_PRODUCT_PLACE_INSPECTION_TCP
+      ratio: 0.30
+
+  inspect:
+    - code: camera_position
+      label: "固定相机定位检测区域"
+      point: CAMERA_INSPECTION_CENTER
+      ratio: 0.25
+    - code: camera_detect
+      label: "相机检测并输出 OK/NG"
+      point: CAMERA_INSPECTION_CENTER
+      ratio: 0.75
+
+  screw:
+    - code: screw_app
+      label: "R4 到达螺钉接近点"
+      point: R4_SCREW_APP
+      ratio: 0.25
+    - code: screw_touch
+      label: "R4 接触端子排主螺钉头"
+      point: R4_SCREW_TCP
+      ratio: 0.25
+    - code: screw_press
+      label: "R4 下压并完成锁付"
+      point: R4_SCREW_PRESS
+      ratio: 0.50
+
+  sort_good:
+    - code: good_pick
+      label: "R5 从检测平台抓取合格品"
+      point: R5_PRODUCT_PICK_TCP
+      ratio: 0.45
+    - code: good_place
+      label: "R5 放置到合格品传送带"
+      point: R5_GOOD_PLACE_TCP
+      ratio: 0.55
+
+  sort_defect:
+    - code: defect_pick
+      label: "R5 从检测平台抓取缺陷品"
+      point: R5_PRODUCT_PICK_TCP
+      ratio: 0.45
+    - code: defect_place
+      label: "R5 放置到缺陷品传送带"
+      point: R5_DEFECT_PLACE_TCP
+      ratio: 0.55

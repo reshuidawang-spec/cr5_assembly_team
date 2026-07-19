@@ -1,0 +1,8 @@
+﻿scenario_id,scenario_name,fault_robot,serial_makespan,fifo_makespan,critical_makespan,proposed_makespan,serial_urgent_completion,fifo_urgent_completion,critical_urgent_completion,proposed_urgent_completion,serial_tardiness,fifo_tardiness,critical_tardiness,proposed_tardiness,proposed_urgent_delta_vs_fifo,proposed_tardiness_delta_vs_critical
+normal,无故障正常生产,NONE,195.0,154.0,188.0,170.0,195.0,154.0,178.0,98.0,525.0,320.0,554.0,105.0,-56.0,-449.0
+r1_start_fault_repair,R1 开局故障，18s 后修复,R1,213.0,172.0,206.0,188.0,213.0,172.0,196.0,100.0,615.0,410.0,698.0,146.0,-72.0,-552.0
+r2_mid_fault_repair,R2 在 PCB 安装窗口故障，18s 后修复,R2,195.0,154.0,166.0,151.0,195.0,154.0,161.0,124.0,525.0,320.0,401.0,201.0,-30.0,-200.0
+r3_mid_fault_repair,R3 在模块安装/转移窗口故障，18s 后修复,R3,195.0,156.0,200.0,182.0,195.0,156.0,190.0,118.0,525.0,330.0,650.0,236.0,-38.0,-414.0
+r4_mid_fault_repair,R4 在锁付窗口故障，18s 后修复,R4,195.0,160.0,188.0,180.0,195.0,160.0,178.0,122.0,525.0,350.0,554.0,250.0,-38.0,-304.0
+r5_late_fault_repair,R5 在分拣窗口故障，18s 后修复,R5,195.0,159.0,188.0,175.0,195.0,159.0,178.0,117.0,525.0,345.0,554.0,215.0,-42.0,-339.0
+camera_mid_fault_repair,固定相机在检测窗口故障，18s 后修复,CAMERA,195.0,156.0,188.0,180.0,195.0,156.0,178.0,122.0,525.0,330.0,554.0,250.0,-34.0,-304.0
