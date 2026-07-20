@@ -14,12 +14,14 @@ R1 箱体/端子 -> R2 PCB -> R3 模块/产品转移
 -> R4 视觉锁付 -> R5 good/defect 分拣
 ```
 
-五臂基础协同已接入真实 `RobotExecutor/SimBridge`。所有成员从自己 clone 的
-仓库根目录使用同一套启动脚本，不需要手写个人绝对路径：
+五臂基础协同已接入真实 `RobotExecutor/SimBridge`。所有成员先进入自己 clone 的
+仓库根目录，再用 `$(pwd)` 打开当前仓库中的场景，不需要手写仓库绝对路径：
 
 ```bash
 cd /你的克隆目录/cr5_assembly_team
-bash scripts/start_five_cr5a_scene.sh
+source /opt/ros/humble/setup.bash
+/home/vboxuser/CoppeliaSim/coppeliaSim.sh \
+  "$(pwd)/scenes/five_cr5a_cell.ttt"
 ```
 
 打开场景并保持停止后，可运行：

@@ -33,7 +33,6 @@ configs/
 tests/                        ← 62 项自动化测试
 
 scripts/
-  start_five_cr5a_scene.sh    ← 通用场景启动脚本
   run_five_arm_cycle.sh       ← 通用五臂固定流程入口
   run_real_scheduler.sh       ← 通用真实 Scheduler headless 入口
   run_robot_task.sh           ← 通用单 Task 入口
@@ -58,33 +57,32 @@ scripts/
 cd /你的克隆目录/cr5_assembly_team
 ```
 
-从这里开始，下面的命令对所有成员都相同。
+从这里开始，场景路径统一写成 `$(pwd)/scenes/five_cr5a_cell.ttt`，这样每个成员
+只需要进入自己的仓库根目录，不需要手写仓库绝对路径。
 
 ### 启动 CoppeliaSim
 
 ```bash
-# 自动使用当前仓库中的 scenes/five_cr5a_cell.ttt
-bash scripts/start_five_cr5a_scene.sh
+source /opt/ros/humble/setup.bash
+/home/vboxuser/CoppeliaSim/coppeliaSim.sh \
+  "$(pwd)/scenes/five_cr5a_cell.ttt"
 ```
 
-这个脚本会用脚本自身位置找到仓库根目录，再打开：
+这条命令会打开：
 
 ```text
 <当前仓库>/scenes/five_cr5a_cell.ttt
 ```
 
-因此仓库放在 `/home/vboxuser/桌面`、`~/code`、`D:/workspace` 的 Linux 挂载目录
-或其他路径都可以，成员不需要修改场景路径。
+因此仓库放在 `/home/vboxuser/桌面`、`~/code` 或其他路径都可以，成员不需要修改
+场景路径。`$(pwd)` 会自动替换成当前仓库目录。
 
-如果某台电脑的 CoppeliaSim 没装在常见位置，启动时指定安装路径：
+如果某台电脑的 CoppeliaSim 不在 `/home/vboxuser/CoppeliaSim`，只替换第一段
+`coppeliaSim.sh` 的位置，场景参数仍保持不变：
 
 ```bash
-COPPELIASIM_ROOT=/absolute/path/to/CoppeliaSim \
-  bash scripts/start_five_cr5a_scene.sh
-
-# 或直接指定启动脚本
-COPPELIASIM_SH=/absolute/path/to/coppeliaSim.sh \
-  bash scripts/start_five_cr5a_scene.sh
+/实际安装目录/coppeliaSim.sh \
+  "$(pwd)/scenes/five_cr5a_cell.ttt"
 ```
 
 打开场景后保持仿真停止，不要手动按 Start，不要保存上一次运行末态。运动脚本
@@ -225,12 +223,13 @@ python3 -m unittest discover -s tests -v
 ## 常见启动错误
 
 - 把 `/path/to/cr5_assembly_team` 原样复制执行：这是占位符，会找不到场景。
-  现在统一使用 `bash scripts/start_five_cr5a_scene.sh`。
+  现在统一先 `cd` 到自己的仓库根目录，再使用 `$(pwd)/scenes/five_cr5a_cell.ttt`。
 - 命令里把 `scenes/` 和 `five_cr5a_cell.ttt` 分成两行或中间多了空格：文件路径会
-  变成错误参数。启动脚本会自动传入正确路径。
-- CoppeliaSim 没显示五臂场景：先确认终端输出的 `Scene:` 指向当前仓库下的
-  `scenes/five_cr5a_cell.ttt`，再确认没有打开旧的 `compact_cell.ttt`。
-- `cannot find CoppeliaSim`：设置 `COPPELIASIM_ROOT` 或 `COPPELIASIM_SH` 后重试。
+  变成错误参数。建议按文档保留引号：`"$(pwd)/scenes/five_cr5a_cell.ttt"`。
+- CoppeliaSim 没显示五臂场景：先确认命令中的第二个参数是当前仓库下的
+  `scenes/five_cr5a_cell.ttt`，不是旧的 `compact_cell.ttt`。
+- 找不到 CoppeliaSim：把命令开头的 `/home/vboxuser/CoppeliaSim/coppeliaSim.sh`
+  替换成那台电脑真实的 `coppeliaSim.sh` 路径。
 - 运动脚本连不上 `23000`：确认 CoppeliaSim 已打开场景，ZMQ Remote API 已启用，
   且没有另一个旧 CoppeliaSim 进程占用端口。
 
