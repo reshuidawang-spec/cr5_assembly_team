@@ -533,6 +533,31 @@ cell_screw_state
 |---|---|
 | `done` | 表示锁付完成，当前主要用于状态记录，可后续扩展视觉效果 |
 
+### 11.4 工件视觉所有权 signal
+
+signal 名称：
+
+```lua
+cell_visual_owner
+```
+
+可用值：
+
+| signal 值 | 所有权与场景行为 |
+|---|---|
+| `template` | Generator 按 `cell_product_state` 显示阶段产品模板，供 Mock/手动展示使用 |
+| `executor` | 真实运动执行器管理 `Box_Blank` 等实际工件的 attach、detach 和可见性；Generator 仍处理状态，但跳过 `assembly_shell`、`assembly_pcb`、`assembly_module`、`assembly_full`、`inspection_full` 模板显示 |
+
+正式 `SimBridge.connect()` 会设置：
+
+```lua
+sim.setStringSignal('cell_visual_owner', 'executor')
+```
+
+这样 `/compact_cell/status` 仍可返回 `DONE:*`，同时不会在实际搬运工件之外
+再生成一套重叠产品模板。未设置该 signal 时保持原 Generator 行为，兼容
+Mock 和手动 `SHOW_*` 命令。
+
 ---
 
 ## 12. 典型完整流程
@@ -1045,3 +1070,27 @@ ROS2 通信接口验证平台
 ```
 
 就可以基于本场景实现完整的五机械臂协同装配流程。
+
+---
+
+## 22. 当前仓库的真实五臂执行入口
+
+前述 Lua 桥接本身仍只负责 signal 和状态，但当前仓库已在 Python 执行层
+实现 R1-R5 基础视觉动作和固定顺序协同：
+
+```text
+sim_bridge.coppelia_client.SimBridge
+robot_control.robot_executor.RobotExecutor
+robot_control.five_arm_coordinator.FiveArmCoordinator
+```
+
+打开本文档对应的 `five_cr5a_cell.ttt` 并保持停止后，运行：
+
+```bash
+python3 robot_control/run_five_arm_cycle.py --quality good
+python3 robot_control/run_five_arm_cycle.py --quality defect
+```
+
+两个命令都使用同一个长期 CoppeliaSim 连接，不在相邻机械臂工序间停止
+或重载仿真。运行约束、当前场景的视觉偏移和 R5 good 边界见
+`robot_control/FIVE_ARM_COORDINATOR.md`。

@@ -1,7 +1,7 @@
 """共享数据类型定义 —— 所有模块统一使用这些数据结构。"""
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 from enum import Enum
 
 
@@ -43,6 +43,7 @@ class Order:
     priority: int              # 越大越紧急
     quantity: int = 1
     due_time: float = 0.0
+    expected_quality: str = "OK"
 
     def to_dict(self) -> dict:
         return {
@@ -51,6 +52,7 @@ class Order:
             "priority": self.priority,
             "quantity": self.quantity,
             "due_time": self.due_time,
+            "expected_quality": self.expected_quality,
         }
 
     @classmethod
@@ -61,6 +63,7 @@ class Order:
             priority=d.get("priority", 1),
             quantity=d.get("quantity", 1),
             due_time=d.get("due_time", 0.0),
+            expected_quality=str(d.get("expected_quality", "OK")).upper(),
         )
 
 
@@ -105,6 +108,7 @@ class TaskResult:
     end_time: float = 0.0
     message: str = ""
     quality_result: str = ""    # OK / NG (仅 inspection 任务有效)
+    metrics: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -115,6 +119,7 @@ class TaskResult:
             "end_time": self.end_time,
             "message": self.message,
             "quality_result": self.quality_result,
+            "metrics": self.metrics,
         }
 
 

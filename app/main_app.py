@@ -127,6 +127,7 @@ class Cr5AssemblyApp:
         self.scheduler = MockScheduler()
         self.robot_executor = MockRobotExecutor()
         self.sim_bridge = MockSimBridge()
+        self.runtime_mode = "MOCK"
 
         # ---- 运行时状态 ----
         self.orders: List[Order] = []
@@ -135,6 +136,13 @@ class Cr5AssemblyApp:
         self.paused: bool = False
         self._stop_event = threading.Event()
         self._ui_queue = queue.Queue()
+        self._dispatched_task_ids = set()
+        self._real_cycle_consumed = False
+        self._real_preparing = False
+        self._real_ready = False
+        self._real_ready_evidence = None
+        self._real_ready_error = ""
+        self.product_buttons = {}
 
         self.scheduler.set_state_change_callback(self._on_state_change)
 
@@ -154,7 +162,14 @@ class Cr5AssemblyApp:
     # ============================================================
     # 模块替换
     # ============================================================
-    def set_modules(self, order_parser=None, scheduler=None, robot_executor=None, sim_bridge=None):
+    def set_modules(
+        self,
+        order_parser=None,
+        scheduler=None,
+        robot_executor=None,
+        sim_bridge=None,
+        mode="REAL",
+    ):
         if order_parser is not None:
             self.order_parser = order_parser
         if scheduler is not None:
@@ -164,7 +179,41 @@ class Cr5AssemblyApp:
             self.robot_executor = robot_executor
         if sim_bridge is not None:
             self.sim_bridge = sim_bridge
-        self._log("MODULE SWITCHED TO REAL IMPLEMENTATION")
+        self.runtime_mode = str(mode).upper()
+        self._set_mode_badge()
+        if self.runtime_mode == "REAL":
+            for product_type, button in self.product_buttons.items():
+                button.configure(
+                    state=tk.NORMAL if product_type == "A" else tk.DISABLED
+                )
+            self.demo_orders_btn.configure(state=tk.DISABLED)
+            self._real_preparing = True
+            self._real_ready = False
+            self._real_ready_error = ""
+            self.start_btn.configure(state=tk.DISABLED, text="PREPARING")
+            self.status_bar.configure(text="PREPARING...", fg=C_AMBER)
+            self._log("REAL READY PREPARATION STARTED")
+            threading.Thread(
+                target=self._prepare_real_cycle, daemon=True
+            ).start()
+        self._log(f"MODULE SWITCHED TO {self.runtime_mode} IMPLEMENTATION")
+
+    def _prepare_real_cycle(self):
+        try:
+            evidence = self.robot_executor.prepare_cycle(
+                quality="good", preload_both_r5=True
+            )
+            self._ui_queue.put(("real_ready", evidence))
+        except Exception as exc:
+            self._ui_queue.put(("real_ready_failed", str(exc)))
+
+    def _set_mode_badge(self, running=False):
+        text = self.runtime_mode + (" RUN" if running else "")
+        background = C_GREEN if running else (
+            C_BLUE if self.runtime_mode == "REAL" else C_AMBER
+        )
+        foreground = "white" if self.runtime_mode == "REAL" else C_HEADER
+        self._mode_label.configure(text=text, bg=background, fg=foreground)
 
     # ============================================================
     # 顶部：校徽 + 校名 + 系统标题 + 模式
@@ -284,6 +333,38 @@ class Cr5AssemblyApp:
                 command=lambda t=ptype: self._add_order(t),
             )
             btn.pack(fill=tk.X, ipady=8)
+            self.product_buttons[ptype] = btn
+
+        quality_frame = tk.Frame(inner, bg=C_PANEL)
+        quality_frame.pack(fill=tk.X, padx=10, pady=(8, 2))
+        tk.Label(
+            quality_frame,
+            text="QUALITY:",
+            font=(FONT_MONO, 8),
+            fg=C_TEXT_DIM,
+            bg=C_PANEL,
+        ).pack(side=tk.LEFT)
+        self.quality_var = tk.StringVar(value="OK")
+        for value, label, color in (
+            ("OK", "GOOD", C_GREEN),
+            ("NG", "DEFECT", C_RED),
+        ):
+            tk.Radiobutton(
+                quality_frame,
+                text=label,
+                variable=self.quality_var,
+                value=value,
+                indicatoron=False,
+                font=(FONT_MONO, 8, "bold"),
+                bg=C_BUTTON,
+                fg=color,
+                activebackground=C_BUTTON_HOVER,
+                activeforeground=color,
+                selectcolor=C_TREE_SEL,
+                relief=tk.FLAT,
+                padx=7,
+                pady=2,
+            ).pack(side=tk.RIGHT, padx=(3, 0))
 
         # 分隔
         tk.Frame(inner, bg=C_PANEL_BORDER, height=1).pack(fill=tk.X, padx=10, pady=8)
@@ -319,12 +400,13 @@ class Cr5AssemblyApp:
             command=self._insert_urgent_order,
         ).pack(fill=tk.X, ipady=6, pady=2)
 
-        tk.Button(
+        self.demo_orders_btn = tk.Button(
             bf, text="📂 加载 Demo", font=(FONT_MONO, 8),
             bg=C_BUTTON, fg=C_TEXT, activebackground=C_BUTTON_HOVER,
             relief=tk.FLAT, cursor="hand2",
             command=self._load_demo_orders,
-        ).pack(fill=tk.X, ipady=4, pady=1)
+        )
+        self.demo_orders_btn.pack(fill=tk.X, ipady=4, pady=1)
 
         tk.Button(
             bf, text="📂 从文件加载...", font=(FONT_MONO, 8),
@@ -386,10 +468,11 @@ class Cr5AssemblyApp:
 
         self.robot_widgets = {}
         robots_def = [
-            ("R1", "FEED/UNLOAD", "上料定位"),
-            ("R2", "ASSEMBLE", "元件装配"),
-            ("R3", "SCREW/INSPECT", "锁付检测"),
-            ("R4", "SORT/REWORK", "分拣返修"),
+            ("R1", "BOX/TERMINAL", "箱体/端子"),
+            ("R2", "PCB", "PCB 装配"),
+            ("R3", "MODULE/TRANSFER", "模块/转移"),
+            ("R4", "SCREW", "视觉锁付"),
+            ("R5", "SORT", "良品/不良品分拣"),
         ]
         for rid, rtype, rname in robots_def:
             card = tk.Frame(cards, bg=C_INPUT_BG, relief=tk.FLAT, bd=1, highlightbackground=C_PANEL_BORDER, highlightthickness=1)
@@ -557,15 +640,33 @@ class Cr5AssemblyApp:
     # 订单操作
     # ============================================================
     def _add_order(self, product_type: str):
+        if self.runtime_mode == "REAL" and self.orders:
+            messagebox.showwarning(
+                "REAL MODE", "Current scene supports exactly one order."
+            )
+            return
+        if self.runtime_mode == "REAL" and product_type != "A":
+            messagebox.showwarning(
+                "REAL MODE", "Current scene is calibrated only for type A."
+            )
+            return
         priority = self.priority_var.get()
         order = Order(
             order_id=f"{product_type}{len(self.orders)+1:03d}",
             product_type=product_type, priority=priority, quantity=1,
+            expected_quality=self.quality_var.get(),
         )
         self.orders.append(order)
         self.order_parser.add_order(order)
-        self.order_listbox.insert(tk.END, f"  {order.order_id}  |  TYPE-{product_type}  |  PRI={priority}")
-        self._log(f"NEW ORDER: {order.order_id} TYPE={product_type} PRI={priority}")
+        self.order_listbox.insert(
+            tk.END,
+            f"  {order.order_id}  |  TYPE-{product_type}  |  "
+            f"{order.expected_quality}  |  PRI={priority}",
+        )
+        self._log(
+            f"NEW ORDER: {order.order_id} TYPE={product_type} "
+            f"QUALITY={order.expected_quality} PRI={priority}"
+        )
 
     def _submit_selected_order(self):
         if not self.orders:
@@ -574,7 +675,19 @@ class Cr5AssemblyApp:
         self._start_execution()
 
     def _insert_urgent_order(self):
-        order = Order(order_id=f"URG-{len(self.orders)+1:02d}", product_type="A", priority=10, quantity=1)
+        if self.runtime_mode == "REAL":
+            messagebox.showwarning(
+                "REAL MODE",
+                "Urgent insertion is unavailable in the single-product scene.",
+            )
+            return
+        order = Order(
+            order_id=f"URG-{len(self.orders)+1:02d}",
+            product_type="A",
+            priority=10,
+            quantity=1,
+            expected_quality=self.quality_var.get(),
+        )
         self.orders.append(order)
         self.order_parser.add_order(order)
         self.order_listbox.insert(tk.END, f"  {order.order_id}  |  !!URGENT!!  |  PRI=10")
@@ -582,6 +695,11 @@ class Cr5AssemblyApp:
         self.status_bar.configure(text="URGENT ORDER PENDING", fg=C_RED)
 
     def _load_demo_orders(self):
+        if self.runtime_mode == "REAL":
+            messagebox.showwarning(
+                "REAL MODE", "Mock demo orders are disabled in REAL mode."
+            )
+            return
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             "data", "orders", "demo_orders.json")
         self._load_orders(path)
@@ -594,9 +712,25 @@ class Cr5AssemblyApp:
     def _load_orders(self, path: str):
         try:
             new = self.order_parser.parse_file(path)
+            if self.runtime_mode == "REAL" and (
+                len(self.orders) != 0
+                or len(new) != 1
+                or new[0].product_type.upper() != "A"
+                or new[0].quantity != 1
+            ):
+                self.order_parser.clear()
+                for existing in self.orders:
+                    self.order_parser.add_order(existing)
+                raise ValueError(
+                    "REAL mode requires one A-type order with quantity 1"
+                )
             self.orders.extend(new)
             for o in new:
-                self.order_listbox.insert(tk.END, f"  {o.order_id}  |  TYPE-{o.product_type}  |  PRI={o.priority}")
+                self.order_listbox.insert(
+                    tk.END,
+                    f"  {o.order_id}  |  TYPE-{o.product_type}  |  "
+                    f"{o.expected_quality}  |  PRI={o.priority}",
+                )
             self._log(f"LOADED {len(new)} ORDERS FROM {os.path.basename(path)}")
         except Exception as e:
             self._log(f"LOAD FAILED: {e}", "error")
@@ -611,18 +745,39 @@ class Cr5AssemblyApp:
         if not self.orders:
             self._log("NO ORDERS TO EXECUTE", "warn")
             return
+        if self.runtime_mode == "REAL" and self._real_cycle_consumed:
+            messagebox.showwarning(
+                "REAL MODE",
+                "This scene cycle was already used. Reload the clean scene "
+                "before starting another REAL run.",
+            )
+            return
+        if self.runtime_mode == "REAL" and not self._real_ready:
+            detail = self._real_ready_error or "READY preparation is still running"
+            self._log(f"REAL START BLOCKED: {detail}", "warn")
+            return
+
+        try:
+            new_tasks = self.scheduler.generate_tasks(self.orders)
+        except Exception as exc:
+            self._log(f"TASK GENERATION FAILED: {exc}", "error")
+            self.status_bar.configure(text="ORDER REJECTED", fg=C_RED)
+            messagebox.showerror("TASK GENERATION FAILED", str(exc))
+            return
 
         self.running = True
         self.paused = False
         self._stop_event.clear()
+        self._dispatched_task_ids.clear()
+        if self.runtime_mode == "REAL":
+            self._real_cycle_consumed = True
         self.start_btn.configure(state=tk.DISABLED, text="●  RUNNING")
-        self._mode_label.configure(text="RUN", bg=C_GREEN)
+        self._set_mode_badge(running=True)
         self.status_bar.configure(text="EXECUTING...", fg=C_GREEN)
 
         self._log("=" * 50)
         self._log(f"EXECUTION STARTED — {len(self.orders)} ORDERS")
 
-        new_tasks = self.scheduler.generate_tasks(self.orders)
         self.tasks.extend(new_tasks)
         self._refresh_task_tree()
         self._log(f"GENERATED {len(new_tasks)} TASKS")
@@ -630,6 +785,19 @@ class Cr5AssemblyApp:
         threading.Thread(target=self._execution_loop, daemon=True).start()
 
     def _execution_loop(self):
+        try:
+            self._execution_loop_impl()
+        except Exception as exc:
+            for task in self.tasks:
+                if task.status != TaskStatus.FINISHED.value:
+                    task.status = TaskStatus.FAILED.value
+            self._ui_queue.put(
+                ("log", (f"EXECUTION LOOP FAILED: {exc}\n", "error"))
+            )
+            self._ui_queue.put(("refresh_tasks", None))
+            self._ui_queue.put(("done", None))
+
+    def _execution_loop_impl(self):
         while not self._stop_event.is_set():
             if self.paused:
                 time.sleep(0.1)
@@ -653,10 +821,13 @@ class Cr5AssemblyApp:
 
             for task in self.tasks:
                 if task.status == TaskStatus.RUNNING.value:
+                    if task.task_id in self._dispatched_task_ids:
+                        continue
                     idle_robots = [r for r in robots if r.status == "idle"]
                     valid = [r for r in task.available_robots if r in [ir.robot_id for ir in idle_robots]]
                     if valid:
                         rid = valid[0]
+                        self._dispatched_task_ids.add(task.task_id)
                         self.robot_executor.execute_task_async(
                             task, lambda r, t=task: self._on_task_done(t, r),
                         )
@@ -666,13 +837,30 @@ class Cr5AssemblyApp:
                         self._ui_queue.put(("refresh_robots", None))
             time.sleep(0.3)
 
-        self._ui_queue.put(("finish", None))
-
     def _on_task_done(self, task: Task, result: TaskResult):
         self.tasks = self.scheduler.on_task_complete(result, self.tasks, self.robot_executor.get_robot_states())
         qi = f"  QLTY={result.quality_result}" if result.quality_result else ""
-        dur = result.end_time - result.start_time
-        self._log(f"  DONE {result.task_id} [{result.robot_id}] {dur:.1f}s{qi}")
+        dur = max(0.0, result.end_time - result.start_time)
+        task.duration = dur
+        outcome = "DONE" if result.status == TaskStatus.FINISHED.value else "FAILED"
+        level = "ok" if result.status == TaskStatus.FINISHED.value else "error"
+        self._log(
+            f"  {outcome} {result.task_id} [{result.robot_id}] {dur:.1f}s{qi}",
+            level,
+        )
+        motion = result.metrics.get("motion_timing", {})
+        first_motion = motion.get("task_call_to_first_motion_wall_s")
+        handoff = result.metrics.get("handoff_to_first_motion_simulation_s")
+        if first_motion is not None or handoff is not None:
+            wall_text = "n/a" if first_motion is None else f"{first_motion:.3f}s"
+            sim_text = "n/a" if handoff is None else f"{handoff:.3f}s"
+            self._log(
+                f"    FIRST MOTION wall={wall_text} sim-handoff={sim_text}"
+            )
+        if motion.get("monitor_error"):
+            self._log(
+                f"    MOTION MONITOR: {motion['monitor_error']}", "warn"
+            )
         self._ui_queue.put(("refresh_tasks", None))
         self._ui_queue.put(("refresh_robots", None))
         self._ui_queue.put(("update_metrics", None))
@@ -689,30 +877,73 @@ class Cr5AssemblyApp:
             self.status_bar.configure(text="EXECUTING...", fg=C_GREEN)
 
     def _reset(self):
+        if self.runtime_mode == "REAL" and self.running:
+            messagebox.showwarning(
+                "REAL MODE", "Cannot reset the GUI while a physical task is running."
+            )
+            return
+        consumed_real_cycle = (
+            self.runtime_mode == "REAL" and self._real_cycle_consumed
+        )
+        clean_scene_confirmed = False
+        if consumed_real_cycle:
+            clean_scene_confirmed = messagebox.askyesno(
+                "REAL MODE",
+                "RESET only clears GUI state. Has the clean CoppeliaSim scene "
+                "already been reloaded?",
+            )
         self._stop_event.set()
         self.running = False
         self.paused = False
         self.orders.clear()
         self.tasks.clear()
         self.order_parser.clear()
+        self._dispatched_task_ids.clear()
+        if clean_scene_confirmed:
+            self._real_cycle_consumed = False
         self.order_listbox.delete(0, tk.END)
         for item in self.task_tree.get_children():
             self.task_tree.delete(item)
-        self.start_btn.configure(state=tk.NORMAL, text="▶  START")
+        start_state = (
+            tk.NORMAL
+            if self.runtime_mode != "REAL" or self._real_ready
+            else tk.DISABLED
+        )
+        self.start_btn.configure(state=start_state, text="▶  START")
         self.pause_btn.configure(text="⏸  PAUSE")
-        self._mode_label.configure(text="MOCK", bg=C_AMBER)
-        self.status_bar.configure(text="READY", fg=C_GREEN)
+        self._set_mode_badge()
+        self.status_bar.configure(
+            text=(
+                "RELOAD CLEAN SCENE"
+                if consumed_real_cycle and not clean_scene_confirmed
+                else "READY"
+            ),
+            fg=(
+                C_AMBER
+                if consumed_real_cycle and not clean_scene_confirmed
+                else C_GREEN
+            ),
+        )
         for k in self.metrics_labels:
             self.metrics_labels[k].configure(text="--")
         self._log("=" * 50)
         self._log("SYSTEM RESET")
+        if consumed_real_cycle and not clean_scene_confirmed:
+            self._log(
+                "REAL UI RESET ONLY - reload the clean scene before next run",
+                "warn",
+            )
 
     def _simulate_fault(self, robot_id: str):
         self.robot_executor.set_robot_fault(robot_id)
         self.tasks = self.scheduler.handle_robot_fault(robot_id, self.tasks)
-        self._log(f"!!! FAULT INJECTED: {robot_id} — TASKS REASSIGNED", "error")
+        if self.runtime_mode == "REAL":
+            detail = "DEPENDENT TASKS HALTED"
+        else:
+            detail = "TASKS REASSIGNED"
+        self._log(f"!!! FAULT INJECTED: {robot_id} — {detail}", "error")
         self._refresh_task_tree()
-        messagebox.showwarning("FAULT INJECTION", f"{robot_id} FAULT\nTasks reassigned to available robots.")
+        messagebox.showwarning("FAULT INJECTION", f"{robot_id} FAULT\n{detail}")
 
     # ============================================================
     # UI 刷新
@@ -735,6 +966,26 @@ class Cr5AssemblyApp:
                     self._update_metrics()
                 elif action == "done":
                     self._on_all_done()
+                elif action == "real_ready":
+                    self._real_preparing = False
+                    self._real_ready = True
+                    self._real_ready_evidence = data
+                    self.start_btn.configure(state=tk.NORMAL, text="▶  START")
+                    self.status_bar.configure(text="READY", fg=C_GREEN)
+                    self._log(
+                        "REAL READY - cached path points="
+                        f"{data.get('path_points_total', 0)}",
+                        "ok",
+                    )
+                elif action == "real_ready_failed":
+                    self._real_preparing = False
+                    self._real_ready = False
+                    self._real_ready_error = str(data)
+                    self.start_btn.configure(
+                        state=tk.DISABLED, text="READY FAILED"
+                    )
+                    self.status_bar.configure(text="READY FAILED", fg=C_RED)
+                    self._log(f"REAL READY FAILED: {data}", "error")
         except queue.Empty:
             pass
         self.root.after(200, self._process_ui_queue)
@@ -782,12 +1033,21 @@ class Cr5AssemblyApp:
     def _on_all_done(self):
         self.running = False
         self._stop_event.set()
-        self.start_btn.configure(state=tk.NORMAL, text="▶  START")
-        self._mode_label.configure(text="MOCK", bg=C_AMBER)
-        self.status_bar.configure(text="ALL TASKS COMPLETE", fg=C_GREEN)
+        self.start_btn.configure(
+            state=(tk.DISABLED if self.runtime_mode == "REAL" else tk.NORMAL),
+            text="▶  START",
+        )
+        self._set_mode_badge()
         finished = [t for t in self.tasks if t.status == TaskStatus.FINISHED.value]
         failed = [t for t in self.tasks if t.status == TaskStatus.FAILED.value]
-        self._log(f"EXECUTION COMPLETE — DONE: {len(finished)} | FAILED: {len(failed)}", "ok")
+        self.status_bar.configure(
+            text=("TASK CHAIN FAILED" if failed else "ALL TASKS COMPLETE"),
+            fg=(C_RED if failed else C_GREEN),
+        )
+        self._log(
+            f"EXECUTION COMPLETE — DONE: {len(finished)} | FAILED: {len(failed)}",
+            "error" if failed else "ok",
+        )
         self._update_metrics()
 
     # ============================================================

@@ -1016,10 +1016,28 @@ end
 -- ??????????????
 -- =========================================================
 
+local function executorOwnsProductVisuals()
+    return sim.getStringSignal('cell_visual_owner') == 'executor'
+end
+
+local function isTemplateProductState(state)
+    return state == 'assembly_shell'
+        or state == 'assembly_pcb'
+        or state == 'assembly_module'
+        or state == 'assembly_full'
+        or state == 'inspection_full'
+end
+
 local function processProductStateSignal()
     local state = sim.getStringSignal('cell_product_state')
 
     if state == nil then return end
+
+    if executorOwnsProductVisuals() and isTemplateProductState(state) then
+        print('[PRODUCT STATE] Executor owns product visuals; template state skipped: ' .. state)
+        sim.clearStringSignal('cell_product_state')
+        return
+    end
 
     if state == 'reset' then
         resetRuntimeState()

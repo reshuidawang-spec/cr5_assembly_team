@@ -4,6 +4,44 @@
 > CR5 Assembly Team — 江科大学生参赛项目仓库  
 > 面向低压配电柜、新能源箱变等电气装备柔性制造场景，构建“**四机械臂 + 多工序 + 动态订单 + 检测分拣闭环**”的自主调度、协同避碰与效能优化系统。
 
+### 当前五臂场景覆盖说明
+
+上述“四机械臂”内容是早期方案。当前 CoppeliaSim 主线以
+`docs/Five_CR5A_Cell_Control_Interface.md` 为准，使用 `/R1` 到 `/R5`：
+
+```text
+R1 箱体/端子 -> R2 PCB -> R3 模块/产品转移
+-> R4 视觉锁付 -> R5 good/defect 分拣
+```
+
+五臂基础协同已接入真实 `RobotExecutor/SimBridge`。打开
+`scenes/five_cr5a_cell.ttt` 并保持停止后，可运行：
+
+```bash
+python3 robot_control/run_five_arm_cycle.py --quality good
+# 或
+python3 robot_control/run_five_arm_cycle.py --quality defect
+```
+
+正式订单调度和 GUI 也已接入真实模块：
+
+```bash
+# 五臂 REAL GUI
+python3 run_demo.py --real
+
+# 单个 A 型 Good 订单，默认 50 deg/s、APP 0.8 s
+python3 run_demo.py \
+  --real --headless --quality good \
+  --output data/logs/scheduled_good.json
+```
+
+当前 REAL 模式只支持干净场景中的一个 A 型单件订单；B/C、多订单、自动补料、
+动态急单和跨机械臂故障重分配尚未实现场景级验证。GUI 已显示 R1-R5、
+Good/Defect 选择、真实任务状态和首动延迟。
+
+详细前置条件、视觉验收边界和实跑证据见
+[`robot_control/FIVE_ARM_COORDINATOR.md`](robot_control/FIVE_ARM_COORDINATOR.md)。
+
 ---
 
 ## 1. 项目定位
@@ -154,8 +192,8 @@ cr5_assembly_team/
 |------|---------|---------|---------|
 | 软件集成 (app/) | 5号 | 维护 main_app.py，调用各模块 | GUI 可用 |
 | 订单调度 (scheduler/) | 4号 | IOrderParser, IScheduler | Mock 占位 |
-| 机械臂控制 (robot_control/) | 3号 | IRobotExecutor | Mock 占位 |
-| 仿真通信 (sim_bridge/) | 2号/3号 | ISimBridge | Mock 占位 |
+| 机械臂控制 (robot_control/) | 3号 | IRobotExecutor | R1-R5 基础视觉动作与一键协同已接入真实 Coppelia 执行 |
+| 仿真通信 (sim_bridge/) | 2号/3号 | ISimBridge | 五臂 ZMQ、对象、关节、夹爪和场景控制已实现 |
 | 场景搭建 | 2号 | configs/points.yaml | 点位表已定义，需落到 CoppeliaSim |
 
 ### 4.2 开发流程

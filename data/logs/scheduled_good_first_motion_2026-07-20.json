@@ -1,0 +1,384 @@
+{
+  "status": "finished",
+  "mode": "REAL",
+  "order": {
+    "order_id": "SCHEDULED-A-001",
+    "product_type": "A",
+    "priority": 1,
+    "quantity": 1,
+    "due_time": 0.0,
+    "expected_quality": "OK"
+  },
+  "quality": "OK",
+  "host": "127.0.0.1",
+  "port": 23000,
+  "speed_deg_s": 50.0,
+  "hold_seconds": 0.8,
+  "started_at_epoch_s": 1784540392.624141,
+  "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+  "tasks": [
+    {
+      "task": {
+        "task_id": "SCHEDULED-A-001-01-R1_BOX_PLACED",
+        "order_id": "SCHEDULED-A-001",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R1_BOX_PLACED",
+        "available_robots": [
+          "R1"
+        ],
+        "duration": 5.0,
+        "predecessors": [],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784540392.624214,
+      "result": {
+        "task_id": "SCHEDULED-A-001-01-R1_BOX_PLACED",
+        "robot_id": "R1",
+        "status": "finished",
+        "start_time": 1784540392.8052897,
+        "end_time": 1784540437.0934823,
+        "message": "R1_BOX_PLACED completed (visual attach; physical grasp not validated); {'action': 'R1_BOX_PLACED', 'visual_grasp_only': True, 'final_joint_positions_deg': [75.663527, 30.400484, 65.166023, -5.573394, -89.99787, -49.336637], 'box_position': [-1.150002, 0.1999, 0.215915], 'terminal_position': [-1.9, 0.1, 0.1735], 'terminal_visual_offset_m': 0.028}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R1",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784540392.8052769,
+            "dispatch_simulation_time_s": 0.0,
+            "first_motion_wall_epoch_s": 1784540396.1535437,
+            "first_motion_simulation_time_s": 1.5000000000000007,
+            "dispatch_to_first_motion_wall_s": 3.3482663569993747,
+            "max_joint_delta_deg_at_detection": 0.031457204887415505,
+            "monitor_error": ""
+          },
+          "handoff_to_first_motion_simulation_s": null,
+          "task_end_simulation_time_s": 27.70000000000026
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "SCHEDULED-A-001-02-R2_PCB_PLACED",
+        "order_id": "SCHEDULED-A-001",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R2_PCB_PLACED",
+        "available_robots": [
+          "R2"
+        ],
+        "duration": 5.0,
+        "predecessors": [
+          "SCHEDULED-A-001-01-R1_BOX_PLACED"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784540437.1567483,
+      "result": {
+        "task_id": "SCHEDULED-A-001-02-R2_PCB_PLACED",
+        "robot_id": "R2",
+        "status": "finished",
+        "start_time": 1784540437.57642,
+        "end_time": 1784540477.7213335,
+        "message": "R2_PCB_PLACED completed (visual suction; physical grasp not validated); {'action': 'R2_PCB_PLACED', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, 90.0], 'virtual_tcp_offset_m': 0.1, 'pcb_visual_offset_m': 0.052, 'final_joint_positions_deg': [-9.1e-05, 0.000633, -0.000607, 0.00041, 0.000463, -0.000766], 'pcb_position': [-1.150058, 0.200161, 0.281739], 'box_position': [-1.150002, 0.1999, 0.215915]}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R2",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784540437.5764067,
+            "dispatch_simulation_time_s": 28.000000000000263,
+            "first_motion_wall_epoch_s": 1784540439.3387792,
+            "first_motion_simulation_time_s": 29.000000000000277,
+            "dispatch_to_first_motion_wall_s": 1.762372150000374,
+            "max_joint_delta_deg_at_detection": 0.04854966410141625,
+            "monitor_error": ""
+          },
+          "handoff_to_first_motion_simulation_s": 1.3000000000000185,
+          "task_end_simulation_time_s": 58.19999999999883
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "SCHEDULED-A-001-03-R3_MODULE_PLACED",
+        "order_id": "SCHEDULED-A-001",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R3_MODULE_PLACED",
+        "available_robots": [
+          "R3"
+        ],
+        "duration": 5.0,
+        "predecessors": [
+          "SCHEDULED-A-001-02-R2_PCB_PLACED"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784540477.7859113,
+      "result": {
+        "task_id": "SCHEDULED-A-001-03-R3_MODULE_PLACED",
+        "robot_id": "R3",
+        "status": "finished",
+        "start_time": 1784540478.5366392,
+        "end_time": 1784540507.6462781,
+        "message": "R3_MODULE_PLACED completed (visual suction; physical grasp not validated); {'action': 'R3_MODULE_PLACED', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, -135.0], 'virtual_tcp_offset_m': 0.1, 'final_joint_positions_deg': [0.000177, 0.001009, 2.4e-05, -0.000778, -2.2e-05, -0.000558], 'payload_position': [-1.119679, 0.219819, 0.319549], 'module_visual_offset_m': 0.046}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R3",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784540478.5366297,
+            "dispatch_simulation_time_s": 58.7499999999988,
+            "first_motion_wall_epoch_s": 1784540480.6483982,
+            "first_motion_simulation_time_s": 59.99999999999873,
+            "dispatch_to_first_motion_wall_s": 2.1117680560000736,
+            "max_joint_delta_deg_at_detection": 0.02726724283019304,
+            "monitor_error": ""
+          },
+          "handoff_to_first_motion_simulation_s": 1.7999999999998977,
+          "task_end_simulation_time_s": 81.09999999999754
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "SCHEDULED-A-001-04-R1_TERMINAL_PLACED",
+        "order_id": "SCHEDULED-A-001",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R1_TERMINAL_PLACED",
+        "available_robots": [
+          "R1"
+        ],
+        "duration": 5.0,
+        "predecessors": [
+          "SCHEDULED-A-001-03-R3_MODULE_PLACED"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784540507.7062378,
+      "result": {
+        "task_id": "SCHEDULED-A-001-04-R1_TERMINAL_PLACED",
+        "robot_id": "R1",
+        "status": "finished",
+        "start_time": 1784540508.4223537,
+        "end_time": 1784540542.3733497,
+        "message": "R1_TERMINAL_PLACED completed (visual attach; physical grasp not validated); {'action': 'R1_TERMINAL_PLACED', 'visual_grasp_only': True, 'final_joint_positions_deg': [0.000482, -0.00029, 2e-06, 0.001642, -0.0, 0.000188], 'box_position': [-1.150002, 0.1999, 0.215915], 'terminal_position': [-1.089622, 0.129917, 0.329536], 'terminal_visual_offset_m': 0.056}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R1",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784540508.422338,
+            "dispatch_simulation_time_s": 81.6499999999975,
+            "first_motion_wall_epoch_s": 1784540511.5066783,
+            "first_motion_simulation_time_s": 83.3999999999974,
+            "dispatch_to_first_motion_wall_s": 3.0843417400010367,
+            "max_joint_delta_deg_at_detection": 0.032186848220782646,
+            "monitor_error": ""
+          },
+          "handoff_to_first_motion_simulation_s": 2.2999999999998693,
+          "task_end_simulation_time_s": 103.04999999999629
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "SCHEDULED-A-001-05-R3_PRODUCT_TO_INSPECTION",
+        "order_id": "SCHEDULED-A-001",
+        "product_type": "A",
+        "process": "transfer",
+        "target_area": "inspection_screw_area",
+        "target_point": "R3_PRODUCT_TO_INSPECTION",
+        "available_robots": [
+          "R3"
+        ],
+        "duration": 5.0,
+        "predecessors": [
+          "SCHEDULED-A-001-04-R1_TERMINAL_PLACED"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784540542.5262969,
+      "result": {
+        "task_id": "SCHEDULED-A-001-05-R3_PRODUCT_TO_INSPECTION",
+        "robot_id": "R3",
+        "status": "finished",
+        "start_time": 1784540542.9965732,
+        "end_time": 1784540597.2680128,
+        "message": "R3_PRODUCT_TO_INSPECTION completed (visual suction; physical grasp not validated); {'action': 'R3_PRODUCT_TO_INSPECTION', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, -135.0], 'virtual_tcp_offset_m': 0.1, 'final_joint_positions_deg': [-0.000999, 0.000299, 0.000193, 0.001519, -0.000302, -0.000102], 'payload_position': [0.150143, 0.049949, 0.216003], 'template_stage_swap': True, 'product_visual_lift_m': 0.1}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R3",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784540542.9965608,
+            "dispatch_simulation_time_s": 103.39999999999627,
+            "first_motion_wall_epoch_s": 1784540545.5538328,
+            "first_motion_simulation_time_s": 104.84999999999619,
+            "dispatch_to_first_motion_wall_s": 2.5572714070003713,
+            "max_joint_delta_deg_at_detection": 0.12390281442441625,
+            "monitor_error": ""
+          },
+          "handoff_to_first_motion_simulation_s": 1.7999999999998977,
+          "task_end_simulation_time_s": 139.1499999999974
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "SCHEDULED-A-001-06-R4_SCREW_DONE",
+        "order_id": "SCHEDULED-A-001",
+        "product_type": "A",
+        "process": "screw",
+        "target_area": "inspection_screw_area",
+        "target_point": "R4_SCREW_DONE",
+        "available_robots": [
+          "R4"
+        ],
+        "duration": 5.0,
+        "predecessors": [
+          "SCHEDULED-A-001-05-R3_PRODUCT_TO_INSPECTION"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784540597.26851,
+      "result": {
+        "task_id": "SCHEDULED-A-001-06-R4_SCREW_DONE",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784540597.839631,
+        "end_time": 1784540620.0519528,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": "OK",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R4",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784540597.7752278,
+            "dispatch_simulation_time_s": 139.49999999999747,
+            "first_motion_wall_epoch_s": 1784540599.5080311,
+            "first_motion_simulation_time_s": 140.59999999999772,
+            "dispatch_to_first_motion_wall_s": 1.7328031699998974,
+            "max_joint_delta_deg_at_detection": 0.029756718927120108,
+            "monitor_error": ""
+          },
+          "handoff_to_first_motion_simulation_s": 1.4500000000003297,
+          "task_end_simulation_time_s": 156.45000000000132,
+          "camera_transition": {
+            "quality": "OK",
+            "signal": "camera_good",
+            "simulation_time_before": 139.49999999999747,
+            "simulation_time_after": 139.54999999999748
+          }
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "SCHEDULED-A-001-07-R5_SORT_GOOD_DONE",
+        "order_id": "SCHEDULED-A-001",
+        "product_type": "A",
+        "process": "sort_good",
+        "target_area": "sort_area",
+        "target_point": "R5_SORT_GOOD_DONE",
+        "available_robots": [
+          "R5"
+        ],
+        "duration": 5.0,
+        "predecessors": [
+          "SCHEDULED-A-001-06-R4_SCREW_DONE"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784540620.052391,
+      "result": {
+        "task_id": "SCHEDULED-A-001-07-R5_SORT_GOOD_DONE",
+        "robot_id": "R5",
+        "status": "finished",
+        "start_time": 1784540620.4424005,
+        "end_time": 1784540676.3859305,
+        "message": "R5_SORT_GOOD_DONE completed (visual suction; physical grasp not validated); {'action': 'R5_SORT_GOOD_DONE', 'visual_suction_only': True, 'physical_grasp_validated': False, 'runtime_pick_orientation_deg': [195.0, -45.0, 0.0], 'runtime_place_orientation_deg': [-134.007027, 10.545291, 79.271417], 'runtime_place_prealign_orientation_deg': [-143.152079, 31.403342, 104.05737], 'runtime_place_app_position': [0.64, -1.08, 0.62], 'runtime_place_tcp_position': [0.64, -1.08, 0.42], 'runtime_good_target_xy_offset_m': [-0.01, 0.02], 'runtime_tool_tcp_offset_m': 0.1, 'belt_height_correction_m': -0.026, 'belt_height_correction_mode': 'rigid_tcp_motion', 'rigid_visual_payload_through_release': True, 'grasp_transform_max_error': 1.1102230246251565e-16, 'good_base_turn_delta_deg': -121.0, 'transfer_waypoint': [0.6307210076930809, -0.931635470600265, 0.76], 'release_product_orientation_deg': [-0.005404, -0.024063, -89.99816], 'good_target_product_yaw_deg': -90.0, 'good_track_parallel_error_deg': 0.00184, 'final_joint_positions_deg': [-0.000635, -0.001754, -0.000115, 0.00092, 0.000198, -0.004661], 'conveyor_branch': 'good', 'product_position': [0.65, -1.181, 0.27]}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R5",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784540620.4423862,
+            "dispatch_simulation_time_s": 156.70000000000138,
+            "first_motion_wall_epoch_s": 1784540622.5159695,
+            "first_motion_simulation_time_s": 157.90000000000165,
+            "dispatch_to_first_motion_wall_s": 2.073583213001257,
+            "max_joint_delta_deg_at_detection": 0.03821480637924835,
+            "monitor_error": ""
+          },
+          "handoff_to_first_motion_simulation_s": 1.4500000000003297,
+          "task_end_simulation_time_s": 196.70000000001048
+        }
+      }
+    }
+  ],
+  "finished_at_epoch_s": 1784540676.3868377,
+  "wall_duration_s": 283.7626967430115,
+  "robot_states": [
+    {
+      "robot_id": "R1",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 2
+    },
+    {
+      "robot_id": "R2",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    },
+    {
+      "robot_id": "R3",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 2
+    },
+    {
+      "robot_id": "R4",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    },
+    {
+      "robot_id": "R5",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    }
+  ]
+}

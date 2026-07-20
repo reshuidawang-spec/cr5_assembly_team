@@ -10,6 +10,68 @@
 - 软件集成同学只通过接口调用各模块，不私自定义另一套格式；
 - 未完成的真实模块先用 Mock 模块替代。
 
+### 当前五臂场景的强制覆盖规则
+
+本文件后面的 `P_FEED_01`、`/CompactCell` 和四臂示例是早期接口草案。
+当前五臂实现以 `docs/Five_CR5A_Cell_Control_Interface.md` 为场景命名权威，
+必须使用 `/FiveCR5A_Cell`、`/R1` 到 `/R5` 和既有 APP/TCP 名称。
+
+软件模块入口保持不变：
+
+```text
+sim_bridge.coppelia_client.SimBridge implements ISimBridge
+robot_control.robot_executor.RobotExecutor implements IRobotExecutor
+execute_task(Task) -> TaskResult
+get_robot_states() -> list[RobotState]
+```
+
+真实软件集成入口现为：
+
+```text
+scheduler.order_parser.OrderParser implements IOrderParser
+scheduler.scheduler.Scheduler implements IScheduler
+robot_control.integrated_executor.IntegratedRobotExecutor implements IRobotExecutor
+run_demo.py --real [--headless] [--quality good|defect]
+```
+
+当前保存场景只能完成一个 A 型单件订单。REAL 模式会拒绝多订单、B/C 型、
+`quantity != 1` 和运行中急单插入；这些限制是场景无补料/复位能力的真实边界，
+不能用 Mock 成功代替。
+
+当前真实执行器已经支持：
+
+| `Task.target_point` / `process` / `task_id` | 机械臂 | 结果 |
+|---|---|---|
+| `R1_BOX_PLACED` | R1 | 箱体抓放后退出装配共享区，停在端子 APP |
+| `R1_TERMINAL_PLACED` | R1 | 从箱体任务末态继续端子抓放并回零 |
+| `R1_COMPLETE_CYCLE` | R1 | 上述两个动作连续执行 |
+| `R2_PCB_PLACED` | R2 | 接续 R1 箱体任务，将实际 PCB 安装到实际箱体并回零 |
+| `R3_MODULE_PLACED` | R3 | 接续 PCB 末态，安装实际模块并回零 |
+| `R3_PRODUCT_TO_INSPECTION` | R3 | 将执行器产品模板转移到检测区并回零 |
+| `R4_SCREW_DONE` | R4 | 使用运行时可视螺丝刀完成 APP/TCP/PRESS、旋转、撤回并回零 |
+| `R5_SORT_GOOD_DONE` | R5 | 固定产品到 TCP，同步进入 good 带面、yaw 对齐并回零 |
+| `R5_SORT_DEFECT_DONE` | R5 | 携视觉产品到 defect 带面并回零 |
+
+未知任务和错误机械臂分配必须返回
+`TaskResult.status == "failed"`，不得使用 sleep 或 Mock 假完成。
+R1/R2/R3 的私有供料区应互不重叠；同一正式执行器实例调度它们进入装配区
+时必须持有同一个装配共享区互斥锁。R3/R4/R5 进入检测/锁付区时必须使用
+检测共享区互斥锁；当前正式 R3/R4/R5 控制器已经接入该锁。
+
+固定顺序的五臂基础协同入口为：
+
+```text
+robot_control.five_arm_coordinator.FiveArmCoordinator
+robot_control/run_five_arm_cycle.py
+```
+
+该协调器使用单一长期 `SimBridge/RobotExecutor` 实例，不在相邻工序间停止或
+重连仿真。它是机械臂执行层的基础工艺协同，不取代订单调度模块。
+
+R4 保存场景没有螺丝刀模型。经用户批准，运行时使用 `100 mm` 可视工具和
+`(180,0,-135)` 度竖直姿态；三个 Git APP/TCP/PRESS target 均不修改。
+这只表示视觉旋转/下压，不代表物理扭矩或真实螺钉接触验收。
+
 ---
 
 ## 1. 订单输入格式
@@ -44,9 +106,11 @@
 | `priority` | int | 优先级，数值越大越紧急 |
 | `quantity` | int | 数量 |
 | `due_time` | float | 期望完成时间，可选 |
-| `expected_quality` | string | 演示用检测结果，OK/NG/UNKNOWN，可选 |
+| `expected_quality` | string | 当前真实演示的检测结果，`OK` 或 `NG`，可选，默认 `OK` |
 
-说明：`expected_quality` 用于稳定演示，避免 R3 检测结果随机导致答辩现场不可控。真实视觉检测接入后，该字段可移除或只作为测试配置。
+说明：`expected_quality` 用于稳定触发 R4 相机信号和 R5 唯一分支，避免答辩
+现场随机选择。真实视觉检测接入后，该字段可改为期望值/测试配置，实际分支应
+使用相机返回结果。
 
 ---
 
@@ -282,6 +346,26 @@ R4 分拣任务返回示例：
   "message": "defect product moved to defect area"
 }
 ```
+
+当前真实 `TaskResult` 还包含可选 `metrics` 字段。首动监测示例：
+
+```json
+{
+  "motion_timing": {
+    "motion_detected": true,
+    "threshold_deg": 0.02,
+    "dispatch_to_first_motion_wall_s": 1.76,
+    "task_call_to_first_motion_wall_s": 2.18,
+    "first_motion_simulation_time_s": 29.0,
+    "monitor_error": ""
+  },
+  "handoff_to_first_motion_simulation_s": 1.30,
+  "task_end_simulation_time_s": 58.20
+}
+```
+
+`handoff_to_first_motion_simulation_s` 以当前 Task 首次真实关节变化减去上一 Task
+结束仿真时刻；它不同于旧协调器的 Task 函数调用间隔。
 
 其中 `quality_result` 建议取值：
 

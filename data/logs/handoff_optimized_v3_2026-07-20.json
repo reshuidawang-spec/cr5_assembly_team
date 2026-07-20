@@ -1,0 +1,501 @@
+{
+  "status": "finished",
+  "mode": "REAL",
+  "order": {
+    "order_id": "OPT-PREPOS-02",
+    "product_type": "A",
+    "priority": 1,
+    "quantity": 1,
+    "due_time": 0.0,
+    "expected_quality": "OK"
+  },
+  "quality": "OK",
+  "host": "127.0.0.1",
+  "port": 23000,
+  "speed_deg_s": 50.0,
+  "hold_seconds": 0.8,
+  "preparation_started_at_epoch_s": 1784547138.1354544,
+  "ready_prepare_wall_s": 12.437665528999787,
+  "ready_evidence": {
+    "ready": true,
+    "quality_action": "R5_SORT_GOOD_DONE",
+    "preloaded_both_r5": false,
+    "controllers": [
+      {
+        "robot_id": "R1",
+        "prepared_actions": [
+          "R1_BOX_PLACED",
+          "R1_COMPLETE_CYCLE",
+          "R1_TERMINAL_PLACED"
+        ],
+        "path_source": "/home/vboxuser/桌面/cr5_assembly_team/robot_control/plans/r1_complete_cycle_plan.json"
+      },
+      {
+        "robot_id": "R2",
+        "prepared_actions": [
+          "R2_PCB_PLACED"
+        ],
+        "path_points": {
+          "initial_to_pick_app": 101,
+          "pick_descend": 51,
+          "lift_and_transfer": 151,
+          "place_descend": 51,
+          "return_home": 251
+        }
+      },
+      {
+        "robot_id": "R3",
+        "prepared_actions": [
+          "R3_MODULE_PLACED"
+        ],
+        "path_points": {
+          "initial_to_pick_app": 101,
+          "pick_descend": 51,
+          "lift_and_transfer": 131,
+          "place_descend": 51,
+          "return_home": 231
+        }
+      },
+      {
+        "robot_id": "R3",
+        "prepared_actions": [
+          "R3_PRODUCT_TO_INSPECTION"
+        ],
+        "path_points": {
+          "initial_to_pick_app": 101,
+          "pick_descend": 51,
+          "lift_and_transfer": 271,
+          "place_descend": 51,
+          "return_home": 371,
+          "lift_to_pick_app": 51,
+          "transfer_to_first_waypoint": 61,
+          "transfer_after_first_waypoint": 161,
+          "transfer_segment_1": 61,
+          "transfer_segment_2": 81,
+          "transfer_segment_3": 81
+        }
+      },
+      {
+        "robot_id": "R4",
+        "prepared_actions": [
+          "R4_SCREW_DONE"
+        ],
+        "path_points": {
+          "initial_to_app": 101,
+          "descend_to_tcp": 61,
+          "press": 21,
+          "retract_and_home": 181
+        }
+      },
+      {
+        "robot_id": "R5",
+        "prepared_actions": [
+          "R5_SORT_GOOD_DONE"
+        ],
+        "path_points": {
+          "initial_to_pick_app": 101,
+          "pick_descend": 51,
+          "lift_and_transfer": 311,
+          "place_descend": 101,
+          "belt_lower": 15,
+          "return_home": 475
+        },
+        "transfer_waypoint": [
+          0.6307210076930809,
+          -0.931635470600265,
+          0.76
+        ]
+      }
+    ],
+    "path_points_total": 3929,
+    "ready_state": {
+      "simulation_time_s": 1.3500000000000005,
+      "gripper_open": true,
+      "stepping_held": true,
+      "preposition_simulation_time_s": 5.449999999999983
+    },
+    "prepare_wall_s": 12.15951945100096
+  },
+  "trigger_started_at_epoch_s": 1784547150.57326,
+  "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+  "tasks": [
+    {
+      "task": {
+        "task_id": "OPT-PREPOS-02-01-R1_BOX_PLACED",
+        "order_id": "OPT-PREPOS-02",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R1_BOX_PLACED",
+        "available_robots": [
+          "R1"
+        ],
+        "duration": 38.98805618286133,
+        "predecessors": [],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784547150.5733345,
+      "result": {
+        "task_id": "OPT-PREPOS-02-01-R1_BOX_PLACED",
+        "robot_id": "R1",
+        "status": "finished",
+        "start_time": 1784547150.584558,
+        "end_time": 1784547189.5726142,
+        "message": "R1_BOX_PLACED completed (visual attach; physical grasp not validated); {'action': 'R1_BOX_PLACED', 'visual_grasp_only': True, 'final_joint_positions_deg': [75.663527, 30.400484, 65.166023, -5.573394, -89.99787, -49.336637], 'box_position': [-1.150002, 0.1999, 0.215915], 'terminal_position': [-1.9, 0.1, 0.1735], 'terminal_visual_offset_m': 0.028}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R1",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784547150.5845437,
+            "dispatch_simulation_time_s": 6.799999999999984,
+            "first_motion_wall_epoch_s": 1784547151.3581634,
+            "first_motion_simulation_time_s": 6.999999999999983,
+            "dispatch_to_first_motion_wall_s": 0.773619305997272,
+            "max_joint_delta_deg_at_detection": 0.031457204887415505,
+            "monitor_error": "",
+            "task_call_wall_epoch_s": 1784547150.573348,
+            "task_call_to_first_motion_wall_s": 0.7848153114318848
+          },
+          "handoff_to_first_motion_simulation_s": null,
+          "task_end_simulation_time_s": 33.300000000000246
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "OPT-PREPOS-02-02-R2_PCB_PLACED",
+        "order_id": "OPT-PREPOS-02",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R2_PCB_PLACED",
+        "available_robots": [
+          "R2"
+        ],
+        "duration": 29.323951244354248,
+        "predecessors": [
+          "OPT-PREPOS-02-01-R1_BOX_PLACED"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784547189.5730379,
+      "result": {
+        "task_id": "OPT-PREPOS-02-02-R2_PCB_PLACED",
+        "robot_id": "R2",
+        "status": "finished",
+        "start_time": 1784547189.5812097,
+        "end_time": 1784547218.905161,
+        "message": "R2_PCB_PLACED completed (visual suction; physical grasp not validated); {'action': 'R2_PCB_PLACED', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, 90.0], 'virtual_tcp_offset_m': 0.1, 'pcb_visual_offset_m': 0.052, 'final_joint_positions_deg': [-9.1e-05, 0.000633, -0.000607, 0.00041, 0.000463, -0.000766], 'pcb_position': [-1.150055, 0.200176, 0.281743], 'box_position': [-1.150002, 0.1999, 0.215915]}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R2",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784547189.5811896,
+            "dispatch_simulation_time_s": 33.300000000000246,
+            "first_motion_wall_epoch_s": 1784547190.054367,
+            "first_motion_simulation_time_s": 33.40000000000024,
+            "dispatch_to_first_motion_wall_s": 0.47317741900042165,
+            "max_joint_delta_deg_at_detection": 0.04500235098072798,
+            "monitor_error": "",
+            "task_call_wall_epoch_s": 1784547189.5730424,
+            "task_call_to_first_motion_wall_s": 0.4813246726989746
+          },
+          "handoff_to_first_motion_simulation_s": 0.09999999999999432,
+          "task_end_simulation_time_s": 56.9999999999989
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "OPT-PREPOS-02-03-R3_MODULE_PLACED",
+        "order_id": "OPT-PREPOS-02",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R3_MODULE_PLACED",
+        "available_robots": [
+          "R3"
+        ],
+        "duration": 19.269932508468628,
+        "predecessors": [
+          "OPT-PREPOS-02-02-R2_PCB_PLACED"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784547218.90628,
+      "result": {
+        "task_id": "OPT-PREPOS-02-03-R3_MODULE_PLACED",
+        "robot_id": "R3",
+        "status": "finished",
+        "start_time": 1784547218.9217792,
+        "end_time": 1784547238.1917117,
+        "message": "R3_MODULE_PLACED completed (visual suction; physical grasp not validated); {'action': 'R3_MODULE_PLACED', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, -135.0], 'virtual_tcp_offset_m': 0.1, 'final_joint_positions_deg': [0.000177, 0.001009, 2.4e-05, -0.000778, -2.2e-05, -0.000558], 'payload_position': [-1.119686, 0.219824, 0.319549], 'module_visual_offset_m': 0.046}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R3",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784547218.92177,
+            "dispatch_simulation_time_s": 56.9999999999989,
+            "first_motion_wall_epoch_s": 1784547219.4604788,
+            "first_motion_simulation_time_s": 57.19999999999889,
+            "dispatch_to_first_motion_wall_s": 0.538708462001523,
+            "max_joint_delta_deg_at_detection": 0.08250077762113693,
+            "monitor_error": "",
+            "task_call_wall_epoch_s": 1784547218.906285,
+            "task_call_to_first_motion_wall_s": 0.5541937351226807
+          },
+          "handoff_to_first_motion_simulation_s": 0.19999999999998863,
+          "task_end_simulation_time_s": 73.34999999999798
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "OPT-PREPOS-02-04-R1_TERMINAL_PLACED",
+        "order_id": "OPT-PREPOS-02",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R1_TERMINAL_PLACED",
+        "available_robots": [
+          "R1"
+        ],
+        "duration": 30.09170174598694,
+        "predecessors": [
+          "OPT-PREPOS-02-03-R3_MODULE_PLACED"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784547238.1924841,
+      "result": {
+        "task_id": "OPT-PREPOS-02-04-R1_TERMINAL_PLACED",
+        "robot_id": "R1",
+        "status": "finished",
+        "start_time": 1784547238.1996384,
+        "end_time": 1784547268.29134,
+        "message": "R1_TERMINAL_PLACED completed (visual attach; physical grasp not validated); {'action': 'R1_TERMINAL_PLACED', 'visual_grasp_only': True, 'final_joint_positions_deg': [0.000482, -0.00029, 2e-06, 0.001642, -0.0, 0.000188], 'box_position': [-1.150002, 0.1999, 0.215915], 'terminal_position': [-1.089622, 0.129917, 0.329536], 'terminal_visual_offset_m': 0.056}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R1",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784547238.1996286,
+            "dispatch_simulation_time_s": 73.34999999999798,
+            "first_motion_wall_epoch_s": 1784547239.921483,
+            "first_motion_simulation_time_s": 74.29999999999792,
+            "dispatch_to_first_motion_wall_s": 1.7218540100002429,
+            "max_joint_delta_deg_at_detection": 0.032186848220782646,
+            "monitor_error": "",
+            "task_call_wall_epoch_s": 1784547238.1924882,
+            "task_call_to_first_motion_wall_s": 1.7289948463439941
+          },
+          "handoff_to_first_motion_simulation_s": 0.949999999999946,
+          "task_end_simulation_time_s": 93.9999999999968
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "OPT-PREPOS-02-05-R3_PRODUCT_TO_INSPECTION",
+        "order_id": "OPT-PREPOS-02",
+        "product_type": "A",
+        "process": "transfer",
+        "target_area": "inspection_screw_area",
+        "target_point": "R3_PRODUCT_TO_INSPECTION",
+        "available_robots": [
+          "R3"
+        ],
+        "duration": 47.295175075531006,
+        "predecessors": [
+          "OPT-PREPOS-02-04-R1_TERMINAL_PLACED"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784547268.292001,
+      "result": {
+        "task_id": "OPT-PREPOS-02-05-R3_PRODUCT_TO_INSPECTION",
+        "robot_id": "R3",
+        "status": "finished",
+        "start_time": 1784547268.2973988,
+        "end_time": 1784547315.592574,
+        "message": "R3_PRODUCT_TO_INSPECTION completed (visual suction; physical grasp not validated); {'action': 'R3_PRODUCT_TO_INSPECTION', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, -135.0], 'virtual_tcp_offset_m': 0.1, 'final_joint_positions_deg': [-0.000999, 0.000299, 0.000193, 0.001519, -0.000302, -0.000102], 'payload_position': [0.150143, 0.049949, 0.216003], 'template_stage_swap': True, 'product_visual_lift_m': 0.1}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R3",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784547268.2973888,
+            "dispatch_simulation_time_s": 93.9999999999968,
+            "first_motion_wall_epoch_s": 1784547268.8657277,
+            "first_motion_simulation_time_s": 94.19999999999679,
+            "dispatch_to_first_motion_wall_s": 0.5683382319984958,
+            "max_joint_delta_deg_at_detection": 0.028497568412031892,
+            "monitor_error": "",
+            "task_call_wall_epoch_s": 1784547268.2920053,
+            "task_call_to_first_motion_wall_s": 0.5737223625183105
+          },
+          "handoff_to_first_motion_simulation_s": 0.19999999999998863,
+          "task_end_simulation_time_s": 128.599999999995
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "OPT-PREPOS-02-06-R4_SCREW_DONE",
+        "order_id": "OPT-PREPOS-02",
+        "product_type": "A",
+        "process": "screw",
+        "target_area": "inspection_screw_area",
+        "target_point": "R4_SCREW_DONE",
+        "available_robots": [
+          "R4"
+        ],
+        "duration": 19.718661069869995,
+        "predecessors": [
+          "OPT-PREPOS-02-05-R3_PRODUCT_TO_INSPECTION"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784547315.593055,
+      "result": {
+        "task_id": "OPT-PREPOS-02-06-R4_SCREW_DONE",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784547315.6662855,
+        "end_time": 1784547335.3849466,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": "OK",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R4",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784547315.6005948,
+            "dispatch_simulation_time_s": 128.599999999995,
+            "first_motion_wall_epoch_s": 1784547316.308285,
+            "first_motion_simulation_time_s": 128.89999999999506,
+            "dispatch_to_first_motion_wall_s": 0.7076901899999939,
+            "max_joint_delta_deg_at_detection": 0.029756718927120108,
+            "monitor_error": "",
+            "task_call_wall_epoch_s": 1784547315.5930593,
+            "task_call_to_first_motion_wall_s": 0.7152256965637207
+          },
+          "handoff_to_first_motion_simulation_s": 0.3000000000000682,
+          "task_end_simulation_time_s": 144.79999999999868,
+          "camera_transition": {
+            "quality": "OK",
+            "signal": "camera_good",
+            "simulation_time_before": 128.599999999995,
+            "simulation_time_after": 128.649999999995
+          }
+        }
+      }
+    },
+    {
+      "task": {
+        "task_id": "OPT-PREPOS-02-07-R5_SORT_GOOD_DONE",
+        "order_id": "OPT-PREPOS-02",
+        "product_type": "A",
+        "process": "sort_good",
+        "target_area": "sort_area",
+        "target_point": "R5_SORT_GOOD_DONE",
+        "available_robots": [
+          "R5"
+        ],
+        "duration": 50.64635419845581,
+        "predecessors": [
+          "OPT-PREPOS-02-06-R4_SCREW_DONE"
+        ],
+        "priority": 1,
+        "status": "finished"
+      },
+      "dispatch_wall_epoch_s": 1784547335.3856385,
+      "result": {
+        "task_id": "OPT-PREPOS-02-07-R5_SORT_GOOD_DONE",
+        "robot_id": "R5",
+        "status": "finished",
+        "start_time": 1784547335.3934705,
+        "end_time": 1784547386.0398247,
+        "message": "R5_SORT_GOOD_DONE completed (visual suction; physical grasp not validated); {'action': 'R5_SORT_GOOD_DONE', 'visual_suction_only': True, 'physical_grasp_validated': False, 'runtime_pick_orientation_deg': [195.0, -45.0, 0.0], 'runtime_place_orientation_deg': [-134.007027, 10.545291, 79.271417], 'runtime_place_prealign_orientation_deg': [-143.152079, 31.403342, 104.05737], 'runtime_place_app_position': [0.64, -1.08, 0.62], 'runtime_place_tcp_position': [0.64, -1.08, 0.42], 'runtime_good_target_xy_offset_m': [-0.01, 0.02], 'runtime_tool_tcp_offset_m': 0.1, 'belt_height_correction_m': -0.026, 'belt_height_correction_mode': 'rigid_tcp_motion', 'rigid_visual_payload_through_release': True, 'grasp_transform_max_error': 1.1102230246251565e-16, 'good_base_turn_delta_deg': -121.0, 'transfer_waypoint': [0.6307210076930809, -0.931635470600265, 0.76], 'release_product_orientation_deg': [-0.005404, -0.024063, -89.99816], 'good_target_product_yaw_deg': -90.0, 'good_track_parallel_error_deg': 0.00184, 'final_joint_positions_deg': [-0.000635, -0.001754, -0.000115, 0.00092, 0.000198, -0.004661], 'conveyor_branch': 'good', 'product_position': [0.65, -1.181, 0.27]}",
+        "quality_result": "",
+        "metrics": {
+          "motion_timing": {
+            "robot_id": "R5",
+            "motion_detected": true,
+            "threshold_deg": 0.02,
+            "dispatch_wall_epoch_s": 1784547335.3934608,
+            "dispatch_simulation_time_s": 144.79999999999868,
+            "first_motion_wall_epoch_s": 1784547336.0448143,
+            "first_motion_simulation_time_s": 145.04999999999873,
+            "dispatch_to_first_motion_wall_s": 0.6513533209981688,
+            "max_joint_delta_deg_at_detection": 0.03821480637924835,
+            "monitor_error": "",
+            "task_call_wall_epoch_s": 1784547335.3856435,
+            "task_call_to_first_motion_wall_s": 0.6591708660125732
+          },
+          "handoff_to_first_motion_simulation_s": 0.25000000000005684,
+          "task_end_simulation_time_s": 183.90000000000757
+        }
+      }
+    }
+  ],
+  "finished_at_epoch_s": 1784547386.0919955,
+  "total_wall_duration_s": 247.95654106140137,
+  "wall_duration_s": 235.51873540878296,
+  "robot_states": [
+    {
+      "robot_id": "R1",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 2
+    },
+    {
+      "robot_id": "R2",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    },
+    {
+      "robot_id": "R3",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 2
+    },
+    {
+      "robot_id": "R4",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    },
+    {
+      "robot_id": "R5",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    }
+  ]
+}

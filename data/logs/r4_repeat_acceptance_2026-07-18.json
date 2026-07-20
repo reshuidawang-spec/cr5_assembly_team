@@ -1,0 +1,504 @@
+{
+  "started_at": "2026-07-18T13:15:08+08:00",
+  "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+  "scene_fingerprint": {
+    "size": 2875907,
+    "sha256": "0e1c1b8ac6b0e9a7cdf1a49cc9abce85243fd5c03c5b38563d3e3cf3433af657"
+  },
+  "prior_successes": 2,
+  "requested_new_runs": 8,
+  "runs": [
+    {
+      "new_run_index": 1,
+      "overall_run_index": 3,
+      "preflight": {
+        "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+        "simulation_state": 0,
+        "r4_joint_deg": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "runtime_objects": []
+      },
+      "subprocess_wall_time_s": 22.080158472061157,
+      "command_exit_code": 0,
+      "stderr": "",
+      "task_result": {
+        "task_id": "R4-ACCEPTANCE-03",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784351710.2818534,
+        "end_time": 1784351732.3107703,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      },
+      "postflight": {
+        "simulation_state": 17,
+        "simulation_time_before": 16.750000000000103,
+        "simulation_time_after": 16.950000000000106,
+        "simulation_time_advanced": true,
+        "r4_joint_deg": [
+          0.0003802497238962973,
+          0.0004762036966884066,
+          -0.00010259723913346724,
+          0.0006318292976169085,
+          6.0743967072435604e-05,
+          0.00010902685504425206
+        ],
+        "max_home_error_deg": 0.0006318292976169085,
+        "runtime_objects": [],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "inspection_product_parent": "/Parts",
+        "inspection_product_visible_shapes": 30,
+        "environment_collision": null,
+        "self_collision": null,
+        "failures": []
+      },
+      "success": true
+    },
+    {
+      "new_run_index": 2,
+      "overall_run_index": 4,
+      "preflight": {
+        "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+        "simulation_state": 0,
+        "r4_joint_deg": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "runtime_objects": []
+      },
+      "subprocess_wall_time_s": 21.99640440940857,
+      "command_exit_code": 0,
+      "stderr": "",
+      "task_result": {
+        "task_id": "R4-ACCEPTANCE-04",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784351741.7998028,
+        "end_time": 1784351763.7531698,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      },
+      "postflight": {
+        "simulation_state": 17,
+        "simulation_time_before": 16.800000000000104,
+        "simulation_time_after": 17.000000000000107,
+        "simulation_time_advanced": true,
+        "r4_joint_deg": [
+          0.0003802497238962973,
+          0.0004762036966884066,
+          -0.00010259723913346724,
+          0.0006318292976169085,
+          6.0743967072435604e-05,
+          0.00010902685504425206
+        ],
+        "max_home_error_deg": 0.0006318292976169085,
+        "runtime_objects": [],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "inspection_product_parent": "/Parts",
+        "inspection_product_visible_shapes": 30,
+        "environment_collision": null,
+        "self_collision": null,
+        "failures": []
+      },
+      "success": true
+    },
+    {
+      "new_run_index": 3,
+      "overall_run_index": 5,
+      "preflight": {
+        "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+        "simulation_state": 0,
+        "r4_joint_deg": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "runtime_objects": []
+      },
+      "subprocess_wall_time_s": 22.254460096359253,
+      "command_exit_code": 0,
+      "stderr": "",
+      "task_result": {
+        "task_id": "R4-ACCEPTANCE-05",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784351772.326732,
+        "end_time": 1784351794.5356684,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      },
+      "postflight": {
+        "simulation_state": 17,
+        "simulation_time_before": 16.750000000000103,
+        "simulation_time_after": 16.950000000000106,
+        "simulation_time_advanced": true,
+        "r4_joint_deg": [
+          0.0003802497238962973,
+          0.0004762036966884066,
+          -0.00010259723913346724,
+          0.0006318292976169085,
+          6.0743967072435604e-05,
+          0.00010902685504425206
+        ],
+        "max_home_error_deg": 0.0006318292976169085,
+        "runtime_objects": [],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "inspection_product_parent": "/Parts",
+        "inspection_product_visible_shapes": 30,
+        "environment_collision": null,
+        "self_collision": null,
+        "failures": []
+      },
+      "success": true
+    },
+    {
+      "new_run_index": 4,
+      "overall_run_index": 6,
+      "preflight": {
+        "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+        "simulation_state": 0,
+        "r4_joint_deg": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "runtime_objects": []
+      },
+      "subprocess_wall_time_s": 21.73241662979126,
+      "command_exit_code": 0,
+      "stderr": "",
+      "task_result": {
+        "task_id": "R4-ACCEPTANCE-06",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784351803.997654,
+        "end_time": 1784351825.6772099,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      },
+      "postflight": {
+        "simulation_state": 17,
+        "simulation_time_before": 16.800000000000104,
+        "simulation_time_after": 17.000000000000107,
+        "simulation_time_advanced": true,
+        "r4_joint_deg": [
+          0.0003802497238962973,
+          0.0004762036966884066,
+          -0.00010259723913346724,
+          0.0006318292976169085,
+          6.0743967072435604e-05,
+          0.00010902685504425206
+        ],
+        "max_home_error_deg": 0.0006318292976169085,
+        "runtime_objects": [],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "inspection_product_parent": "/Parts",
+        "inspection_product_visible_shapes": 30,
+        "environment_collision": null,
+        "self_collision": null,
+        "failures": []
+      },
+      "success": true
+    },
+    {
+      "new_run_index": 5,
+      "overall_run_index": 7,
+      "preflight": {
+        "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+        "simulation_state": 0,
+        "r4_joint_deg": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "runtime_objects": []
+      },
+      "subprocess_wall_time_s": 21.187374353408813,
+      "command_exit_code": 0,
+      "stderr": "",
+      "task_result": {
+        "task_id": "R4-ACCEPTANCE-07",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784351833.5977788,
+        "end_time": 1784351854.7303283,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      },
+      "postflight": {
+        "simulation_state": 17,
+        "simulation_time_before": 16.750000000000103,
+        "simulation_time_after": 16.950000000000106,
+        "simulation_time_advanced": true,
+        "r4_joint_deg": [
+          0.0003802497238962973,
+          0.0004762036966884066,
+          -0.00010259723913346724,
+          0.0006318292976169085,
+          6.0743967072435604e-05,
+          0.00010902685504425206
+        ],
+        "max_home_error_deg": 0.0006318292976169085,
+        "runtime_objects": [],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "inspection_product_parent": "/Parts",
+        "inspection_product_visible_shapes": 30,
+        "environment_collision": null,
+        "self_collision": null,
+        "failures": []
+      },
+      "success": true
+    },
+    {
+      "new_run_index": 6,
+      "overall_run_index": 8,
+      "preflight": {
+        "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+        "simulation_state": 0,
+        "r4_joint_deg": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "runtime_objects": []
+      },
+      "subprocess_wall_time_s": 22.41513419151306,
+      "command_exit_code": 0,
+      "stderr": "",
+      "task_result": {
+        "task_id": "R4-ACCEPTANCE-08",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784351862.9112391,
+        "end_time": 1784351885.272736,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      },
+      "postflight": {
+        "simulation_state": 17,
+        "simulation_time_before": 16.750000000000103,
+        "simulation_time_after": 16.950000000000106,
+        "simulation_time_advanced": true,
+        "r4_joint_deg": [
+          0.0003802497238962973,
+          0.0004762036966884066,
+          -0.00010259723913346724,
+          0.0006318292976169085,
+          6.0743967072435604e-05,
+          0.00010902685504425206
+        ],
+        "max_home_error_deg": 0.0006318292976169085,
+        "runtime_objects": [],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "inspection_product_parent": "/Parts",
+        "inspection_product_visible_shapes": 30,
+        "environment_collision": null,
+        "self_collision": null,
+        "failures": []
+      },
+      "success": true
+    },
+    {
+      "new_run_index": 7,
+      "overall_run_index": 9,
+      "preflight": {
+        "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+        "simulation_state": 0,
+        "r4_joint_deg": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "runtime_objects": []
+      },
+      "subprocess_wall_time_s": 22.058478832244873,
+      "command_exit_code": 0,
+      "stderr": "",
+      "task_result": {
+        "task_id": "R4-ACCEPTANCE-09",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784351893.8048906,
+        "end_time": 1784351915.7958333,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      },
+      "postflight": {
+        "simulation_state": 17,
+        "simulation_time_before": 16.750000000000103,
+        "simulation_time_after": 16.950000000000106,
+        "simulation_time_advanced": true,
+        "r4_joint_deg": [
+          0.0003802497238962973,
+          0.0004762036966884066,
+          -0.00010259723913346724,
+          0.0006318292976169085,
+          6.0743967072435604e-05,
+          0.00010902685504425206
+        ],
+        "max_home_error_deg": 0.0006318292976169085,
+        "runtime_objects": [],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "inspection_product_parent": "/Parts",
+        "inspection_product_visible_shapes": 30,
+        "environment_collision": null,
+        "self_collision": null,
+        "failures": []
+      },
+      "success": true
+    },
+    {
+      "new_run_index": 8,
+      "overall_run_index": 10,
+      "preflight": {
+        "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+        "simulation_state": 0,
+        "r4_joint_deg": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "runtime_objects": []
+      },
+      "subprocess_wall_time_s": 21.78983998298645,
+      "command_exit_code": 0,
+      "stderr": "",
+      "task_result": {
+        "task_id": "R4-ACCEPTANCE-10",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784351923.9413412,
+        "end_time": 1784351945.6810305,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      },
+      "postflight": {
+        "simulation_state": 17,
+        "simulation_time_before": 16.750000000000103,
+        "simulation_time_after": 16.950000000000106,
+        "simulation_time_advanced": true,
+        "r4_joint_deg": [
+          0.0003802497238962973,
+          0.0004762036966884066,
+          -0.00010259723913346724,
+          0.0006318292976169085,
+          6.0743967072435604e-05,
+          0.00010902685504425206
+        ],
+        "max_home_error_deg": 0.0006318292976169085,
+        "runtime_objects": [],
+        "inspection_product_position": [
+          0.15,
+          0.05,
+          0.216
+        ],
+        "inspection_product_parent": "/Parts",
+        "inspection_product_visible_shapes": 30,
+        "environment_collision": null,
+        "self_collision": null,
+        "failures": []
+      },
+      "success": true
+    }
+  ],
+  "finished_at": "2026-07-18T13:19:13+08:00",
+  "successful_new_runs": 8,
+  "total_successes": 10,
+  "acceptance_passed": true
+}

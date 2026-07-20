@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "scene": {
+    "name": "five_cr5a_cell.ttt",
+    "size": 2875907,
+    "sha256": "0e1c1b8ac6b0e9a7cdf1a49cc9abce85243fd5c03c5b38563d3e3cf3433af657"
+  },
+  "counts": {
+    "cell_objects": 208,
+    "target_tree_dummies": 42
+  },
+  "targets": {
+    "R1_HOME_REF": {"position": [-1.47, 0.67, 0.8], "orientation": [0.0, 0.0, 0.0]},
+    "R1_BOX_PICK_APP": {"position": [-1.8, 0.35, 0.55], "orientation": [0.0, 0.0, 0.0]},
+    "R1_BOX_PICK_TCP": {"position": [-1.8, 0.35, 0.3], "orientation": [0.0, 0.0, 0.0]},
+    "R1_BOX_PLACE_APP": {"position": [-1.15, 0.2, 0.55], "orientation": [0.0, 0.0, 0.0]},
+    "R1_BOX_PLACE_TCP": {"position": [-1.15, 0.2, 0.3], "orientation": [0.0, 0.0, 0.0]},
+    "R1_TERMINAL_PICK_APP": {"position": [-1.9, 0.1, 0.45], "orientation": [0.0, 0.0, 0.0]},
+    "R1_TERMINAL_PICK_TCP": {"position": [-1.9, 0.1, 0.24], "orientation": [0.0, 0.0, 0.0]},
+    "R1_TERMINAL_PLACE_APP": {"position": [-1.09, 0.13, 0.5], "orientation": [0.0, 0.0, 0.0]},
+    "R1_TERMINAL_PLACE_TCP": {"position": [-1.09, 0.13, 0.34], "orientation": [0.0, 0.0, 0.0]},
+    "R2_HOME_REF": {"position": [-1.55, -0.15, 0.8], "orientation": [0.0, 0.0, 0.0]},
+    "R2_PCB_PICK_APP": {"position": [-1.28, -0.28, 0.45], "orientation": [0.0, 0.0, 0.0]},
+    "R2_PCB_PICK_TCP": {"position": [-1.28, -0.28, 0.22], "orientation": [0.0, 0.0, 0.0]},
+    "R2_PCB_PLACE_APP": {"position": [-1.15, 0.2, 0.5], "orientation": [0.0, 0.0, 0.0]},
+    "R2_PCB_PLACE_TCP": {"position": [-1.15, 0.2, 0.29], "orientation": [0.0, 0.0, 0.0]},
+    "R3_HOME_REF": {"position": [-0.55, 0.28, 0.8], "orientation": [0.0, 0.0, 0.0]},
+    "R3_MODULE_PICK_APP": {"position": [-0.85, -0.05, 0.45], "orientation": [0.0, 0.0, 0.0]},
+    "R3_MODULE_PICK_TCP": {"position": [-0.85, -0.05, 0.24], "orientation": [0.0, 0.0, 0.0]},
+    "R3_MODULE_PLACE_APP": {"position": [-1.12, 0.22, 0.5], "orientation": [0.0, 0.0, 0.0]},
+    "R3_MODULE_PLACE_TCP": {"position": [-1.12, 0.22, 0.34], "orientation": [0.0, 0.0, 0.0]},
+    "R3_PRODUCT_PICK_APP": {"position": [-1.15, 0.2, 0.6], "orientation": [0.0, 0.0, 0.0]},
+    "R3_PRODUCT_PICK_TCP": {"position": [-1.15, 0.2, 0.34], "orientation": [0.0, 0.0, 0.0]},
+    "R3_PRODUCT_PLACE_INSPECTION_APP": {"position": [0.15, 0.05, 0.6], "orientation": [0.0, 0.0, 0.0]},
+    "R3_PRODUCT_PLACE_INSPECTION_TCP": {"position": [0.15, 0.05, 0.34], "orientation": [0.0, 0.0, 0.0]},
+    "CAMERA_INSPECTION_CENTER": {"position": [0.15, 0.05, 0.55], "orientation": [0.0, 0.0, 0.0]},
+    "R4_HOME_REF": {"position": [0.58, 0.25, 0.8], "orientation": [0.0, 0.0, 0.0]},
+    "R4_SCREW_APP": {"position": [0.21, -0.02, 0.55], "orientation": [0.0, 0.0, 0.0]},
+    "R4_SCREW_TCP": {"position": [0.21, -0.02, 0.36], "orientation": [0.0, 0.0, 0.0]},
+    "R4_SCREW_PRESS": {"position": [0.21, -0.02, 0.33], "orientation": [0.0, 0.0, 0.0]},
+    "R5_HOME_REF": {"position": [0.15, -0.5, 0.8], "orientation": [0.0, 0.0, 0.0]},
+    "R5_PRODUCT_PICK_APP": {"position": [0.15, 0.05, 0.6], "orientation": [0.0, 0.0, 0.0]},
+    "R5_PRODUCT_PICK_TCP": {"position": [0.15, 0.05, 0.34], "orientation": [0.0, 0.0, 0.0]},
+    "R5_GOOD_PLACE_APP": {"position": [0.65, -1.1, 0.62], "orientation": [0.0, 0.0, 0.0]},
+    "R5_GOOD_PLACE_TCP": {"position": [0.65, -1.1, 0.42], "orientation": [0.0, 0.0, 0.0]},
+    "R5_DEFECT_PLACE_APP": {"position": [-0.35, -1.12, 0.62], "orientation": [0.0, 0.0, 0.0]},
+    "R5_DEFECT_PLACE_TCP": {"position": [-0.35, -1.12, 0.42], "orientation": [0.0, 0.0, 0.0]}
+  },
+  "protected_target_prefixes": ["R1_", "R2_", "R4_"],
+  "initial_parts": {
+    "BOX_BLANK": [-1.8, 0.35, 0.156],
+    "PCB_SUPPLY": [-1.28, -0.28, 0.16],
+    "CONTROL_MODULE_SUPPLY": [-0.85, -0.05, 0.1735],
+    "TERMINAL_BLOCK_SUPPLY": [-1.9, 0.1, 0.1735],
+    "INSPECTION_PRODUCT": [0.15, 0.05, 0.216]
+  },
+  "r5_product_on_belt_z": 0.27,
+  "tolerances": {
+    "target": 0.000001,
+    "joint_deg": 0.25,
+    "part_position_m": 0.002,
+    "belt_height_error_m": 0.003
+  }
+}
