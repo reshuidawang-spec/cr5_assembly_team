@@ -31,6 +31,12 @@ configs/
   five_cr5a_scene_audit_baseline.json  ← 场景指纹与 target 基线
 
 tests/                        ← 62 项自动化测试
+
+scripts/
+  start_five_cr5a_scene.sh    ← 通用场景启动脚本
+  run_five_arm_cycle.sh       ← 通用五臂固定流程入口
+  run_real_scheduler.sh       ← 通用真实 Scheduler headless 入口
+  run_robot_task.sh           ← 通用单 Task 入口
 ```
 
 ## 前提条件
@@ -42,29 +48,61 @@ tests/                        ← 62 项自动化测试
 3. ZMQ 端口 `23000` 未被占用
 4. Python 3 环境，依赖 `coppeliasim-zmqremoteapi-client`
 
-## 快速开始
+## 团队统一启动方式
+
+所有成员都使用同一套命令，不要把 `/home/vboxuser/桌面/...` 或
+`/path/to/...` 当成固定路径写死。先进入自己电脑上的仓库根目录，也就是能看到
+`README.md`、`robot_control/`、`scenes/` 的目录：
+
+```bash
+cd /你的克隆目录/cr5_assembly_team
+```
+
+从这里开始，下面的命令对所有成员都相同。
 
 ### 启动 CoppeliaSim
 
 ```bash
-# 打开场景（保持停止态，不要保存上一次运行末态）
-/home/vboxuser/CoppeliaSim/coppeliaSim.sh \
-  /path/to/cr5_assembly_team/scenes/five_cr5a_cell.ttt
+# 自动使用当前仓库中的 scenes/five_cr5a_cell.ttt
+bash scripts/start_five_cr5a_scene.sh
 ```
+
+这个脚本会用脚本自身位置找到仓库根目录，再打开：
+
+```text
+<当前仓库>/scenes/five_cr5a_cell.ttt
+```
+
+因此仓库放在 `/home/vboxuser/桌面`、`~/code`、`D:/workspace` 的 Linux 挂载目录
+或其他路径都可以，成员不需要修改场景路径。
+
+如果某台电脑的 CoppeliaSim 没装在常见位置，启动时指定安装路径：
+
+```bash
+COPPELIASIM_ROOT=/absolute/path/to/CoppeliaSim \
+  bash scripts/start_five_cr5a_scene.sh
+
+# 或直接指定启动脚本
+COPPELIASIM_SH=/absolute/path/to/coppeliaSim.sh \
+  bash scripts/start_five_cr5a_scene.sh
+```
+
+打开场景后保持仿真停止，不要手动按 Start，不要保存上一次运行末态。运动脚本
+会自己启动仿真、接管 stepping、执行后释放或停止。
 
 ### 运行五臂完整工艺
 
+另开一个终端，仍然进入同一个仓库根目录：
+
 ```bash
-cd /path/to/cr5_assembly_team
+cd /你的克隆目录/cr5_assembly_team
 
 # Good 产品（默认 50 deg/s，APP 保持 0.8 s）
-python3 robot_control/run_five_arm_cycle.py \
-  --quality good \
+bash scripts/run_five_arm_cycle.sh good \
   --output data/logs/five_arm_good.json
 
 # Defect 产品
-python3 robot_control/run_five_arm_cycle.py \
-  --quality defect \
+bash scripts/run_five_arm_cycle.sh defect \
   --output data/logs/five_arm_defect.json
 ```
 
@@ -74,7 +112,7 @@ python3 robot_control/run_five_arm_cycle.py \
 
 ```bash
 # 真实模式无界面
-python3 run_demo.py --real --headless --quality good \
+bash scripts/run_real_scheduler.sh good \
   --speed-deg-s 50 --hold-seconds 0.8 \
   --output data/logs/scheduled_good.json
 
@@ -84,20 +122,23 @@ python3 run_demo.py --real
 
 ## 单臂命令
 
-每个 Task 对应一个 CLI，可在协调运行中间手动调用：
+每个 Task 对应一个正式 CLI。推荐使用统一入口，由脚本按 Task 名自动选择
+`run_r1_task.py` 到 `run_r5_task.py`：
 
 ```bash
-python3 robot_control/run_r1_task.py R1_BOX_PLACED
-python3 robot_control/run_r1_task.py R1_TERMINAL_PLACED
-python3 robot_control/run_r2_task.py R2_PCB_PLACED
-python3 robot_control/run_r3_task.py R3_MODULE_PLACED
-python3 robot_control/run_r3_task.py R3_PRODUCT_TO_INSPECTION
-python3 robot_control/run_r4_task.py R4_SCREW_DONE
-python3 robot_control/run_r5_task.py R5_SORT_GOOD_DONE
-python3 robot_control/run_r5_task.py R5_SORT_DEFECT_DONE
+bash scripts/run_robot_task.sh R1_BOX_PLACED
+bash scripts/run_robot_task.sh R1_TERMINAL_PLACED
+bash scripts/run_robot_task.sh R2_PCB_PLACED
+bash scripts/run_robot_task.sh R3_MODULE_PLACED
+bash scripts/run_robot_task.sh R3_PRODUCT_TO_INSPECTION
+bash scripts/run_robot_task.sh R4_SCREW_DONE
+bash scripts/run_robot_task.sh R5_SORT_GOOD_DONE
+bash scripts/run_robot_task.sh R5_SORT_DEFECT_DONE
 ```
 
-**注意**：单臂命令之间不得停止或重载仿真。`R1_TERMINAL_PLACED` 必须接在 `R1_BOX_PLACED` 成功后运行；`R2_PCB_PLACED` 必须接在 `R1_BOX_PLACED` 后。
+**注意**：单臂命令不是都能从干净场景直接运行。`R1_TERMINAL_PLACED` 必须接在
+`R1_BOX_PLACED` 成功后运行；`R2_PCB_PLACED` 必须接在真实 `R1_BOX_PLACED`
+后；R3/R4/R5 也需要前序产品状态。单臂命令之间不得停止或重载仿真。
 
 ## 速度参数
 
@@ -109,8 +150,7 @@ python3 robot_control/run_r5_task.py R5_SORT_DEFECT_DONE
 
 ```bash
 # Good 加速回归（已验证通过；Defect 60/0.4 尚未运行）
-python3 robot_control/run_five_arm_cycle.py \
-  --quality good \
+bash scripts/run_five_arm_cycle.sh good \
   --speed-deg-s 60 \
   --hold-seconds 0.4 \
   --output data/logs/five_arm_good_yaw_aligned_60.json
@@ -168,6 +208,7 @@ print(result.status, result.message)
 新场景到达时运行只读审计：
 
 ```bash
+cd /你的克隆目录/cr5_assembly_team
 python3 sim_bridge/audit_five_cr5a_scene.py \
   --scene scenes/five_cr5a_cell.ttt \
   --baseline configs/five_cr5a_scene_audit_baseline.json
@@ -176,9 +217,22 @@ python3 sim_bridge/audit_five_cr5a_scene.py \
 ## 测试
 
 ```bash
+cd /你的克隆目录/cr5_assembly_team
 python3 -m unittest discover -s tests -v
 # Ran 62 tests — OK
 ```
+
+## 常见启动错误
+
+- 把 `/path/to/cr5_assembly_team` 原样复制执行：这是占位符，会找不到场景。
+  现在统一使用 `bash scripts/start_five_cr5a_scene.sh`。
+- 命令里把 `scenes/` 和 `five_cr5a_cell.ttt` 分成两行或中间多了空格：文件路径会
+  变成错误参数。启动脚本会自动传入正确路径。
+- CoppeliaSim 没显示五臂场景：先确认终端输出的 `Scene:` 指向当前仓库下的
+  `scenes/five_cr5a_cell.ttt`，再确认没有打开旧的 `compact_cell.ttt`。
+- `cannot find CoppeliaSim`：设置 `COPPELIASIM_ROOT` 或 `COPPELIASIM_SH` 后重试。
+- 运动脚本连不上 `23000`：确认 CoppeliaSim 已打开场景，ZMQ Remote API 已启用，
+  且没有另一个旧 CoppeliaSim 进程占用端口。
 
 ## 限制与边界
 

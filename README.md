@@ -14,13 +14,20 @@ R1 箱体/端子 -> R2 PCB -> R3 模块/产品转移
 -> R4 视觉锁付 -> R5 good/defect 分拣
 ```
 
-五臂基础协同已接入真实 `RobotExecutor/SimBridge`。打开
-`scenes/five_cr5a_cell.ttt` 并保持停止后，可运行：
+五臂基础协同已接入真实 `RobotExecutor/SimBridge`。所有成员从自己 clone 的
+仓库根目录使用同一套启动脚本，不需要手写个人绝对路径：
 
 ```bash
-python3 robot_control/run_five_arm_cycle.py --quality good
+cd /你的克隆目录/cr5_assembly_team
+bash scripts/start_five_cr5a_scene.sh
+```
+
+打开场景并保持停止后，可运行：
+
+```bash
+bash scripts/run_five_arm_cycle.sh good
 # 或
-python3 robot_control/run_five_arm_cycle.py --quality defect
+bash scripts/run_five_arm_cycle.sh defect
 ```
 
 正式订单调度和 GUI 也已接入真实模块：
@@ -30,8 +37,7 @@ python3 robot_control/run_five_arm_cycle.py --quality defect
 python3 run_demo.py --real
 
 # 单个 A 型 Good 订单，默认 50 deg/s、APP 0.8 s
-python3 run_demo.py \
-  --real --headless --quality good \
+bash scripts/run_real_scheduler.sh good \
   --output data/logs/scheduled_good.json
 ```
 
@@ -39,7 +45,8 @@ python3 run_demo.py \
 动态急单和跨机械臂故障重分配尚未实现场景级验证。GUI 已显示 R1-R5、
 Good/Defect 选择、真实任务状态和首动延迟。
 
-详细前置条件、视觉验收边界和实跑证据见
+详细启动方式、单臂 Task 命令、前置条件、视觉验收边界和实跑证据见
+[`docs/ROBOT_CONTROL_USAGE.md`](docs/ROBOT_CONTROL_USAGE.md) 与
 [`robot_control/FIVE_ARM_COORDINATOR.md`](robot_control/FIVE_ARM_COORDINATOR.md)。
 
 ---
