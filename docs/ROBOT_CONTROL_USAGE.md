@@ -156,8 +156,8 @@ bash scripts/run_five_arm_cycle.sh good \
 
 `run_demo.py --real` 也支持 `--speed-deg-s` 和 `--hold-seconds`，但当前
 Scheduler/GUI 真实集成的结构化实跑证据使用默认 `50 deg/s`、APP `0.8 s`。
-Defect `60 deg/s`、APP `0.4 s` 回归已按用户要求暂缓，在重新允许前不要把
-旧 Defect 日志当作新速度验收。
+Defect `60 deg/s`、APP `0.4 s` 回归尚未完成；验收前不要把旧 Defect 日志当作
+新速度验收。
 
 ## 输出 JSON
 
@@ -239,15 +239,14 @@ python3 -m unittest discover -s tests -v
 - **受保护 target**：Git HOME/APP/TCP 坐标和姿态不得修改
 - **场景文件**：不得保存运行瞬态到 `five_cr5a_cell.ttt`
 - **R2 暂停**：因 PCB 供料区与 R2 基座重叠等待场景组修复
-- **Defect 加速**：60 deg/s defect 回归由用户暂缓
+- **Defect 加速**：60 deg/s defect 回归尚未完成
 - **单产品**：当前只支持一件 A 型产品，无自动补料/场景复位
 - **R4 不预定位**：screw APP 在检测区，与 R3 产品转运路径冲突
 
 ## 参考文档
 
-- `AGENTS.md` — 工作风格与约束
-- `PROJECT_CONTEXT.md` — 项目上下文与里程碑
-- `docs/CR5_SESSION_MEMORY_2026-07-15.md` — 完整会话记忆
+- `docs/Five_CR5A_Cell_Control_Interface.md` — 五臂场景控制接口
+- `docs/INTERFACES.md` — 团队接口契约
 - `docs/SCENE_CHANGE_REQUEST_2026-07-18.md` — 场景组修改清单
 - `robot_control/R[1-5]_EXECUTOR.md` — 各臂详细说明
 - `robot_control/FIVE_ARM_COORDINATOR.md` — 协调器说明

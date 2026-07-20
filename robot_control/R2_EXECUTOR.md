@@ -10,16 +10,16 @@ R2_PCB_PLACED -> R2
 
 ## 执行顺序
 
-重新加载并保持以下场景为停止状态：
+重新加载并保持仓库中的保存场景为停止状态：
 
 ```text
-/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt
+scenes/five_cr5a_cell.ttt
 ```
 
 然后从仓库根目录依次执行：
 
 ```bash
-cd /home/vboxuser/桌面/cr5_assembly_team
+cd /你的克隆目录/cr5_assembly_team
 python3 robot_control/run_r1_task.py R1_BOX_PLACED
 python3 robot_control/run_r2_task.py R2_PCB_PLACED
 ```

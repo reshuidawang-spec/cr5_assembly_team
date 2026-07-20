@@ -7,10 +7,10 @@
 
 ## 前置条件
 
-打开并重新加载保存场景：
+打开并重新加载仓库中的保存场景：
 
 ```text
-/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt
+scenes/five_cr5a_cell.ttt
 ```
 
 首次执行箱体或完整循环前，场景必须停止、R1 六关节为零，箱体和端子位于
@@ -21,7 +21,7 @@
 完整 R1 循环：
 
 ```bash
-cd /home/vboxuser/桌面/cr5_assembly_team
+cd /你的克隆目录/cr5_assembly_team
 python3 robot_control/run_r1_task.py R1_COMPLETE_CYCLE
 ```
 

@@ -10,7 +10,7 @@ R4_SCREW_DONE -> R4
 
 ## 当前验收边界
 
-保存场景没有 R4 螺丝刀模型。经用户确认，正式动作仅在运行时创建一把
+保存场景没有 R4 螺丝刀模型。正式动作仅在运行时创建一把
 `100 mm` 可视螺丝刀，使用 `(180,0,-135)` 度竖直姿态。Git 定义的
 `R4_SCREW_APP/TCP/PRESS` 位置和 `{0,0,0}` 姿态保持不变。
 
@@ -20,16 +20,16 @@ R4_SCREW_DONE -> R4
 
 ## 命令行使用
 
-打开以下保存场景并保持停止态：
+打开仓库中的保存场景并保持停止态：
 
 ```text
-/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt
+scenes/five_cr5a_cell.ttt
 ```
 
 然后从仓库根目录执行：
 
 ```bash
-cd /home/vboxuser/桌面/cr5_assembly_team
+cd /你的克隆目录/cr5_assembly_team
 python3 robot_control/run_r4_task.py R4_SCREW_DONE
 ```
 
@@ -60,13 +60,13 @@ result = RobotExecutor().execute_task(task)
 
 ## 重复验收
 
-用户确认运行时 `100 mm` 可视螺丝刀、`(180,0,-135)` 度竖直姿态、下压、
-速度和两圈可见旋转效果可接受。前两次正式执行分别为 `22.9 s` 和 `21.7 s`。
+运行时 `100 mm` 可视螺丝刀、`(180,0,-135)` 度竖直姿态、下压、速度和两圈
+可见旋转效果已通过观察确认。前两次正式执行分别为 `22.9 s` 和 `21.7 s`。
 
 剩余 8 次使用可复现运行器执行：
 
 ```bash
-cd /home/vboxuser/桌面/cr5_assembly_team
+cd /你的克隆目录/cr5_assembly_team
 python3 robot_control/repeat_r4_acceptance.py \
   --runs 8 \
   --prior-successes 2 \

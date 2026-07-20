@@ -71,8 +71,8 @@ bash scripts/run_real_scheduler.sh good \
   --output data/logs/scheduled_good.json
 ```
 
-默认运动参数保持 `50 deg/s`、APP `0.8 s`。用户已经取消 defect
-`60 deg/s`、APP `0.4 s` 加速回归，本次集成没有改默认值。
+默认运动参数保持 `50 deg/s`、APP `0.8 s`。Defect `60 deg/s`、APP `0.4 s`
+加速回归尚未完成，本次集成没有改默认值。
 
 `IntegratedRobotExecutor` 在 R4 前发送 `camera_good/camera_defect`，并从独立
 ZMQ 观察连接读取对应机械臂六关节。关节相对任务下发基线变化达到 `0.02 deg`
