@@ -1,7 +1,7 @@
 sim = require('sim')
 
 -- =========================================================
--- ROS2_CompactCell_Bridge_V2_GlobalCallbacks.lua
+-- ROS2_CompactCell_Bridge_V3_ColorCycle.lua
 --
 -- 修复点：
 -- 上一版 createSubscription 用的是 local callback 函数。
@@ -24,6 +24,12 @@ local pub_status = nil
 
 local mainMap = {
     RESET_CELL = {signal='cell_product_state', value='reset'},
+
+    -- 颜色循环命令：用于演示连续多个电柜时区分批次
+    COLOR_NEXT = {signal='cell_product_state', value='color_next'},
+    COLOR_1 = {signal='cell_product_state', value='color_1'},
+    COLOR_2 = {signal='cell_product_state', value='color_2'},
+    COLOR_3 = {signal='cell_product_state', value='color_3'},
 
     SHOW_ASSEMBLY_SHELL = {signal='cell_product_state', value='assembly_shell'},
     SHOW_ASSEMBLY_PCB = {signal='cell_product_state', value='assembly_pcb'},
@@ -90,7 +96,7 @@ local toolCmdSet = {
 }
 
 local function log(msg)
-    print('[ROS2 BRIDGE V2] '..msg)
+    print('[ROS2 BRIDGE V3] '..msg)
 end
 
 local function trim(s)
@@ -181,7 +187,7 @@ local function addSub(topic, msgType, cbName)
 end
 
 function sysCall_init()
-    print('===== ROS2 Compact Cell Bridge V2 Global Callbacks =====')
+    print('===== ROS2 Compact Cell Bridge V3 ColorCycle =====')
 
     local ok, modOrErr = pcall(require, 'simROS2')
     if not ok then
@@ -211,7 +217,7 @@ function sysCall_init()
     addSub('/compact_cell/r4_cmd', 'std_msgs/msg/String', 'compactCell_r4_cb')
     addSub('/compact_cell/r5_cmd', 'std_msgs/msg/String', 'compactCell_r5_cb')
 
-    publishStatus('ROS2_BRIDGE_V2_READY')
+    publishStatus('ROS2_BRIDGE_V3_COLOR_READY')
 end
 
 function sysCall_cleanup()

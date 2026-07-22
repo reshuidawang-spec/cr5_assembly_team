@@ -1,9 +1,9 @@
 sim = require('sim')
 
 -- =========================================================
--- Step01_Create_Clean_Cell_60_GreyTable_RobotColor.lua
+-- Step01_Create_Clean_Cell_60_CloserTables_ColorReady.lua
 --
--- 第 1 步：创建干净场景 + 60% 工件 + 避免重叠版
+-- 第 1 步：创建干净场景 + 60% 工件 + 工作台完全分离 + 颜色循环准备版
 --
 -- 这个脚本只做：
 -- 1. 创建地面、两个圆形工作台、供料区、装配区、检测区、传送带、固定相机；
@@ -122,8 +122,8 @@ local robotBases = {
     R1 = {-1.60,  0.65, 0.17},
     R2 = {-1.56, -0.22, 0.17},
     R3 = {-0.62,  0.40, 0.17},
-    R4 = { 0.58,  0.25, 0.17},
-    R5 = { 0.15, -0.50, 0.17}
+    R4 = { 0.78,  0.25, 0.17},
+    R5 = { 0.35, -0.50, 0.17}
 }
 
 local robotYaw = {
@@ -135,7 +135,7 @@ local robotYaw = {
 }
 
 local leftTableCenter  = {-1.20,  0.25, 0.06}
-local rightTableCenter = { 0.55, -0.10, 0.06}
+local rightTableCenter = { 0.75, -0.10, 0.06}
 
 -- 工位坐标
 local P = {
@@ -146,12 +146,12 @@ local P = {
     moduleSupply   = {-0.78, -0.20},
 
     assembly       = {-1.08,  0.12},
-    inspection     = { 0.15,  0.05},
+    inspection     = { 0.35,  0.05},
 
-    cameraColumn   = {-0.10,  0.55},
+    cameraColumn   = { 0.10,  0.55},
 
-    goodInlet      = { 0.65, -1.10},
-    defectInlet    = {-0.35, -1.12}
+    goodInlet      = { 0.85, -1.10},
+    defectInlet    = {-0.15, -1.12}
 }
 
 local root = -1
@@ -446,11 +446,11 @@ local function makeFixedCamera(parent)
     cylinder('Camera_Column_Base', {x, y, 0.08}, 0.055, 0.08, COLOR_METAL, g)
     cylinder('Camera_Column', {x, y, 0.48}, 0.022, 0.80, COLOR_METAL, g)
 
-    cuboid('Camera_Bracket_X', {0.03, 0.55, 0.86}, {0.30, 0.035, 0.035}, COLOR_METAL, g)
-    cuboid('Camera_Bracket_Y', {0.15, 0.33, 0.86}, {0.035, 0.45, 0.035}, COLOR_METAL, g)
+    cuboid('Camera_Bracket_X', {P.cameraColumn[1] + 0.13, P.cameraColumn[2], 0.86}, {0.30, 0.035, 0.035}, COLOR_METAL, g)
+    cuboid('Camera_Bracket_Y', {P.inspection[1], (P.cameraColumn[2] + P.inspection[2]) / 2, 0.86}, {0.035, math.abs(P.cameraColumn[2] - P.inspection[2]), 0.035}, COLOR_METAL, g)
 
-    cuboid('Fixed_Camera_Body', {0.15, 0.15, 0.82}, {0.08, 0.06, 0.06}, COLOR_DARK, g)
-    cuboid('Fixed_Camera_Lens', {0.15, 0.15, 0.775}, {0.035, 0.035, 0.035}, COLOR_BLACK, g)
+    cuboid('Fixed_Camera_Body', {P.inspection[1], P.inspection[2] + 0.10, 0.82}, {0.08, 0.06, 0.06}, COLOR_DARK, g)
+    cuboid('Fixed_Camera_Lens', {P.inspection[1], P.inspection[2] + 0.10, 0.775}, {0.035, 0.035, 0.035}, COLOR_BLACK, g)
 
     cuboid(
         'Camera_View_Area',
@@ -540,10 +540,10 @@ local function createScene()
     makeAssembledControlBox('Inspection_ControlBox_Product', P.inspection[1], P.inspection[2], PRODUCT_BOTTOM_Z, groups.Parts, COLOR_BOX)
 
     -- 传送带
-    makeConveyor('Good_Conveyor', {0.65, -1.72, 0.18}, 1.25, 0.36, 'Y', groups.Conveyors)
-    makeConveyor('Defect_Conveyor', {-0.95, -1.12, 0.18}, 1.20, 0.36, 'X', groups.Conveyors)
+    makeConveyor('Good_Conveyor', {0.85, -1.72, 0.18}, 1.25, 0.36, 'Y', groups.Conveyors)
+    makeConveyor('Defect_Conveyor', {-0.75, -1.12, 0.18}, 1.20, 0.36, 'X', groups.Conveyors)
 
-    print('[OK] Clean 60% cell created. No targets. No grippers.')
+    print('[OK] Separated-table 60% cell created. No targets. No grippers.')
 end
 
 -- =========================================================
@@ -714,7 +714,7 @@ end
 -- =========================================================
 
 function sysCall_init()
-    print('===== Step01: Create Clean 60% Cell, No Targets, No Grippers, Grey Table, Robot Color =====')
+    print('===== Step01: Create Clean 60% Cell, Separated Tables, Color Ready =====')
 
     local oldRoot = safeGet('/FiveCR5A_Cell')
 

@@ -1,7 +1,7 @@
 sim = require('sim')
 
 -- =========================================================
--- Step03_Create_Process_Targets_60.lua
+-- Step03_Create_Process_Targets_60_CloserTables.lua
 --
 -- 第 3 步：创建 R1~R5 工艺目标点 APP/TCP
 --
@@ -60,9 +60,9 @@ local P = {
     pcbSupply      = {-1.22, -0.42},
     moduleSupply   = {-0.78, -0.20},
     assembly       = {-1.08,  0.12},
-    inspection     = { 0.15,  0.05},
-    goodPlace      = { 0.65, -1.10},
-    defectPlace    = {-0.35, -1.12},
+    inspection     = { 0.35,  0.05},
+    goodPlace      = { 0.85, -1.10},
+    defectPlace    = {-0.15, -1.12},
 }
 
 local function safeGet(path)
@@ -185,7 +185,7 @@ local function makePair(group,prefix,tcpPos,ori,color,lift)
 end
 
 function sysCall_init()
-    print('===== Step03 Create Process Targets 60% =====')
+    print('===== Step03 Create Process Targets 60% Separated Tables =====')
 
     local cell = safeGet('/FiveCR5A_Cell')
     if cell == -1 then
@@ -212,8 +212,8 @@ function sysCall_init()
     makeTarget(gR1,'R1_HOME_REF',{-1.55, 0.55,0.70},{0,0,0},COLORS.R1)
     makeTarget(gR2,'R2_HOME_REF',{-1.55,-0.20,0.70},{0,0,0},COLORS.R2)
     makeTarget(gR3,'R3_HOME_REF',{-0.60, 0.35,0.70},{0,0,0},COLORS.R3)
-    makeTarget(gR4,'R4_HOME_REF',{ 0.55, 0.25,0.70},{0,0,0},COLORS.R4)
-    makeTarget(gR5,'R5_HOME_REF',{ 0.15,-0.45,0.70},{0,0,0},COLORS.R5)
+    makeTarget(gR4,'R4_HOME_REF',{ 0.75, 0.25,0.70},{0,0,0},COLORS.R4)
+    makeTarget(gR5,'R5_HOME_REF',{ 0.35,-0.45,0.70},{0,0,0},COLORS.R5)
 
     -- R1：箱体上料 + 端子排安装
     -- R1 宽口夹爪既夹箱体，也夹端子排。点位后续可微调。
