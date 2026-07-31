@@ -10,34 +10,41 @@ from interfaces.types import Order, Task, TaskResult, TaskStatus, RobotState, Pr
 _PRODUCT_PROCESSES = {
     "A": {
         "processes": [
-            (ProcessType.FEED, "feed_area", "P_FEED_01", ["R1"], 6),
-            (ProcessType.ASSEMBLE, "assembly_area", "P_ASSEMBLY_01", ["R2"], 12),
-            (ProcessType.SCREW, "screw_area", "P_SCREW_01", ["R3"], 10),
-            (ProcessType.INSPECT, "inspect_area", "P_INSPECT_01", ["R3"], 5),
+            (ProcessType.BOX_FEED, "box_supply_area", "R1_BOX_PLACE_TCP", ["R1"], 6, ["box_supply_area", "assembly_fixture"]),
+            (ProcessType.PCB_INSTALL, "pcb_supply_area", "R2_PCB_PLACE_TCP", ["R2"], 8, ["pcb_supply_area", "assembly_fixture"]),
+            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 7, ["module_supply_area", "assembly_fixture"]),
+            (ProcessType.TERMINAL_INSTALL, "terminal_supply_area", "R1_TERMINAL_PLACE_TCP", ["R1"], 7, ["terminal_supply_area", "assembly_fixture"]),
+            (ProcessType.TRANSFER_TO_INSPECTION, "transfer_area", "R3_PRODUCT_PLACE_INSPECTION_TCP", ["R3"], 8, ["assembly_fixture", "inspection_platform_area"]),
+            (ProcessType.INSPECT, "camera_area", "CAMERA_INSPECTION_CENTER", ["CAMERA"], 5, ["inspection_platform_area", "camera_area"]),
         ],
     },
     "B": {
         "processes": [
-            (ProcessType.FEED, "feed_area", "P_FEED_01", ["R1"], 7),
-            (ProcessType.ASSEMBLE, "assembly_area", "P_ASSEMBLY_01", ["R2"], 16),
-            (ProcessType.SCREW, "screw_area", "P_SCREW_01", ["R3"], 14),
-            (ProcessType.INSPECT, "inspect_area", "P_INSPECT_01", ["R3"], 6),
+            (ProcessType.BOX_FEED, "box_supply_area", "R1_BOX_PLACE_TCP", ["R1"], 7, ["box_supply_area", "assembly_fixture"]),
+            (ProcessType.PCB_INSTALL, "pcb_supply_area", "R2_PCB_PLACE_TCP", ["R2"], 10, ["pcb_supply_area", "assembly_fixture"]),
+            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 9, ["module_supply_area", "assembly_fixture"]),
+            (ProcessType.TERMINAL_INSTALL, "terminal_supply_area", "R1_TERMINAL_PLACE_TCP", ["R1"], 8, ["terminal_supply_area", "assembly_fixture"]),
+            (ProcessType.TRANSFER_TO_INSPECTION, "transfer_area", "R3_PRODUCT_PLACE_INSPECTION_TCP", ["R3"], 9, ["assembly_fixture", "inspection_platform_area"]),
+            (ProcessType.INSPECT, "camera_area", "CAMERA_INSPECTION_CENTER", ["CAMERA"], 6, ["inspection_platform_area", "camera_area"]),
         ],
     },
     "C": {
         "processes": [
-            (ProcessType.FEED, "feed_area", "P_FEED_01", ["R1"], 8),
-            (ProcessType.ASSEMBLE, "assembly_area", "P_ASSEMBLY_01", ["R2"], 20),
-            (ProcessType.SCREW, "screw_area", "P_SCREW_01", ["R3"], 16),
-            (ProcessType.INSPECT, "inspect_area", "P_INSPECT_01", ["R3"], 7),
+            (ProcessType.BOX_FEED, "box_supply_area", "R1_BOX_PLACE_TCP", ["R1"], 8, ["box_supply_area", "assembly_fixture"]),
+            (ProcessType.PCB_INSTALL, "pcb_supply_area", "R2_PCB_PLACE_TCP", ["R2"], 12, ["pcb_supply_area", "assembly_fixture"]),
+            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 10, ["module_supply_area", "assembly_fixture"]),
+            (ProcessType.TERMINAL_INSTALL, "terminal_supply_area", "R1_TERMINAL_PLACE_TCP", ["R1"], 10, ["terminal_supply_area", "assembly_fixture"]),
+            (ProcessType.TRANSFER_TO_INSPECTION, "transfer_area", "R3_PRODUCT_PLACE_INSPECTION_TCP", ["R3"], 10, ["assembly_fixture", "inspection_platform_area"]),
+            (ProcessType.INSPECT, "camera_area", "CAMERA_INSPECTION_CENTER", ["CAMERA"], 7, ["inspection_platform_area", "camera_area"]),
         ],
     },
 }
 
-# 检测后 R4 分拣（根据检测结果动态生成；Mock 原型使用四臂角色模型）
-_SORT_PROCESSES = {
-    ProcessType.SORT_GOOD: ("sort_area", "P_GOOD_01", ["R4"], 4),
-    ProcessType.SORT_DEFECT: ("sort_area", "P_DEFECT_01", ["R4"], 4),
+# 检测结果分支：OK 先由 R4 锁付再 R5 分拣；NG 直接由 R5 分拣。
+_POST_INSPECTION_PROCESSES = {
+    ProcessType.SCREW: ("inspection_screw_area", "R4_SCREW_PRESS", ["R4"], 9, ["inspection_screw_area", "inspection_platform_area"]),
+    ProcessType.SORT_GOOD: ("good_conveyor_area", "R5_GOOD_PLACE_TCP", ["R5"], 5, ["inspection_platform_area", "good_conveyor_area"]),
+    ProcessType.SORT_DEFECT: ("defect_conveyor_area", "R5_DEFECT_PLACE_TCP", ["R5"], 5, ["inspection_platform_area", "defect_conveyor_area"]),
 }
 
 
@@ -47,6 +54,7 @@ class MockScheduler(IScheduler):
     def __init__(self):
         self._task_counter = 0
         self._callbacks: List[Callable] = []
+        self._quality_by_order = {}
 
     def set_state_change_callback(self, callback: Callable) -> None:
         self._callbacks.append(callback)
@@ -69,23 +77,31 @@ class MockScheduler(IScheduler):
                 order.product_type,
                 _PRODUCT_PROCESSES["A"],
             )
-            prev_id: Optional[str] = None
-            for process, area, point, robots, duration in product_cfg["processes"]:
-                task = Task(
-                    task_id=self._next_task_id(),
-                    order_id=order.order_id,
-                    product_type=order.product_type,
-                    process=process.value,
-                    target_area=area,
-                    target_point=point,
-                    available_robots=list(robots),
-                    duration=duration,
-                    predecessors=[prev_id] if prev_id else [],
-                    priority=order.priority,
-                    status=TaskStatus.PENDING.value,
-                )
-                tasks.append(task)
-                prev_id = task.task_id
+            for unit_index in range(order.quantity):
+                suffix = "" if order.quantity == 1 else f"-{unit_index + 1:02d}"
+                unit_order_id = f"{order.order_id}{suffix}"
+                prev_id: Optional[str] = None
+                for process, area, point, robots, duration, required_areas in product_cfg["processes"]:
+                    task = Task(
+                        task_id=self._next_task_id(),
+                        order_id=unit_order_id,
+                        product_type=order.product_type,
+                        process=process.value,
+                        target_area=area,
+                        target_point=point,
+                        available_robots=list(robots),
+                        duration=duration,
+                        predecessors=[prev_id] if prev_id else [],
+                        priority=order.priority,
+                        status=(
+                            TaskStatus.PENDING.value
+                            if not prev_id
+                            else TaskStatus.WAITING.value
+                        ),
+                        required_areas=list(required_areas),
+                    )
+                    tasks.append(task)
+                    prev_id = task.task_id
 
         return tasks
 
@@ -93,17 +109,7 @@ class MockScheduler(IScheduler):
         self, tasks: List[Task], robots: List[RobotState],
     ) -> List[Task]:
         idle_robots = {r.robot_id for r in robots if r.status == "idle"}
-        robot_task_map = {
-            "R1": ProcessType.FEED.value,
-            "R1": ProcessType.UNLOAD.value,
-            "R2": ProcessType.ASSEMBLE.value,
-            "R3": ProcessType.SCREW.value,
-            "R3": ProcessType.INSPECT.value,
-            "R4": ProcessType.SORT_GOOD.value,
-            "R4": ProcessType.SORT_DEFECT.value,
-        }
-
-        for task in tasks:
+        for task in sorted(tasks, key=lambda item: (-item.priority, item.task_id)):
             if task.status != TaskStatus.PENDING.value:
                 continue
             # 检查前置任务
@@ -121,8 +127,12 @@ class MockScheduler(IScheduler):
             # 分配机械臂
             available = [r for r in task.available_robots if r in idle_robots]
             if available:
+                robot_id = available[0]
                 task.status = TaskStatus.RUNNING.value
-                # 标记对应机械臂为忙碌（由上层处理）
+                task.available_robots = [robot_id] + [
+                    candidate for candidate in task.available_robots if candidate != robot_id
+                ]
+                idle_robots.remove(robot_id)
         return tasks
 
     def insert_urgent_order(self, order: Order) -> List[Task]:
@@ -131,23 +141,20 @@ class MockScheduler(IScheduler):
 
     def handle_robot_fault(self, robot_id: str, tasks: List[Task]) -> List[Task]:
         for task in tasks:
-            if (
-                task.status in (TaskStatus.RUNNING.value, TaskStatus.PENDING.value)
-                and robot_id in task.available_robots
-            ):
+            assigned_robot = task.available_robots[0] if task.available_robots else None
+            if task.status == TaskStatus.RUNNING.value and assigned_robot == robot_id:
                 task.status = TaskStatus.PENDING.value
-                task.available_robots = [
-                    r for r in task.available_robots if r != robot_id
-                ]
         self._notify()
         return tasks
 
     def on_task_complete(
         self, result: TaskResult, tasks: List[Task], robots: List[RobotState],
     ) -> List[Task]:
+        completed_task: Optional[Task] = None
         for task in tasks:
             if task.task_id == result.task_id:
                 task.status = result.status
+                completed_task = task
                 break
         # 解锁后续任务
         for task in tasks:
@@ -161,29 +168,63 @@ class MockScheduler(IScheduler):
                 )
                 if pred_done:
                     task.status = TaskStatus.PENDING.value
-        # 检测完成后，只按实际结果生成一条分拣任务。不能在订单生成时
-        # 同时创建 sort_good 和 sort_defect，否则同一产品会被分拣两次。
-        if result.status == TaskStatus.FINISHED.value and result.quality_result in {"OK", "NG"}:
-            inspected_task = next((task for task in tasks if task.task_id == result.task_id), None)
-            if inspected_task and inspected_task.process == ProcessType.INSPECT.value:
-                sort_process = (
-                    ProcessType.SORT_GOOD
-                    if result.quality_result == "OK"
-                    else ProcessType.SORT_DEFECT
-                )
-                area, point, robots, duration = _SORT_PROCESSES[sort_process]
-                tasks.append(Task(
-                    task_id=self._next_task_id(),
-                    order_id=inspected_task.order_id,
-                    product_type=inspected_task.product_type,
-                    process=sort_process.value,
-                    target_area=area,
-                    target_point=point,
-                    available_robots=list(robots),
-                    duration=duration,
-                    predecessors=[inspected_task.task_id],
-                    priority=inspected_task.priority,
-                    status=TaskStatus.PENDING.value,
-                ))
+        if (
+            completed_task
+            and completed_task.process == ProcessType.INSPECT.value
+            and result.status == TaskStatus.FINISHED.value
+            and result.quality_result in ("OK", "NG")
+        ):
+            self._quality_by_order[completed_task.order_id] = result.quality_result
+
+        if (
+            completed_task
+            and completed_task.process == ProcessType.INSPECT.value
+            and result.status == TaskStatus.FINISHED.value
+        ):
+            quality_result = result.quality_result
+            if quality_result not in ("OK", "NG"):
+                self._notify()
+                return tasks
+            process = (
+                ProcessType.SCREW
+                if quality_result == "OK"
+                else ProcessType.SORT_DEFECT
+            )
+            area, point, available_robots, duration, required_areas = _POST_INSPECTION_PROCESSES[process]
+            tasks.append(Task(
+                task_id=self._next_task_id(),
+                order_id=completed_task.order_id,
+                product_type=completed_task.product_type,
+                process=process.value,
+                target_area=area,
+                target_point=point,
+                available_robots=list(available_robots),
+                duration=duration,
+                predecessors=[completed_task.task_id],
+                priority=completed_task.priority,
+                status=TaskStatus.PENDING.value,
+                required_areas=list(required_areas),
+            ))
+        elif (
+            completed_task
+            and completed_task.process == ProcessType.SCREW.value
+            and result.status == TaskStatus.FINISHED.value
+            and self._quality_by_order.get(completed_task.order_id) == "OK"
+        ):
+            area, point, available_robots, duration, required_areas = _POST_INSPECTION_PROCESSES[ProcessType.SORT_GOOD]
+            tasks.append(Task(
+                task_id=self._next_task_id(),
+                order_id=completed_task.order_id,
+                product_type=completed_task.product_type,
+                process=ProcessType.SORT_GOOD.value,
+                target_area=area,
+                target_point=point,
+                available_robots=list(available_robots),
+                duration=duration,
+                predecessors=[completed_task.task_id],
+                priority=completed_task.priority,
+                status=TaskStatus.PENDING.value,
+                required_areas=list(required_areas),
+            ))
         self._notify()
         return tasks

@@ -1,0 +1,15 @@
+﻿topology_level,node_id,name,kind,process,resource,level,dependencies,granularity,scene_object,description
+1,box_shell,箱体壳,component,box_feed,R1,1,[],main_component,Assembly_ControlBox_Product_Shell,配电柜/电控箱基础壳体，所有后续元件都安装在箱体内部或箱体夹具上。
+2,pcb_board,PCB板,component,pcb_install,R2,2,['box_shell'],main_component,Assembly_ControlBox_Product_PCB,R2 将 PCB 板安装到箱体内，是控制模块和端子排安装的基础。
+3,pcb_electronic_parts,PCB板载元件,component,pcb_install,R2,3,['pcb_board'],detail_feature,Assembly_ControlBox_Product_PCB_Main_Chip/Connector/Capacitor,芯片、连接器、电容等板载细节，用于后续检测和装配完整性描述。
+3,pcb_holes,PCB定位孔,component,pcb_install,R2,3,['pcb_board'],detail_feature,Assembly_ControlBox_Product_PCB_Hole_1~4,用于表达 PCB 安装定位检查，不单独生成机械臂搬运动作。
+4,control_module_body,控制模块本体,component,module_install,R3,4,"['pcb_holes', 'pcb_electronic_parts']",main_component,Assembly_ControlBox_Product_Control_Module_Body,R3 安装控制模块本体，安装位置在 PCB 上方。
+5,control_module_label,控制模块标签,component,module_install,R3,5,['control_module_body'],detail_feature,Assembly_ControlBox_Product_Control_Module_Label,控制模块上的标签细节，用于视觉识别和检测说明。
+5,terminal_block_body,端子排本体,component,terminal_install,R1,6,['control_module_body'],main_component,Assembly_ControlBox_Product_Terminal_Block_Body,R1 将端子排安装到箱体内，是后续锁付动作的对象。
+6,terminal_slots,端子排接线槽,component,terminal_install,R1,7,['terminal_block_body'],detail_feature,Assembly_ControlBox_Product_Terminal_Block_Slot_1~4,端子排内部接线槽细节，用于表达更细的装配和检测对象。
+6,terminal_screw_head,端子排主螺钉头,component,terminal_install,R1,8,['terminal_block_body'],fastening_target,Assembly_ControlBox_Product_Terminal_Block_Main_ScrewHead,端子排自带的锁付目标，随端子排安装进入产品，R4 在后续锁付工序中作用于该目标。
+7,transfer_to_inspection,转移完整装配体到检测区,operation,transfer_to_inspection,R3,9,"['terminal_slots', 'terminal_screw_head']",operation,,
+8,inspect,固定相机检测,operation,inspect,CAMERA,10,['transfer_to_inspection'],operation,,
+9,screw,端子螺钉锁付,operation,screw,R4,11,['inspect'],operation,,
+10,sort_defect,缺陷品分拣,operation,sort_defect,R5,12,['screw'],operation,,
+10,sort_good,合格品分拣,operation,sort_good,R5,12,['screw'],operation,,

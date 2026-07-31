@@ -1,52 +1,74 @@
-# 四臂 Mock 原型配置（尚未与 scenes/ 五臂 CR5A 场景统一）
-# 五臂场景的基座与目标点以 scenes/main_cell_generator.lua 为准。
+# Robot/resource configuration for the Five CR5A cell.
 
 robots:
   R1:
-    name: "上料定位机械臂"
-    model: DOBOT CR5
+    name: "Box and terminal-block robot"
+    model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [-1.75, 0.95, 0]
+    position: [-1.47, 0.67, 0]
     base_object: R1_Base
     home_pose: [0, 0, 0, 0, 0, 0]
-    home_point: R1_Home
-    capabilities: [feed, pick_and_place]
+    home_point: R1_HOME_REF
+    capabilities: [box_feed, terminal_install, pick_and_place]
     end_effector: gripper
-    work_area: [box_area, assembly_area]
+    work_area: [box_supply_area, terminal_supply_area, assembly_fixture]
+    tip: R1_gripper_tip
 
   R2:
-    name: "元件装配机械臂"
-    model: DOBOT CR5
+    name: "PCB installation robot"
+    model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [-1.75, -0.30, 0]
+    position: [-1.55, -0.15, 0]
     base_object: R2_Base
     home_pose: [0, 0, 0, 0, 0, 0]
-    home_point: R2_Home
-    capabilities: [assemble, pick_and_place]
-    end_effector: small_gripper
-    work_area: [electronics_area, assembly_area]
+    home_point: R2_HOME_REF
+    capabilities: [pcb_install, pick_and_place]
+    end_effector: gripper
+    work_area: [pcb_supply_area, assembly_fixture]
+    tip: R2_gripper_tip
 
   R3:
-    name: "锁付检测机械臂"
-    model: DOBOT CR5
+    name: "Module installation and transfer robot"
+    model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [1.05, 0.40, 0]
+    position: [-0.55, 0.28, 0]
     base_object: R3_Base
     home_pose: [0, 0, 0, 0, 0, 0]
-    home_point: R3_Home
-    capabilities: [screw, inspect]
-    end_effector: screwdriver_and_camera
-    work_area: [inspection_screw_area]
+    home_point: R3_HOME_REF
+    capabilities: [module_install, transfer_to_inspection, pick_and_place]
+    end_effector: gripper
+    work_area: [module_supply_area, assembly_fixture, inspection_platform_area]
+    tip: R3_gripper_tip
 
   R4:
-    name: "分拣机械臂"
-    model: DOBOT CR5
+    name: "Terminal screw fastening robot"
+    model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [1.30, -0.65, 0]
+    position: [0.58, 0.25, 0]
     base_object: R4_Base
     home_pose: [0, 0, 0, 0, 0, 0]
-    home_point: R4_Home
-    capabilities: [sort_good, sort_defect]
+    home_point: R4_HOME_REF
+    capabilities: [screw]
+    end_effector: screwdriver
+    work_area: [inspection_screw_area, inspection_platform_area]
+    tip: R4_tool_tip
+
+  R5:
+    name: "Post-inspection sorting robot"
+    model: DOBOT CR5A
+    model_file: cr5_robot_fixed.urdf
+    position: [0.15, -0.50, 0]
+    base_object: R5_Base
+    home_pose: [0, 0, 0, 0, 0, 0]
+    home_point: R5_HOME_REF
+    capabilities: [sort_good, sort_defect, pick_and_place]
     end_effector: gripper
-    work_area: [inspection_area, sort_area]
-    note: "检测完成后分拣，合格→成品传送带(Y)，不合格→缺陷品传送带(X)"
+    work_area: [inspection_platform_area, good_conveyor_area, defect_conveyor_area]
+    tip: R5_gripper_tip
+
+resources:
+  CAMERA:
+    name: "Fixed inspection camera"
+    capabilities: [inspect]
+    work_area: [camera_area, inspection_platform_area]
+    target: CAMERA_INSPECTION_CENTER

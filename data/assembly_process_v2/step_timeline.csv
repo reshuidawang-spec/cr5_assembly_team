@@ -1,0 +1,79 @@
+﻿order_id,task_id,process,step_code,step_label,robot_id,target_point,start_time,end_time,duration,level
+B001,T0008,box_feed,box_pick_app,R1 到达箱体抓取接近点,R1,R1_BOX_PICK_APP,0.0,1.4,1.4,1
+B001,T0008,box_feed,box_pick_tcp,R1 抓取箱体壳,R1,R1_BOX_PICK_TCP,1.4,2.8,1.4,1
+B001,T0008,box_feed,box_place_app,R1 搬运至装配夹具接近点,R1,R1_BOX_PLACE_APP,2.8,4.9,2.1,1
+B001,T0008,box_feed,box_place_tcp,R1 放置箱体壳到装配夹具,R1,R1_BOX_PLACE_TCP,4.9,7.0,2.1,1
+A001,T0001,box_feed,box_pick_app,R1 到达箱体抓取接近点,R1,R1_BOX_PICK_APP,7.0,8.2,1.2,1
+A001,T0001,box_feed,box_pick_tcp,R1 抓取箱体壳,R1,R1_BOX_PICK_TCP,8.2,9.4,1.2,1
+A001,T0001,box_feed,box_place_app,R1 搬运至装配夹具接近点,R1,R1_BOX_PLACE_APP,9.4,11.2,1.8,1
+A001,T0001,box_feed,box_place_tcp,R1 放置箱体壳到装配夹具,R1,R1_BOX_PLACE_TCP,11.2,13.0,1.8,1
+B001,T0009,pcb_install,pcb_pick,R2 抓取 PCB 板,R2,R2_PCB_PICK_TCP,13.0,15.8,2.8,3
+B001,T0009,pcb_install,pcb_align,R2 对准 PCB 定位孔,R2,R2_PCB_PLACE_APP,15.8,18.2,2.4,3
+B001,T0009,pcb_install,pcb_place,R2 安装 PCB 板,R2,R2_PCB_PLACE_TCP,18.2,21.8,3.6,3
+B001,T0009,pcb_install,pcb_feature_check,确认 PCB 板载元件朝向,R2,R2_PCB_PLACE_TCP,21.8,23.0,1.2,3
+C_URGENT,T0015,box_feed,box_pick_app,R1 到达箱体抓取接近点,R1,R1_BOX_PICK_APP,23.0,24.6,1.6,1
+C_URGENT,T0015,box_feed,box_pick_tcp,R1 抓取箱体壳,R1,R1_BOX_PICK_TCP,24.6,26.2,1.6,1
+C_URGENT,T0015,box_feed,box_place_app,R1 搬运至装配夹具接近点,R1,R1_BOX_PLACE_APP,26.2,28.6,2.4,1
+C_URGENT,T0015,box_feed,box_place_tcp,R1 放置箱体壳到装配夹具,R1,R1_BOX_PLACE_TCP,28.6,31.0,2.4,1
+C_URGENT,T0016,pcb_install,pcb_pick,R2 抓取 PCB 板,R2,R2_PCB_PICK_TCP,31.0,34.36,3.36,3
+C_URGENT,T0016,pcb_install,pcb_align,R2 对准 PCB 定位孔,R2,R2_PCB_PLACE_APP,34.36,37.24,2.88,3
+C_URGENT,T0016,pcb_install,pcb_place,R2 安装 PCB 板,R2,R2_PCB_PLACE_TCP,37.24,41.56,4.32,3
+C_URGENT,T0016,pcb_install,pcb_feature_check,确认 PCB 板载元件朝向,R2,R2_PCB_PLACE_TCP,41.56,43.0,1.44,3
+C_URGENT,T0017,module_install,module_pick,R3 抓取控制模块本体,R3,R3_MODULE_PICK_TCP,43.0,45.8,2.8,5
+C_URGENT,T0017,module_install,module_align,R3 对准控制模块安装位置,R3,R3_MODULE_PLACE_APP,45.8,48.2,2.4,5
+C_URGENT,T0017,module_install,module_place,R3 安装控制模块本体,R3,R3_MODULE_PLACE_TCP,48.2,51.8,3.6,5
+C_URGENT,T0017,module_install,module_label_check,确认控制模块标签方向,R3,R3_MODULE_PLACE_TCP,51.8,53.0,1.2,5
+C_URGENT,T0018,terminal_install,terminal_pick,R1 抓取端子排本体,R1,R1_TERMINAL_PICK_TCP,53.0,55.8,2.8,8
+C_URGENT,T0018,terminal_install,terminal_align,R1 对准端子排安装位置,R1,R1_TERMINAL_PLACE_APP,55.8,58.2,2.4,8
+C_URGENT,T0018,terminal_install,terminal_place,R1 安装端子排本体,R1,R1_TERMINAL_PLACE_TCP,58.2,61.8,3.6,8
+C_URGENT,T0018,terminal_install,terminal_slot_check,确认端子排接线槽朝向,R1,R1_TERMINAL_PLACE_TCP,61.8,63.0,1.2,8
+C_URGENT,T0019,transfer_to_inspection,product_pick,R3 从装配夹具抓取完整装配体,R3,R3_PRODUCT_PICK_TCP,63.0,66.5,3.5,9
+C_URGENT,T0019,transfer_to_inspection,product_transfer,R3 转移到检测平台,R3,R3_PRODUCT_PLACE_INSPECTION_APP,66.5,70.0,3.5,9
+C_URGENT,T0019,transfer_to_inspection,product_place,R3 放置完整装配体,R3,R3_PRODUCT_PLACE_INSPECTION_TCP,70.0,73.0,3.0,9
+C_URGENT,T0020,inspect,camera_position,固定相机定位检测区域,CAMERA,CAMERA_INSPECTION_CENTER,73.0,74.75,1.75,10
+C_URGENT,T0020,inspect,camera_detect,相机检测并输出 OK/NG,CAMERA,CAMERA_INSPECTION_CENTER,74.75,80.0,5.25,10
+A001,T0002,pcb_install,pcb_pick,R2 抓取 PCB 板,R2,R2_PCB_PICK_TCP,73.0,75.24,2.24,3
+A001,T0002,pcb_install,pcb_align,R2 对准 PCB 定位孔,R2,R2_PCB_PLACE_APP,75.24,77.16,1.92,3
+A001,T0002,pcb_install,pcb_place,R2 安装 PCB 板,R2,R2_PCB_PLACE_TCP,77.16,80.04,2.88,3
+A001,T0002,pcb_install,pcb_feature_check,确认 PCB 板载元件朝向,R2,R2_PCB_PLACE_TCP,80.04,81.0,0.96,3
+C_URGENT,T0021,screw,screw_app,R4 到达螺钉接近点,R4,R4_SCREW_APP,80.0,83.25,3.25,11
+C_URGENT,T0021,screw,screw_touch,R4 接触端子排主螺钉头,R4,R4_SCREW_TCP,83.25,86.5,3.25,11
+C_URGENT,T0021,screw,screw_press,R4 下压并完成锁付,R4,R4_SCREW_PRESS,86.5,93.0,6.5,11
+B001,T0010,module_install,module_pick,R3 抓取控制模块本体,R3,R3_MODULE_PICK_TCP,81.0,83.52,2.52,5
+B001,T0010,module_install,module_align,R3 对准控制模块安装位置,R3,R3_MODULE_PLACE_APP,83.52,85.68,2.16,5
+B001,T0010,module_install,module_place,R3 安装控制模块本体,R3,R3_MODULE_PLACE_TCP,85.68,88.92,3.24,5
+B001,T0010,module_install,module_label_check,确认控制模块标签方向,R3,R3_MODULE_PLACE_TCP,88.92,90.0,1.08,5
+A001,T0003,module_install,module_pick,R3 抓取控制模块本体,R3,R3_MODULE_PICK_TCP,90.0,91.96,1.96,5
+A001,T0003,module_install,module_align,R3 对准控制模块安装位置,R3,R3_MODULE_PLACE_APP,91.96,93.64,1.68,5
+A001,T0003,module_install,module_place,R3 安装控制模块本体,R3,R3_MODULE_PLACE_TCP,93.64,96.16,2.52,5
+A001,T0003,module_install,module_label_check,确认控制模块标签方向,R3,R3_MODULE_PLACE_TCP,96.16,97.0,0.84,5
+C_URGENT,T0022,sort_good,good_pick,R5 从检测平台抓取合格品,R5,R5_PRODUCT_PICK_TCP,93.0,95.25,2.25,12
+C_URGENT,T0022,sort_good,good_place,R5 放置到合格品传送带,R5,R5_GOOD_PLACE_TCP,95.25,98.0,2.75,12
+A001,T0004,terminal_install,terminal_pick,R1 抓取端子排本体,R1,R1_TERMINAL_PICK_TCP,97.0,98.96,1.96,8
+A001,T0004,terminal_install,terminal_align,R1 对准端子排安装位置,R1,R1_TERMINAL_PLACE_APP,98.96,100.64,1.68,8
+A001,T0004,terminal_install,terminal_place,R1 安装端子排本体,R1,R1_TERMINAL_PLACE_TCP,100.64,103.16,2.52,8
+A001,T0004,terminal_install,terminal_slot_check,确认端子排接线槽朝向,R1,R1_TERMINAL_PLACE_TCP,103.16,104.0,0.84,8
+B001,T0011,terminal_install,terminal_pick,R1 抓取端子排本体,R1,R1_TERMINAL_PICK_TCP,104.0,106.24,2.24,8
+B001,T0011,terminal_install,terminal_align,R1 对准端子排安装位置,R1,R1_TERMINAL_PLACE_APP,106.24,108.16,1.92,8
+B001,T0011,terminal_install,terminal_place,R1 安装端子排本体,R1,R1_TERMINAL_PLACE_TCP,108.16,111.04,2.88,8
+B001,T0011,terminal_install,terminal_slot_check,确认端子排接线槽朝向,R1,R1_TERMINAL_PLACE_TCP,111.04,112.0,0.96,8
+A001,T0005,transfer_to_inspection,product_pick,R3 从装配夹具抓取完整装配体,R3,R3_PRODUCT_PICK_TCP,112.0,114.8,2.8,9
+A001,T0005,transfer_to_inspection,product_transfer,R3 转移到检测平台,R3,R3_PRODUCT_PLACE_INSPECTION_APP,114.8,117.6,2.8,9
+A001,T0005,transfer_to_inspection,product_place,R3 放置完整装配体,R3,R3_PRODUCT_PLACE_INSPECTION_TCP,117.6,120.0,2.4,9
+A001,T0006,inspect,camera_position,固定相机定位检测区域,CAMERA,CAMERA_INSPECTION_CENTER,120.0,121.25,1.25,10
+A001,T0006,inspect,camera_detect,相机检测并输出 OK/NG,CAMERA,CAMERA_INSPECTION_CENTER,121.25,125.0,3.75,10
+B001,T0012,transfer_to_inspection,product_pick,R3 从装配夹具抓取完整装配体,R3,R3_PRODUCT_PICK_TCP,125.0,128.15,3.15,9
+B001,T0012,transfer_to_inspection,product_transfer,R3 转移到检测平台,R3,R3_PRODUCT_PLACE_INSPECTION_APP,128.15,131.3,3.15,9
+B001,T0012,transfer_to_inspection,product_place,R3 放置完整装配体,R3,R3_PRODUCT_PLACE_INSPECTION_TCP,131.3,134.0,2.7,9
+A001,T0007,screw,screw_app,R4 到达螺钉接近点,R4,R4_SCREW_APP,134.0,136.25,2.25,11
+A001,T0007,screw,screw_touch,R4 接触端子排主螺钉头,R4,R4_SCREW_TCP,136.25,138.5,2.25,11
+A001,T0007,screw,screw_press,R4 下压并完成锁付,R4,R4_SCREW_PRESS,138.5,143.0,4.5,11
+B001,T0013,inspect,camera_position,固定相机定位检测区域,CAMERA,CAMERA_INSPECTION_CENTER,143.0,144.5,1.5,10
+B001,T0013,inspect,camera_detect,相机检测并输出 OK/NG,CAMERA,CAMERA_INSPECTION_CENTER,144.5,149.0,4.5,10
+B001,T0014,screw,screw_app,R4 到达螺钉接近点,R4,R4_SCREW_APP,149.0,151.75,2.75,11
+B001,T0014,screw,screw_touch,R4 接触端子排主螺钉头,R4,R4_SCREW_TCP,151.75,154.5,2.75,11
+B001,T0014,screw,screw_press,R4 下压并完成锁付,R4,R4_SCREW_PRESS,154.5,160.0,5.5,11
+A001,T0023,sort_defect,defect_pick,R5 从检测平台抓取缺陷品,R5,R5_PRODUCT_PICK_TCP,160.0,162.25,2.25,12
+A001,T0023,sort_defect,defect_place,R5 放置到缺陷品传送带,R5,R5_DEFECT_PLACE_TCP,162.25,165.0,2.75,12
+B001,T0024,sort_good,good_pick,R5 从检测平台抓取合格品,R5,R5_PRODUCT_PICK_TCP,165.0,167.25,2.25,12
+B001,T0024,sort_good,good_place,R5 放置到合格品传送带,R5,R5_GOOD_PLACE_TCP,167.25,170.0,2.75,12

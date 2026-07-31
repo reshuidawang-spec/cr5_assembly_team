@@ -1,0 +1,29 @@
+﻿scheme_id,scheme_name,scenario_id,scenario_name,fault_robot,fault_start,repair_duration,makespan,urgent_response_time,urgent_completion_time,average_waiting_time,weighted_tardiness,parallel_efficiency,conflict_count,throughput,r3_utilization
+scheme_a_serial,方案A：最基本串行,normal,无故障正常生产,NONE,0.0,0.0,195.0,100.0,195.0,0.0,525.0,0.1667,0,0.0154,0.2718
+scheme_a_serial,方案A：最基本串行,r1_start_fault_repair,R1 开局故障，18s 后修复,R1,0.0,18.0,213.0,118.0,213.0,0.75,615.0,0.1526,0,0.0141,0.2488
+scheme_a_serial,方案A：最基本串行,r2_mid_fault_repair,R2 在 PCB 安装窗口故障，18s 后修复,R2,31.0,18.0,195.0,100.0,195.0,0.0,525.0,0.1667,0,0.0154,0.2718
+scheme_a_serial,方案A：最基本串行,r3_mid_fault_repair,R3 在模块安装/转移窗口故障，18s 后修复,R3,45.0,18.0,195.0,100.0,195.0,0.0,525.0,0.1667,0,0.0154,0.2718
+scheme_a_serial,方案A：最基本串行,r4_mid_fault_repair,R4 在锁付窗口故障，18s 后修复,R4,82.0,18.0,195.0,100.0,195.0,0.0,525.0,0.1667,0,0.0154,0.2718
+scheme_a_serial,方案A：最基本串行,r5_late_fault_repair,R5 在分拣窗口故障，18s 后修复,R5,93.0,18.0,195.0,100.0,195.0,0.0,525.0,0.1667,0,0.0154,0.2718
+scheme_a_serial,方案A：最基本串行,camera_mid_fault_repair,固定相机在检测窗口故障，18s 后修复,CAMERA,73.0,18.0,195.0,100.0,195.0,0.0,525.0,0.1667,0,0.0154,0.2718
+scheme_b_parallel_fifo,方案B：基础并行 FIFO,normal,无故障正常生产,NONE,0.0,0.0,154.0,59.0,154.0,3.96,320.0,0.211,17,0.0195,0.3442
+scheme_b_parallel_fifo,方案B：基础并行 FIFO,r1_start_fault_repair,R1 开局故障，18s 后修复,R1,0.0,18.0,172.0,77.0,172.0,6.21,410.0,0.189,22,0.0174,0.3081
+scheme_b_parallel_fifo,方案B：基础并行 FIFO,r2_mid_fault_repair,R2 在 PCB 安装窗口故障，18s 后修复,R2,31.0,18.0,154.0,23.0,154.0,4.29,320.0,0.211,19,0.0195,0.3442
+scheme_b_parallel_fifo,方案B：基础并行 FIFO,r3_mid_fault_repair,R3 在模块安装/转移窗口故障，18s 后修复,R3,45.0,18.0,156.0,33.0,156.0,4.88,330.0,0.2083,17,0.0192,0.3397
+scheme_b_parallel_fifo,方案B：基础并行 FIFO,r4_mid_fault_repair,R4 在锁付窗口故障，18s 后修复,R4,82.0,18.0,160.0,59.0,160.0,6.46,350.0,0.2031,25,0.0187,0.3312
+scheme_b_parallel_fifo,方案B：基础并行 FIFO,r5_late_fault_repair,R5 在分拣窗口故障，18s 后修复,R5,93.0,18.0,159.0,59.0,159.0,6.38,345.0,0.2044,24,0.0189,0.3333
+scheme_b_parallel_fifo,方案B：基础并行 FIFO,camera_mid_fault_repair,固定相机在检测窗口故障，18s 后修复,CAMERA,73.0,18.0,156.0,59.0,156.0,4.88,330.0,0.2083,20,0.0192,0.3397
+scheme_c_critical_path,方案C：单一关键路径优先,normal,无故障正常生产,NONE,0.0,0.0,188.0,3.0,178.0,13.92,554.0,0.1729,46,0.016,0.2819
+scheme_c_critical_path,方案C：单一关键路径优先,r1_start_fault_repair,R1 开局故障，18s 后修复,R1,0.0,18.0,206.0,5.0,196.0,16.17,698.0,0.1578,49,0.0146,0.2573
+scheme_c_critical_path,方案C：单一关键路径优先,r2_mid_fault_repair,R2 在 PCB 安装窗口故障，18s 后修复,R2,31.0,18.0,166.0,3.0,161.0,7.96,401.0,0.1958,25,0.0181,0.3193
+scheme_c_critical_path,方案C：单一关键路径优先,r3_mid_fault_repair,R3 在模块安装/转移窗口故障，18s 后修复,R3,45.0,18.0,200.0,3.0,190.0,15.33,650.0,0.1625,43,0.015,0.265
+scheme_c_critical_path,方案C：单一关键路径优先,r4_mid_fault_repair,R4 在锁付窗口故障，18s 后修复,R4,82.0,18.0,188.0,3.0,178.0,13.92,554.0,0.1729,48,0.016,0.2819
+scheme_c_critical_path,方案C：单一关键路径优先,r5_late_fault_repair,R5 在分拣窗口故障，18s 后修复,R5,93.0,18.0,188.0,3.0,178.0,13.92,554.0,0.1729,48,0.016,0.2819
+scheme_c_critical_path,方案C：单一关键路径优先,camera_mid_fault_repair,固定相机在检测窗口故障，18s 后修复,CAMERA,73.0,18.0,188.0,3.0,178.0,13.92,554.0,0.1729,48,0.016,0.2819
+scheme_d_proposed,方案D：综合优化调度,normal,无故障正常生产,NONE,0.0,0.0,170.0,3.0,98.0,9.08,105.0,0.1912,36,0.0176,0.3118
+scheme_d_proposed,方案D：综合优化调度,r1_start_fault_repair,R1 开局故障，18s 后修复,R1,0.0,18.0,188.0,5.0,100.0,10.29,146.0,0.1729,35,0.016,0.2819
+scheme_d_proposed,方案D：综合优化调度,r2_mid_fault_repair,R2 在 PCB 安装窗口故障，18s 后修复,R2,31.0,18.0,151.0,3.0,124.0,5.79,201.0,0.2152,16,0.0199,0.351
+scheme_d_proposed,方案D：综合优化调度,r3_mid_fault_repair,R3 在模块安装/转移窗口故障，18s 后修复,R3,45.0,18.0,182.0,3.0,118.0,10.83,236.0,0.1786,26,0.0165,0.2912
+scheme_d_proposed,方案D：综合优化调度,r4_mid_fault_repair,R4 在锁付窗口故障，18s 后修复,R4,82.0,18.0,180.0,3.0,122.0,10.83,250.0,0.1806,37,0.0167,0.2944
+scheme_d_proposed,方案D：综合优化调度,r5_late_fault_repair,R5 在分拣窗口故障，18s 后修复,R5,93.0,18.0,175.0,3.0,117.0,10.29,215.0,0.1857,36,0.0171,0.3029
+scheme_d_proposed,方案D：综合优化调度,camera_mid_fault_repair,固定相机在检测窗口故障，18s 后修复,CAMERA,73.0,18.0,180.0,3.0,122.0,10.92,250.0,0.1806,35,0.0167,0.2944

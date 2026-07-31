@@ -1,0 +1,317 @@
+{
+  "status": "finished",
+  "order_id": "FIVE-ARM-GOOD-ACCEPTANCE",
+  "quality": "GOOD",
+  "scene": "/home/vboxuser/桌面/cr5_assembly_team/scenes/five_cr5a_cell.ttt",
+  "started_at_epoch_s": 1784459380.1974454,
+  "tasks": [
+    {
+      "task": {
+        "task_id": "CELL-01-R1_BOX_PLACED",
+        "order_id": "FIVE-ARM-GOOD-ACCEPTANCE",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R1_BOX_PLACED",
+        "available_robots": [
+          "R1"
+        ],
+        "duration": 5.0,
+        "predecessors": [],
+        "priority": 1,
+        "status": "pending"
+      },
+      "start_wall_epoch_s": 1784459380.19746,
+      "start_simulation_time_s": 0.0,
+      "handoff_delay_simulation_s": null,
+      "end_wall_epoch_s": 1784459425.7216094,
+      "end_simulation_time_s": 27.650000000000258,
+      "wall_duration_s": 45.5241494178772,
+      "simulation_duration_s": 27.650000000000258,
+      "result": {
+        "task_id": "CELL-01-R1_BOX_PLACED",
+        "robot_id": "R1",
+        "status": "finished",
+        "start_time": 1784459380.1977358,
+        "end_time": 1784459425.7215977,
+        "message": "R1_BOX_PLACED completed (visual attach; physical grasp not validated); {'action': 'R1_BOX_PLACED', 'visual_grasp_only': True, 'final_joint_positions_deg': [75.663527, 30.400484, 65.166023, -5.573394, -89.99787, -49.336637], 'box_position': [-1.150002, 0.1999, 0.215915], 'terminal_position': [-1.9, 0.1, 0.1735], 'terminal_visual_offset_m': 0.028}",
+        "quality_result": ""
+      }
+    },
+    {
+      "task": {
+        "task_id": "CELL-02-R2_PCB_PLACED",
+        "order_id": "FIVE-ARM-GOOD-ACCEPTANCE",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R2_PCB_PLACED",
+        "available_robots": [
+          "R2"
+        ],
+        "duration": 5.0,
+        "predecessors": [],
+        "priority": 1,
+        "status": "pending"
+      },
+      "start_wall_epoch_s": 1784459425.7218566,
+      "start_simulation_time_s": 27.650000000000258,
+      "handoff_delay_simulation_s": 0.0,
+      "end_wall_epoch_s": 1784459469.1728745,
+      "end_simulation_time_s": 58.39999999999882,
+      "wall_duration_s": 43.4510178565979,
+      "simulation_duration_s": 30.74999999999856,
+      "result": {
+        "task_id": "CELL-02-R2_PCB_PLACED",
+        "robot_id": "R2",
+        "status": "finished",
+        "start_time": 1784459425.7220604,
+        "end_time": 1784459469.172862,
+        "message": "R2_PCB_PLACED completed (visual suction; physical grasp not validated); {'action': 'R2_PCB_PLACED', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, 90.0], 'virtual_tcp_offset_m': 0.1, 'pcb_visual_offset_m': 0.052, 'final_joint_positions_deg': [-9.1e-05, 0.000633, -0.000607, 0.00041, 0.000463, -0.000766], 'pcb_position': [-1.150058, 0.200161, 0.281739], 'box_position': [-1.150002, 0.1999, 0.215915]}",
+        "quality_result": ""
+      }
+    },
+    {
+      "task": {
+        "task_id": "CELL-03-R3_MODULE_PLACED",
+        "order_id": "FIVE-ARM-GOOD-ACCEPTANCE",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R3_MODULE_PLACED",
+        "available_robots": [
+          "R3"
+        ],
+        "duration": 5.0,
+        "predecessors": [],
+        "priority": 1,
+        "status": "pending"
+      },
+      "start_wall_epoch_s": 1784459469.1730433,
+      "start_simulation_time_s": 58.39999999999882,
+      "handoff_delay_simulation_s": 0.0,
+      "end_wall_epoch_s": 1784459499.7969568,
+      "end_simulation_time_s": 81.24999999999753,
+      "wall_duration_s": 30.623913526535034,
+      "simulation_duration_s": 22.84999999999871,
+      "result": {
+        "task_id": "CELL-03-R3_MODULE_PLACED",
+        "robot_id": "R3",
+        "status": "finished",
+        "start_time": 1784459469.17319,
+        "end_time": 1784459499.7969465,
+        "message": "R3_MODULE_PLACED completed (visual suction; physical grasp not validated); {'action': 'R3_MODULE_PLACED', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, -135.0], 'virtual_tcp_offset_m': 0.1, 'final_joint_positions_deg': [0.000177, 0.001009, 2.4e-05, -0.000778, -2.2e-05, -0.000558], 'payload_position': [-1.119679, 0.219819, 0.319549], 'module_visual_offset_m': 0.046}",
+        "quality_result": ""
+      }
+    },
+    {
+      "task": {
+        "task_id": "CELL-04-R1_TERMINAL_PLACED",
+        "order_id": "FIVE-ARM-GOOD-ACCEPTANCE",
+        "product_type": "A",
+        "process": "assemble",
+        "target_area": "assembly_area",
+        "target_point": "R1_TERMINAL_PLACED",
+        "available_robots": [
+          "R1"
+        ],
+        "duration": 5.0,
+        "predecessors": [],
+        "priority": 1,
+        "status": "pending"
+      },
+      "start_wall_epoch_s": 1784459499.7971513,
+      "start_simulation_time_s": 81.24999999999753,
+      "handoff_delay_simulation_s": 0.0,
+      "end_wall_epoch_s": 1784459534.3515556,
+      "end_simulation_time_s": 102.99999999999629,
+      "wall_duration_s": 34.55440425872803,
+      "simulation_duration_s": 21.749999999998764,
+      "result": {
+        "task_id": "CELL-04-R1_TERMINAL_PLACED",
+        "robot_id": "R1",
+        "status": "finished",
+        "start_time": 1784459499.7973688,
+        "end_time": 1784459534.3515387,
+        "message": "R1_TERMINAL_PLACED completed (visual attach; physical grasp not validated); {'action': 'R1_TERMINAL_PLACED', 'visual_grasp_only': True, 'final_joint_positions_deg': [0.000482, -0.00029, 2e-06, 0.001642, -0.0, 0.000188], 'box_position': [-1.150002, 0.1999, 0.215915], 'terminal_position': [-1.089622, 0.129917, 0.329536], 'terminal_visual_offset_m': 0.056}",
+        "quality_result": ""
+      }
+    },
+    {
+      "task": {
+        "task_id": "CELL-05-R3_PRODUCT_TO_INSPECTION",
+        "order_id": "FIVE-ARM-GOOD-ACCEPTANCE",
+        "product_type": "A",
+        "process": "transfer",
+        "target_area": "inspection_screw_area",
+        "target_point": "R3_PRODUCT_TO_INSPECTION",
+        "available_robots": [
+          "R3"
+        ],
+        "duration": 5.0,
+        "predecessors": [],
+        "priority": 1,
+        "status": "pending"
+      },
+      "start_wall_epoch_s": 1784459534.3517697,
+      "start_simulation_time_s": 102.99999999999629,
+      "handoff_delay_simulation_s": 0.0,
+      "end_wall_epoch_s": 1784459589.7026436,
+      "end_simulation_time_s": 139.1999999999974,
+      "wall_duration_s": 55.350873947143555,
+      "simulation_duration_s": 36.20000000000111,
+      "result": {
+        "task_id": "CELL-05-R3_PRODUCT_TO_INSPECTION",
+        "robot_id": "R3",
+        "status": "finished",
+        "start_time": 1784459534.351913,
+        "end_time": 1784459589.7026317,
+        "message": "R3_PRODUCT_TO_INSPECTION completed (visual suction; physical grasp not validated); {'action': 'R3_PRODUCT_TO_INSPECTION', 'visual_suction_only': True, 'runtime_orientation_deg': [195.0, 0.0, -135.0], 'virtual_tcp_offset_m': 0.1, 'final_joint_positions_deg': [-0.000999, 0.000299, 0.000193, 0.001519, -0.000302, -0.000102], 'payload_position': [0.150143, 0.049949, 0.216003], 'template_stage_swap': True, 'product_visual_lift_m': 0.1}",
+        "quality_result": ""
+      }
+    },
+    {
+      "task": {
+        "task_id": "CELL-06-R4_SCREW_DONE",
+        "order_id": "FIVE-ARM-GOOD-ACCEPTANCE",
+        "product_type": "A",
+        "process": "screw",
+        "target_area": "inspection_screw_area",
+        "target_point": "R4_SCREW_DONE",
+        "available_robots": [
+          "R4"
+        ],
+        "duration": 5.0,
+        "predecessors": [],
+        "priority": 1,
+        "status": "pending"
+      },
+      "start_wall_epoch_s": 1784459589.769263,
+      "start_simulation_time_s": 139.2499999999974,
+      "handoff_delay_simulation_s": 0.05000000000001137,
+      "end_wall_epoch_s": 1784459613.3536997,
+      "end_simulation_time_s": 156.3000000000013,
+      "wall_duration_s": 23.584436655044556,
+      "simulation_duration_s": 17.050000000003877,
+      "result": {
+        "task_id": "CELL-06-R4_SCREW_DONE",
+        "robot_id": "R4",
+        "status": "finished",
+        "start_time": 1784459589.7694035,
+        "end_time": 1784459613.353684,
+        "message": "R4_SCREW_DONE completed (runtime visual screwdriver; physical torque not validated); {'action': 'R4_SCREW_DONE', 'visual_screwdriver_only': True, 'physical_torque_validated': False, 'runtime_orientation_deg': [180.0, 0.0, -135.0], 'runtime_tool_tcp_offset_m': 0.1, 'rotation_turns': 2.0, 'final_joint_positions_deg': [0.00038, 0.000476, -0.000103, 0.000632, 6.1e-05, 0.000109]}",
+        "quality_result": ""
+      }
+    },
+    {
+      "task": {
+        "task_id": "CELL-07-R5_SORT_GOOD_DONE",
+        "order_id": "FIVE-ARM-GOOD-ACCEPTANCE",
+        "product_type": "A",
+        "process": "sort_good",
+        "target_area": "sort_area",
+        "target_point": "R5_SORT_GOOD_DONE",
+        "available_robots": [
+          "R5"
+        ],
+        "duration": 5.0,
+        "predecessors": [],
+        "priority": 1,
+        "status": "pending"
+      },
+      "start_wall_epoch_s": 1784459613.354244,
+      "start_simulation_time_s": 156.3000000000013,
+      "handoff_delay_simulation_s": 0.0,
+      "end_wall_epoch_s": 1784459699.7119002,
+      "end_simulation_time_s": 210.60000000001364,
+      "wall_duration_s": 86.35765624046326,
+      "simulation_duration_s": 54.300000000012346,
+      "result": {
+        "task_id": "CELL-07-R5_SORT_GOOD_DONE",
+        "robot_id": "R5",
+        "status": "finished",
+        "start_time": 1784459613.3546398,
+        "end_time": 1784459699.7118886,
+        "message": "R5_SORT_GOOD_DONE completed (visual suction; physical grasp not validated); {'action': 'R5_SORT_GOOD_DONE', 'visual_suction_only': True, 'physical_grasp_validated': False, 'runtime_pick_orientation_deg': [195.0, -45.0, 0.0], 'runtime_place_orientation_deg': [150.0, 45.0, 45.0], 'runtime_tool_tcp_offset_m': 0.1, 'belt_height_correction_m': -0.026, 'product_app_alignment': True, 'good_visual_handoff_after_robot_clear': True, 'good_product_visual_lift_m': 0.1, 'good_product_visual_offset_x_m': 0.38, 'good_product_visual_offset_y_m': 0.0, 'good_product_visual_offset_relief_x_m': -0.28, 'final_joint_positions_deg': [-0.000897, -0.003519, -0.000594, 0.001264, 9.4e-05, -0.008758], 'conveyor_branch': 'good', 'product_position': [0.65, -1.181, 0.27]}",
+        "quality_result": ""
+      }
+    }
+  ],
+  "camera": {
+    "quality": "GOOD",
+    "signal": "camera_good",
+    "simulation_time_before": 139.1999999999974,
+    "simulation_time_after": 139.2499999999974
+  },
+  "finished_at_epoch_s": 1784459699.7123694,
+  "wall_duration_s": 319.51492404937744,
+  "robot_states": [
+    {
+      "robot_id": "R1",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 2
+    },
+    {
+      "robot_id": "R2",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    },
+    {
+      "robot_id": "R3",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 2
+    },
+    {
+      "robot_id": "R4",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    },
+    {
+      "robot_id": "R5",
+      "status": "idle",
+      "current_task": null,
+      "position": "home",
+      "utilization": 0.0,
+      "completed_tasks": 1
+    }
+  ],
+  "independent_postflight": {
+    "simulation_state": 17,
+    "simulation_time_before": 281.65000000002976,
+    "simulation_time_after": 281.7000000000298,
+    "simulation_time_advanced": true,
+    "max_home_error_deg": {
+      "R1": 0.001641604612597329,
+      "R2": 0.000766036128611587,
+      "R3": 0.001519203226907018,
+      "R4": 0.0006318292976169085,
+      "R5": 0.008758018583901052
+    },
+    "runtime_objects": [],
+    "inspection_product": {
+      "position_after_good_conveyor": [0.65, -2.2, 0.27],
+      "parent": "/Parts",
+      "visible_shapes": 30
+    },
+    "final_robot_collision_free": {
+      "R1": true,
+      "R2": true,
+      "R3": true,
+      "R4": true,
+      "R5": true
+    },
+    "failures": []
+  }
+}

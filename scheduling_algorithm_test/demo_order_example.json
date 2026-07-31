@@ -1,0 +1,50 @@
+{
+  "updated_at": 0,
+  "scoring": {
+    "priority_weight": 0.45,
+    "due_weight": 0.30,
+    "lateness_risk_weight": 0.18,
+    "waiting_weight": 0.15,
+    "post_inspection_clearance_bonus": 0.40,
+    "screw_clearance_bonus": 0.35,
+    "urgent_due_boost": 0.20
+  },
+  "orders": [
+    {
+      "order_id": "A001",
+      "product_type": "A",
+      "quantity": 3,
+      "priority": 1,
+      "arrival_time": 0,
+      "due_time": 300,
+      "quality": "AUTO"
+    },
+    {
+      "order_id": "B001",
+      "product_type": "B",
+      "quantity": 1,
+      "priority": 2,
+      "arrival_time": 0,
+      "due_time": 340,
+      "quality": "AUTO"
+    },
+    {
+      "order_id": "C001",
+      "product_type": "C",
+      "quantity": 2,
+      "priority": 2,
+      "arrival_time": 0,
+      "due_time": 410,
+      "quality": "AUTO"
+    },
+    {
+      "order_id": "URG_C001",
+      "product_type": "C",
+      "quantity": 1,
+      "priority": 5,
+      "arrival_time": 20,
+      "due_time": 115,
+      "quality": "OK"
+    }
+  ]
+}

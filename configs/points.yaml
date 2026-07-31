@@ -1,96 +1,247 @@
-# 四臂 Mock 原型点位表（尚未与 scenes/ 五臂 CR5A 场景统一）
-# 不应据此在 FiveCR5A_Cell 中创建对象；五臂场景目标点见
-# scenes/main_cell_generator.lua 与 docs/SCENE_BUILDING_GUIDE.md。
+# Target point table for the Five CR5A electrical control box cell.
+# Names are aligned with docs/Five_CR5A_Cell_Control_Interface.md.
 
-# ---- R1 (CR5) 箱体上料 ----
-P_FEED_01:
+R1_HOME_REF:
   robot: R1
-  area: box_area
-  action: feed
-  position: [-2.55, 0.55, 0.45]
-  description: "箱体抓取点 — Box_Area 上方"
+  area: r1_home
+  action: home
+  position: [-1.47, 0.67, 0.80]
+  description: "R1 home reference"
 
-# ---- R2 (CR5) 电子元件安装 ----
-P_ASSEMBLY_01:
+R1_BOX_PICK_APP:
+  robot: R1
+  area: box_supply_area
+  action: box_pick_approach
+  position: [-1.80, 0.35, 0.55]
+  description: "Box pick approach"
+
+R1_BOX_PICK_TCP:
+  robot: R1
+  area: box_supply_area
+  action: box_pick
+  position: [-1.80, 0.35, 0.30]
+  description: "Box pick TCP"
+
+R1_BOX_PLACE_APP:
+  robot: R1
+  area: assembly_fixture
+  action: box_place_approach
+  position: [-1.15, 0.20, 0.55]
+  description: "Box place approach"
+
+R1_BOX_PLACE_TCP:
+  robot: R1
+  area: assembly_fixture
+  action: box_feed
+  position: [-1.15, 0.20, 0.30]
+  description: "Place box into assembly fixture"
+
+R1_TERMINAL_PICK_APP:
+  robot: R1
+  area: terminal_supply_area
+  action: terminal_pick_approach
+  position: [-1.90, 0.10, 0.45]
+  description: "Terminal block pick approach"
+
+R1_TERMINAL_PICK_TCP:
+  robot: R1
+  area: terminal_supply_area
+  action: terminal_pick
+  position: [-1.90, 0.10, 0.24]
+  description: "Terminal block pick TCP"
+
+R1_TERMINAL_PLACE_APP:
+  robot: R1
+  area: assembly_fixture
+  action: terminal_place_approach
+  position: [-1.09, 0.13, 0.50]
+  description: "Terminal block place approach"
+
+R1_TERMINAL_PLACE_TCP:
+  robot: R1
+  area: assembly_fixture
+  action: terminal_install
+  position: [-1.09, 0.13, 0.34]
+  description: "Install terminal block"
+
+R2_HOME_REF:
   robot: R2
-  area: electronics_area
-  action: assemble
-  position: [-1.25, 0.65, 0.42]
-  description: "PCB取料点 — Electronics_Area 上方"
+  area: r2_home
+  action: home
+  position: [-1.55, -0.15, 0.80]
+  description: "R2 home reference"
 
-P_ASSEMBLY_02:
+R2_PCB_PICK_APP:
   robot: R2
-  area: assembly_area
-  action: assemble
-  position: [-0.75, -0.35, 0.52]
-  description: "PCB安装点 — Assembly_Area 夹具上方"
+  area: pcb_supply_area
+  action: pcb_pick_approach
+  position: [-1.28, -0.28, 0.45]
+  description: "PCB pick approach"
 
-# ---- R3 (CR5) 检测+锁付 ----
-P_SCREW_01:
-  robot: R3
-  area: screw_area
-  action: screw
-  position: [1.90, 0.64, 0.28]
-  description: "螺钉取料点 — Screw_Tray(2.05,0.70) 上方"
+R2_PCB_PICK_TCP:
+  robot: R2
+  area: pcb_supply_area
+  action: pcb_pick
+  position: [-1.28, -0.28, 0.22]
+  description: "PCB pick TCP"
 
-P_SCREW_02:
+R2_PCB_PLACE_APP:
+  robot: R2
+  area: assembly_fixture
+  action: pcb_place_approach
+  position: [-1.15, 0.20, 0.50]
+  description: "PCB place approach"
+
+R2_PCB_PLACE_TCP:
+  robot: R2
+  area: assembly_fixture
+  action: pcb_install
+  position: [-1.15, 0.20, 0.29]
+  description: "Install PCB"
+
+R3_HOME_REF:
   robot: R3
+  area: r3_home
+  action: home
+  position: [-0.55, 0.28, 0.80]
+  description: "R3 home reference"
+
+R3_MODULE_PICK_APP:
+  robot: R3
+  area: module_supply_area
+  action: module_pick_approach
+  position: [-0.85, -0.05, 0.45]
+  description: "Control module pick approach"
+
+R3_MODULE_PICK_TCP:
+  robot: R3
+  area: module_supply_area
+  action: module_pick
+  position: [-0.85, -0.05, 0.24]
+  description: "Control module pick TCP"
+
+R3_MODULE_PLACE_APP:
+  robot: R3
+  area: assembly_fixture
+  action: module_place_approach
+  position: [-1.12, 0.22, 0.50]
+  description: "Control module place approach"
+
+R3_MODULE_PLACE_TCP:
+  robot: R3
+  area: assembly_fixture
+  action: module_install
+  position: [-1.12, 0.22, 0.34]
+  description: "Install control module"
+
+R3_PRODUCT_PICK_APP:
+  robot: R3
+  area: assembly_fixture
+  action: product_pick_approach
+  position: [-1.15, 0.20, 0.60]
+  description: "Assembly product pick approach"
+
+R3_PRODUCT_PICK_TCP:
+  robot: R3
+  area: assembly_fixture
+  action: product_pick
+  position: [-1.15, 0.20, 0.34]
+  description: "Assembly product pick TCP"
+
+R3_PRODUCT_PLACE_INSPECTION_APP:
+  robot: R3
+  area: inspection_platform_area
+  action: product_place_inspection_approach
+  position: [0.15, 0.05, 0.60]
+  description: "Inspection platform place approach"
+
+R3_PRODUCT_PLACE_INSPECTION_TCP:
+  robot: R3
+  area: inspection_platform_area
+  action: transfer_to_inspection
+  position: [0.15, 0.05, 0.34]
+  description: "Place assembly product on inspection platform"
+
+R4_HOME_REF:
+  robot: R4
+  area: r4_home
+  action: home
+  position: [0.58, 0.25, 0.80]
+  description: "R4 home reference"
+
+R4_SCREW_APP:
+  robot: R4
+  area: inspection_screw_area
+  action: screw_approach
+  position: [0.21, -0.02, 0.55]
+  description: "Screw approach"
+
+R4_SCREW_TCP:
+  robot: R4
+  area: inspection_screw_area
+  action: screw_touch
+  position: [0.21, -0.02, 0.36]
+  description: "Screw touch point"
+
+R4_SCREW_PRESS:
+  robot: R4
   area: inspection_screw_area
   action: screw
-  position: [0.45, 0.10, 0.62]
-  description: "锁付位 — Inspection_Platform 上方（4个Screw_Point中心）"
+  position: [0.21, -0.02, 0.33]
+  description: "Screw press point"
 
-P_INSPECT_01:
-  robot: R3
-  area: inspection_screw_area
-  action: inspect
-  position: [0.45, 0.10, 0.60]
-  description: "视觉检测点 — Camera 下方 Inspection_Platform"
+R5_HOME_REF:
+  robot: R5
+  area: r5_home
+  action: home
+  position: [0.15, -0.50, 0.80]
+  description: "R5 home reference"
 
-# ---- R4 (CR5) 分拣 ----
-P_UNLOAD_01:
-  robot: R4
-  area: inspection_area
-  action: unload
-  position: [0.45, 0.10, 0.52]
-  description: "成品取件点 — 从检测平台取出产品"
+R5_PRODUCT_PICK_APP:
+  robot: R5
+  area: inspection_platform_area
+  action: product_pick_approach
+  position: [0.15, 0.05, 0.60]
+  description: "Inspection product pick approach"
 
-P_GOOD_01:
-  robot: R4
-  area: sort_area
+R5_PRODUCT_PICK_TCP:
+  robot: R5
+  area: inspection_platform_area
+  action: product_pick
+  position: [0.15, 0.05, 0.34]
+  description: "Inspection product pick TCP"
+
+R5_GOOD_PLACE_APP:
+  robot: R5
+  area: good_conveyor_area
+  action: good_place_approach
+  position: [0.65, -1.10, 0.62]
+  description: "Good conveyor place approach"
+
+R5_GOOD_PLACE_TCP:
+  robot: R5
+  area: good_conveyor_area
   action: sort_good
-  position: [1.35, -1.05, 0.48]
-  description: "良品下料 — Conveyor_Good 起点"
+  position: [0.65, -1.10, 0.42]
+  description: "Good conveyor place TCP"
 
-P_DEFECT_01:
-  robot: R4
-  area: sort_area
+R5_DEFECT_PLACE_APP:
+  robot: R5
+  area: defect_conveyor_area
+  action: defect_place_approach
+  position: [-0.35, -1.12, 0.62]
+  description: "Defect conveyor place approach"
+
+R5_DEFECT_PLACE_TCP:
+  robot: R5
+  area: defect_conveyor_area
   action: sort_defect
-  position: [2.15, -0.55, 0.48]
-  description: "不良品下料 — Conveyor_Defect 起点"
+  position: [-0.35, -1.12, 0.42]
+  description: "Defect conveyor place TCP"
 
-P_REWORK_01:
-  robot: R4
-  area: rework_area
-  action: rework
-  position: [3.75, -0.55, 0.48]
-  description: "返修区 — Conveyor_Defect 终点"
-
-# ---- 传送带 ----
-P_CONVEYOR_START:
-  area: conveyor_good
-  position: [1.35, -1.05, 0.36]
-  description: "成品传送带起点"
-
-P_CONVEYOR_END:
-  area: conveyor_good
-  position: [1.35, -3.25, 0.36]
-  description: "成品传送带终点"
-
-# ---- 共享区域 ----
-P_SHARED_TRANSFER:
-  robots: [R1, R2, R3, R4]
-  area: shared_transfer_area
-  lock_required: true
-  position: [-0.10, -0.12, 0.55]
-  description: "中间交接区 — 两台圆形工作台之间"
+CAMERA_INSPECTION_CENTER:
+  resource: CAMERA
+  area: camera_area
+  action: inspect
+  position: [0.15, 0.05, 0.55]
+  description: "Fixed camera inspection center"

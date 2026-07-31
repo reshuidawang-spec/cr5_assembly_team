@@ -1,49 +1,92 @@
-# 调度参数配置
+# Scheduler configuration for the five-CR5A electrical control box cell.
 
 scheduler:
-  # 调度策略: fifo / priority / dynamic
   strategy: dynamic
-
-  # 是否启用区域锁避碰
   region_lock: true
 
-  # 急单优先级阈值（priority >= 此值视为急单）
+  # Orders with priority >= 5 are treated as urgent orders.
   urgent_threshold: 5
 
-  # 故障重分配：是否允许跨机械臂类型分配
+  # The five robots are fixed-role resources in the current scene.
   cross_type_reassign: false
 
-  # 共享区域配置
+  # CAMERA branches the flow:
+  # OK -> R4 screw fastening -> R5 good sorting.
+  # NG -> R5 defect sorting directly, without R4 screw fastening.
+  sort_trigger_process: branch_by_quality
+
+  scoring:
+    priority_weight: 0.45
+    due_weight: 0.30
+    waiting_weight: 0.15
+    critical_path_weight: 0.10
+    # Extra pressure when the remaining route can no longer meet the due time.
+    lateness_risk_weight: 0.18
+    bottleneck_penalty_weight: 0.05
+    area_conflict_penalty_weight: 0.03
+    # After camera inspection, the product occupies the inspection platform until
+    # R4/R5 finishes the quality branch. Clear these tasks aggressively.
+    post_inspection_clearance_bonus: 0.40
+    screw_clearance_bonus: 0.35
+    sort_clearance_bonus: 0.60
+    overdue_boost: 0.35
+    urgent_due_boost: 0.20
+    bottleneck_resources: [R3]
+    conflict_sensitive_areas: [inspection_platform_area]
+    urgent_threshold: 5
+    aging_horizon: 30
+    waiting_aging_shape: 1.25
+    urgency_horizon: 60
+    critical_horizon: 60
+
   areas:
-    feed_area:
-      lock_required: false
-      max_robots: 1
-    assembly_area:
+    box_supply_area:
       lock_required: true
       max_robots: 1
-    screw_area:
+    terminal_supply_area:
       lock_required: true
       max_robots: 1
-    inspect_area:
-      lock_required: false
-      max_robots: 1
-    sort_area:
+    pcb_supply_area:
       lock_required: true
       max_robots: 1
-    rework_area:
-      lock_required: false
+    module_supply_area:
+      lock_required: true
+      max_robots: 1
+    assembly_fixture:
+      lock_required: true
+      max_robots: 1
+    transfer_area:
+      lock_required: true
+      max_robots: 1
+    inspection_screw_area:
+      lock_required: true
+      max_robots: 1
+    inspection_platform_area:
+      lock_required: true
+      max_robots: 1
+    camera_area:
+      lock_required: true
+      max_robots: 1
+    good_conveyor_area:
+      lock_required: true
+      max_robots: 1
+    defect_conveyor_area:
+      lock_required: true
       max_robots: 1
     shared_transfer_area:
       lock_required: true
       max_robots: 2
 
-# 效能对比实验参数
 experiment:
   baseline:
-    description: "固定顺序调度"
+    description: "Serial baseline: finish one order before the next"
     strategy: fifo
     region_lock: false
+  parallel_fifo:
+    description: "Parallel FIFO baseline with the same area locks"
+    strategy: fifo
+    region_lock: true
   proposed:
-    description: "动态优先级 + 区域锁 + 急单重调度"
+    description: "Dynamic scoring with urgency, due date, waiting aging and area locks"
     strategy: dynamic
     region_lock: true

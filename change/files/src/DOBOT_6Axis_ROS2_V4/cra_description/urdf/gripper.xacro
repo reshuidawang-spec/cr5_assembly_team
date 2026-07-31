@@ -1,0 +1,192 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="r1t_gripper">
+  <!-- R1T wide gripper replica for RViz/MoveIt.
+       Source dimensions come from:
+       scenes/Create_Direct_Visible_EndEffectors_R1R3R5Wide_ConnectedJaw_R4fixed.lua
+
+       Frame convention from CoppeliaSim:
+       - R1T root is mounted on Link6 with local rpy = 0 +90deg 0.
+       - The tool extends along R1T local -X.
+       - R1_gripper_tip / R1T_tool_tcp is at local x = -0.370 m.
+  -->
+
+  <material name="r1t_metal">
+    <color rgba="0.62 0.62 0.62 1"/>
+  </material>
+  <material name="r1t_dark">
+    <color rgba="0.05 0.05 0.05 1"/>
+  </material>
+  <material name="r1t_finger">
+    <color rgba="0.10 0.10 0.10 1"/>
+  </material>
+  <material name="r1t_rubber">
+    <color rgba="0.02 0.02 0.02 1"/>
+  </material>
+  <material name="r1t_tcp">
+    <color rgba="1.00 0.70 0.15 1"/>
+  </material>
+
+  <xacro:macro name="r1t_box" params="size xyz material">
+    <visual>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${size}"/>
+      </geometry>
+      <material name="${material}"/>
+    </visual>
+    <collision>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${size}"/>
+      </geometry>
+    </collision>
+  </xacro:macro>
+
+  <xacro:macro name="r1t_cylinder" params="radius length xyz rpy material collision:='true'">
+    <visual>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <geometry>
+        <cylinder radius="${radius}" length="${length}"/>
+      </geometry>
+      <material name="${material}"/>
+    </visual>
+    <xacro:if value="${collision}">
+      <collision>
+        <origin xyz="${xyz}" rpy="${rpy}"/>
+        <geometry>
+          <cylinder radius="${radius}" length="${length}"/>
+        </geometry>
+      </collision>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:macro name="r1t_sphere" params="radius xyz material collision:='false'">
+    <visual>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="${radius}"/>
+      </geometry>
+      <material name="${material}"/>
+    </visual>
+    <xacro:if value="${collision}">
+      <collision>
+        <origin xyz="${xyz}" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="${radius}"/>
+        </geometry>
+      </collision>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:macro name="r1t_finger_geometry" params="screw_y">
+    <xacro:r1t_box size="0.0484 0.0264 0.04224"
+      xyz="-0.132 0 0" material="r1t_metal"/>
+    <xacro:r1t_box size="0.04576 0.0264 0.0704"
+      xyz="-0.1804 0 0" material="r1t_metal"/>
+    <xacro:r1t_box size="0.175 0.01936 0.0176"
+      xyz="-0.275 0 0.02992" material="r1t_finger"/>
+    <xacro:r1t_box size="0.175 0.01936 0.0176"
+      xyz="-0.275 0 -0.02992" material="r1t_finger"/>
+    <xacro:r1t_box size="0.040 0.02288 0.0836"
+      xyz="-0.350 0 0" material="r1t_finger"/>
+    <xacro:r1t_box size="0.018 0.0264 0.066"
+      xyz="-0.368 0 0" material="r1t_rubber"/>
+    <xacro:r1t_cylinder radius="0.00528" length="0.02112"
+      xyz="-0.1804 ${screw_y} 0.01936" rpy="1.57079632679 0 0"
+      material="r1t_metal" collision="false"/>
+    <xacro:r1t_cylinder radius="0.00528" length="0.02112"
+      xyz="-0.1804 ${screw_y} -0.01936" rpy="1.57079632679 0 0"
+      material="r1t_metal" collision="false"/>
+  </xacro:macro>
+
+  <xacro:macro name="cr5_gripper" params="parent_link:='Link6' tool_prefix:='R1T' tip_name:='R1_gripper_tip'">
+    <link name="gripper_base">
+      <inertial>
+        <origin xyz="-0.15 0 0" rpy="0 0 0"/>
+        <mass value="0.6"/>
+        <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002"/>
+      </inertial>
+
+      <xacro:r1t_cylinder radius="0.0396" length="0.0308"
+        xyz="0 0 0" rpy="0 1.57079632679 0" material="r1t_metal"/>
+      <xacro:r1t_cylinder radius="0.0308" length="0.0616"
+        xyz="-0.0396 0 0" rpy="0 1.57079632679 0" material="r1t_metal"/>
+      <xacro:r1t_box size="0.1056 0.205 0.0396"
+        xyz="-0.1012 0 0" material="r1t_metal"/>
+      <xacro:r1t_box size="0.1452 0.205 0.01232"
+        xyz="-0.1408 0 0.03344" material="r1t_metal"/>
+      <xacro:r1t_box size="0.1452 0.205 0.01232"
+        xyz="-0.1408 0 -0.03344" material="r1t_metal"/>
+      <xacro:r1t_cylinder radius="0.006" length="0.200"
+        xyz="-0.1628 0 0.04048" rpy="1.57079632679 0 0"
+        material="r1t_dark"/>
+      <xacro:r1t_cylinder radius="0.006" length="0.200"
+        xyz="-0.1628 0 -0.04048" rpy="1.57079632679 0 0"
+        material="r1t_dark"/>
+      <xacro:r1t_box size="0.0352 0.205 0.0572"
+        xyz="-0.1804 0 0" material="r1t_metal"/>
+    </link>
+
+    <joint name="gripper_base_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 1.57079632679 0"/>
+      <parent link="${parent_link}"/>
+      <child link="gripper_base"/>
+    </joint>
+
+    <link name="finger_left">
+      <inertial>
+        <origin xyz="-0.25 0 0" rpy="0 0 0"/>
+        <mass value="0.15"/>
+        <inertia ixx="0.0005" ixy="0" ixz="0" iyy="0.0005" iyz="0" izz="0.0005"/>
+      </inertial>
+      <xacro:r1t_finger_geometry screw_y="0.01232"/>
+    </link>
+    <joint name="finger_left_joint" type="prismatic">
+      <origin xyz="0 0.085 0" rpy="0 0 0"/>
+      <parent link="gripper_base"/>
+      <child link="finger_left"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-0.060" upper="0.010" effort="50" velocity="1.0"/>
+    </joint>
+
+    <link name="finger_right">
+      <inertial>
+        <origin xyz="-0.25 0 0" rpy="0 0 0"/>
+        <mass value="0.15"/>
+        <inertia ixx="0.0005" ixy="0" ixz="0" iyy="0.0005" iyz="0" izz="0.0005"/>
+      </inertial>
+      <xacro:r1t_finger_geometry screw_y="-0.01232"/>
+    </link>
+    <joint name="finger_right_joint" type="prismatic">
+      <origin xyz="0 -0.085 0" rpy="0 0 0"/>
+      <parent link="gripper_base"/>
+      <child link="finger_right"/>
+      <axis xyz="0 -1 0"/>
+      <limit lower="-0.060" upper="0.010" effort="50" velocity="1.0"/>
+      <mimic joint="finger_left_joint" multiplier="1" offset="0"/>
+    </joint>
+
+    <link name="${tool_prefix}_tool_tcp"/>
+    <joint name="${tool_prefix}_tool_tcp_joint" type="fixed">
+      <origin xyz="-0.370 0 0" rpy="0 0 0"/>
+      <parent link="gripper_base"/>
+      <child link="${tool_prefix}_tool_tcp"/>
+    </joint>
+
+    <link name="${tool_prefix}_tcp_marker">
+      <xacro:r1t_sphere radius="0.0088" xyz="0 0 0" material="r1t_tcp" collision="true"/>
+    </link>
+    <joint name="${tool_prefix}_tcp_marker_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="${tool_prefix}_tool_tcp"/>
+      <child link="${tool_prefix}_tcp_marker"/>
+    </joint>
+
+    <link name="${tip_name}"/>
+    <joint name="${tip_name}_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="${tool_prefix}_tool_tcp"/>
+      <child link="${tip_name}"/>
+    </joint>
+  </xacro:macro>
+</robot>

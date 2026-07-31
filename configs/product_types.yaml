@@ -1,105 +1,179 @@
-# 四臂 Mock 原型工艺配置；当前 MockScheduler 使用内置等价模板。
-# 该配置尚未与 FiveCR5A_Cell 的五臂小型电控箱工艺接通。
+# Product process templates aligned with the Five CR5A cell.
+# Each product unit is expanded into a DAG by scheduler/task_generator.py.
 
 A:
-  name: "A 型配电柜"
+  name: "A type small electrical control box"
   processes:
-    - process: feed
-      area: feed_area
-      point: P_FEED_01
+    - process: box_feed
+      area: box_supply_area
+      point: R1_BOX_PLACE_TCP
       available_robots: [R1]
       duration: 6
-    - process: assemble
-      area: assembly_area
-      point: P_ASSEMBLY_01
+      required_areas: [box_supply_area, assembly_fixture]
+      scene_done_cmd: R1_BOX_PLACED
+    - process: pcb_install
+      area: pcb_supply_area
+      point: R2_PCB_PLACE_TCP
       available_robots: [R2]
-      duration: 12
-    - process: screw
-      area: screw_area
-      point: P_SCREW_01
+      duration: 8
+      required_areas: [pcb_supply_area, assembly_fixture]
+      scene_done_cmd: R2_PCB_PLACED
+    - process: module_install
+      area: module_supply_area
+      point: R3_MODULE_PLACE_TCP
       available_robots: [R3]
-      duration: 10
+      duration: 7
+      required_areas: [module_supply_area, assembly_fixture]
+      scene_done_cmd: R3_MODULE_PLACED
+    - process: terminal_install
+      area: terminal_supply_area
+      point: R1_TERMINAL_PLACE_TCP
+      available_robots: [R1]
+      duration: 7
+      required_areas: [terminal_supply_area, assembly_fixture]
+      scene_done_cmd: R1_TERMINAL_PLACED
+    - process: transfer_to_inspection
+      area: transfer_area
+      point: R3_PRODUCT_PLACE_INSPECTION_TCP
+      available_robots: [R3]
+      duration: 8
+      required_areas: [assembly_fixture, inspection_platform_area]
+      scene_done_cmd: R3_PRODUCT_TO_INSPECTION
     - process: inspect
-      area: inspect_area
-      point: P_INSPECT_01
-      available_robots: [R3]
+      area: camera_area
+      point: CAMERA_INSPECTION_CENTER
+      available_robots: [CAMERA]
       duration: 5
-  component_count: 3
-  screw_count: 6
-  inspection_points: 2
+      required_areas: [inspection_platform_area, camera_area]
+      scene_done_cmd: CAMERA_GOOD_OR_DEFECT
+  component_count: 4
+  screw_count: 4
+  inspection_points: 1
 
 B:
-  name: "B 型配电柜"
+  name: "B type small electrical control box"
   processes:
-    - process: feed
-      area: feed_area
-      point: P_FEED_01
+    - process: box_feed
+      area: box_supply_area
+      point: R1_BOX_PLACE_TCP
       available_robots: [R1]
       duration: 7
-    - process: assemble
-      area: assembly_area
-      point: P_ASSEMBLY_01
+      required_areas: [box_supply_area, assembly_fixture]
+      scene_done_cmd: R1_BOX_PLACED
+    - process: pcb_install
+      area: pcb_supply_area
+      point: R2_PCB_PLACE_TCP
       available_robots: [R2]
-      duration: 16
-    - process: screw
-      area: screw_area
-      point: P_SCREW_01
+      duration: 10
+      required_areas: [pcb_supply_area, assembly_fixture]
+      scene_done_cmd: R2_PCB_PLACED
+    - process: module_install
+      area: module_supply_area
+      point: R3_MODULE_PLACE_TCP
       available_robots: [R3]
-      duration: 14
-    - process: inspect
-      area: inspect_area
-      point: P_INSPECT_01
-      available_robots: [R3]
-      duration: 6
-  component_count: 5
-  screw_count: 10
-  inspection_points: 3
-
-C:
-  name: "C 型配电柜"
-  processes:
-    - process: feed
-      area: feed_area
-      point: P_FEED_01
+      duration: 9
+      required_areas: [module_supply_area, assembly_fixture]
+      scene_done_cmd: R3_MODULE_PLACED
+    - process: terminal_install
+      area: terminal_supply_area
+      point: R1_TERMINAL_PLACE_TCP
       available_robots: [R1]
       duration: 8
-    - process: assemble
-      area: assembly_area
-      point: P_ASSEMBLY_01
-      available_robots: [R2]
-      duration: 20
-    - process: screw
-      area: screw_area
-      point: P_SCREW_01
+      required_areas: [terminal_supply_area, assembly_fixture]
+      scene_done_cmd: R1_TERMINAL_PLACED
+    - process: transfer_to_inspection
+      area: transfer_area
+      point: R3_PRODUCT_PLACE_INSPECTION_TCP
       available_robots: [R3]
-      duration: 16
+      duration: 9
+      required_areas: [assembly_fixture, inspection_platform_area]
+      scene_done_cmd: R3_PRODUCT_TO_INSPECTION
     - process: inspect
-      area: inspect_area
-      point: P_INSPECT_01
-      available_robots: [R3]
-      duration: 7
-  component_count: 6
-  screw_count: 12
-  inspection_points: 4
+      area: camera_area
+      point: CAMERA_INSPECTION_CENTER
+      available_robots: [CAMERA]
+      duration: 6
+      required_areas: [inspection_platform_area, camera_area]
+      scene_done_cmd: CAMERA_GOOD_OR_DEFECT
+  component_count: 4
+  screw_count: 4
+  inspection_points: 1
 
-# R4 分拣工序（所有产品共有，在检测之后）
+C:
+  name: "C type small electrical control box"
+  processes:
+    - process: box_feed
+      area: box_supply_area
+      point: R1_BOX_PLACE_TCP
+      available_robots: [R1]
+      duration: 8
+      required_areas: [box_supply_area, assembly_fixture]
+      scene_done_cmd: R1_BOX_PLACED
+    - process: pcb_install
+      area: pcb_supply_area
+      point: R2_PCB_PLACE_TCP
+      available_robots: [R2]
+      duration: 12
+      required_areas: [pcb_supply_area, assembly_fixture]
+      scene_done_cmd: R2_PCB_PLACED
+    - process: module_install
+      area: module_supply_area
+      point: R3_MODULE_PLACE_TCP
+      available_robots: [R3]
+      duration: 10
+      required_areas: [module_supply_area, assembly_fixture]
+      scene_done_cmd: R3_MODULE_PLACED
+    - process: terminal_install
+      area: terminal_supply_area
+      point: R1_TERMINAL_PLACE_TCP
+      available_robots: [R1]
+      duration: 10
+      required_areas: [terminal_supply_area, assembly_fixture]
+      scene_done_cmd: R1_TERMINAL_PLACED
+    - process: transfer_to_inspection
+      area: transfer_area
+      point: R3_PRODUCT_PLACE_INSPECTION_TCP
+      available_robots: [R3]
+      duration: 10
+      required_areas: [assembly_fixture, inspection_platform_area]
+      scene_done_cmd: R3_PRODUCT_TO_INSPECTION
+    - process: inspect
+      area: camera_area
+      point: CAMERA_INSPECTION_CENTER
+      available_robots: [CAMERA]
+      duration: 7
+      required_areas: [inspection_platform_area, camera_area]
+      scene_done_cmd: CAMERA_GOOD_OR_DEFECT
+  component_count: 4
+  screw_count: 4
+  inspection_points: 1
+
 post_inspection:
-  - process: sort_good
-    area: sort_area
-    point: P_GOOD_01
+  - process: screw
+    area: inspection_screw_area
+    point: R4_SCREW_PRESS
     available_robots: [R4]
-    duration: 4
+    duration: 9
+    duration_by_product:
+      A: 9
+      B: 11
+      C: 13
     condition: "inspect_result == OK"
+    required_areas: [inspection_screw_area, inspection_platform_area]
+    scene_done_cmd: R4_SCREW_DONE
+  - process: sort_good
+    area: good_conveyor_area
+    point: R5_GOOD_PLACE_TCP
+    available_robots: [R5]
+    duration: 5
+    condition: "inspect_result == OK"
+    required_areas: [inspection_platform_area, good_conveyor_area]
+    scene_done_cmd: R5_SORT_GOOD_DONE
   - process: sort_defect
-    area: sort_area
-    point: P_DEFECT_01
-    available_robots: [R4]
-    duration: 4
+    area: defect_conveyor_area
+    point: R5_DEFECT_PLACE_TCP
+    available_robots: [R5]
+    duration: 5
     condition: "inspect_result == NG"
-  # 可选扩展
-  - process: rework
-    area: rework_area
-    point: P_REWORK_01
-    available_robots: [R4]
-    duration: 15
-    condition: "robot_idle_and_defect_exists"
+    required_areas: [inspection_platform_area, defect_conveyor_area]
+    scene_done_cmd: R5_SORT_DEFECT_DONE

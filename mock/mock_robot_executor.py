@@ -16,6 +16,8 @@ class MockRobotExecutor(IRobotExecutor):
             "R2": RobotState(robot_id="R2", status="idle", position="home"),
             "R3": RobotState(robot_id="R3", status="idle", position="home"),
             "R4": RobotState(robot_id="R4", status="idle", position="home"),
+            "R5": RobotState(robot_id="R5", status="idle", position="home"),
+            "CAMERA": RobotState(robot_id="CAMERA", status="idle", position="home"),
         }
         self._sim_time = 0.0
         self._lock = threading.Lock()
@@ -32,7 +34,7 @@ class MockRobotExecutor(IRobotExecutor):
         self._sim_time += task.duration
         end = self._sim_time
 
-        # R3 检测任务随机给出 OK / NG
+        # 固定相机检测任务随机给出 OK / NG
         quality = ""
         if task.process == "inspect":
             import random

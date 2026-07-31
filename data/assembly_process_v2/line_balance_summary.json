@@ -1,0 +1,15 @@
+{
+  "station_times": {
+    "CAMERA": 18.0,
+    "R1": 46.0,
+    "R2": 30.0,
+    "R3": 53.0,
+    "R4": 33.0,
+    "R5": 15.0
+  },
+  "total_work_time": 195.0,
+  "cycle_time": 53.0,
+  "balance_rate": 0.6132,
+  "balance_loss_rate": 0.3868,
+  "bottleneck_resource": "R3"
+}
