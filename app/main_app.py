@@ -14,14 +14,15 @@ from typing import List, Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from interfaces.types import (
-    Order, Task, TaskResult, TaskStatus, RobotState, RobotStatus,
-    QualityResult, ProcessType, SystemSnapshot,
-)
-from mock.mock_order_parser import MockOrderParser
-from mock.mock_scheduler import MockScheduler
+from interfaces.types import Order, Task, TaskStatus
 from mock.mock_robot_executor import MockRobotExecutor
 from mock.mock_sim_bridge import MockSimBridge
+from orchestration.cell_orchestrator import CellOrchestrator, OrchestratorEvent
+from robot_control.scene_aware_executor import SceneAwareExecutor
+from scheduler.order_parser import OrderParser
+from scheduler.scheduler import Scheduler
+from sim_bridge.coppelia_client import SimBridge
+from sim_bridge.process_manager import CoppeliaProcessManager
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -63,9 +64,11 @@ STATUS_COLORS = {
 }
 
 PROCESS_LABELS = {
-    "feed": "上料", "assemble": "装配", "screw": "锁付",
+    "box_feed": "箱体上料", "pcb_install": "PCB安装",
+    "module_install": "模块安装", "terminal_install": "端子安装",
+    "transfer_to_inspection": "转移检测", "screw": "锁付",
     "inspect": "检测", "sort_good": "良品分拣",
-    "sort_defect": "不良品分拣", "unload": "下料", "rework": "返修拆解",
+    "sort_defect": "不良品分拣",
 }
 
 FONT_MONO = "Consolas"
@@ -99,7 +102,13 @@ def _make_panel(parent, title="", **kw):
 class Cr5AssemblyApp:
     """多机械臂柔性产线调度系统 — 工业 HMI 界面"""
 
-    def __init__(self, root: tk.Tk):
+    def __init__(
+        self,
+        root: tk.Tk,
+        scene_linked: bool = True,
+        host: str = "127.0.0.1",
+        port: int = 23000,
+    ):
         self.root = root
         self.root.title("CR5 多机械臂柔性产线调度系统 — 江苏科技大学")
         self.root.geometry("1320x860")
@@ -123,20 +132,34 @@ class Cr5AssemblyApp:
                 pass
 
         # ---- 模块实例 ----
-        self.order_parser = MockOrderParser()
-        self.scheduler = MockScheduler()
-        self.robot_executor = MockRobotExecutor()
-        self.sim_bridge = MockSimBridge()
+        self.scene_linked = bool(scene_linked)
+        self.host = host
+        self.port = int(port)
+        self.order_parser = OrderParser()
+        self.scheduler = Scheduler()
+        self.base_robot_executor = MockRobotExecutor()
+        self.robot_executor = self.base_robot_executor
+        self.sim_bridge = (
+            SimBridge(host=self.host, port=self.port)
+            if self.scene_linked
+            else MockSimBridge()
+        )
+        self.coppelia_manager = CoppeliaProcessManager()
+        self.coppelia_manager.host = self.host
+        self.coppelia_manager.port = self.port
+        self.orchestrator: Optional[CellOrchestrator] = None
 
         # ---- 运行时状态 ----
         self.orders: List[Order] = []
         self.tasks: List[Task] = []
         self.running: bool = False
         self.paused: bool = False
-        self._stop_event = threading.Event()
         self._ui_queue = queue.Queue()
-
-        self.scheduler.set_state_change_callback(self._on_state_change)
+        self._pending_start = False
+        self._connection_in_progress = False
+        self._scene_preparation_in_progress = False
+        self._scene_ready = False
+        self._order_counter = 0
 
         # ---- 构建界面 ----
         self._build_header()
@@ -147,9 +170,11 @@ class Cr5AssemblyApp:
         # ---- 定时刷新 ----
         self._process_ui_queue()
         self._refresh_robot_panel()
+        self.root.protocol("WM_DELETE_WINDOW", self._on_window_close)
 
-        self._log("SYSTEM INIT OK — Mock Mode")
-        self._log("READY. Submit order or load demo_orders.json")
+        mode = "COPPELIASIM MOTION MODE" if self.scene_linked else "OFFLINE MOCK MODE"
+        self._log(f"SYSTEM INIT OK — {mode}")
+        self._log("READY. Add orders, connect CoppeliaSim, then press START")
 
     # ============================================================
     # 模块替换
@@ -159,8 +184,8 @@ class Cr5AssemblyApp:
             self.order_parser = order_parser
         if scheduler is not None:
             self.scheduler = scheduler
-            self.scheduler.set_state_change_callback(self._on_state_change)
         if robot_executor is not None:
+            self.base_robot_executor = robot_executor
             self.robot_executor = robot_executor
         if sim_bridge is not None:
             self.sim_bridge = sim_bridge
@@ -216,15 +241,21 @@ class Cr5AssemblyApp:
         right.pack(side=tk.RIGHT, padx=16)
 
         self._mode_label = tk.Label(
-            right, text="MOCK", font=(FONT_MONO, 10, "bold"),
+            right,
+            text="COP SIM" if self.scene_linked else "MOCK",
+            font=(FONT_MONO, 10, "bold"),
             fg=C_HEADER, bg=C_AMBER, padx=10, pady=1,
         )
         self._mode_label.pack(side=tk.RIGHT, padx=(12, 0))
 
-        tk.Label(
-            right, text="STATUS: ONLINE", font=(FONT_MONO, 9),
-            fg=C_GREEN, bg=C_HEADER,
-        ).pack(side=tk.RIGHT)
+        self._connection_label = tk.Label(
+            right,
+            text="COP: OFFLINE" if self.scene_linked else "COP: MOCK",
+            font=(FONT_MONO, 9),
+            fg=C_RED if self.scene_linked else C_AMBER,
+            bg=C_HEADER,
+        )
+        self._connection_label.pack(side=tk.RIGHT)
 
         # 底部装饰线
         tk.Frame(self.root, bg=C_HEADER_LINE, height=2).pack(fill=tk.X, side=tk.TOP)
@@ -233,7 +264,36 @@ class Cr5AssemblyApp:
     # 主体三栏
     # ============================================================
     def _build_body(self):
-        body = tk.Frame(self.root, bg=C_BG)
+        style = ttk.Style()
+        style.configure(
+            "Industrial.TNotebook",
+            background=C_BG,
+            borderwidth=0,
+        )
+        style.configure(
+            "Industrial.TNotebook.Tab",
+            background=C_BUTTON,
+            foreground=C_TEXT,
+            padding=(18, 7),
+            font=(FONT_UI, 9, "bold"),
+        )
+        style.map(
+            "Industrial.TNotebook.Tab",
+            background=[("selected", C_PANEL)],
+            foreground=[("selected", C_ACCENT)],
+        )
+        self.workspace_tabs = ttk.Notebook(
+            self.root,
+            style="Industrial.TNotebook",
+        )
+        self.workspace_tabs.pack(fill=tk.BOTH, expand=True, padx=6, pady=(4, 2))
+
+        execution_tab = tk.Frame(self.workspace_tabs, bg=C_BG)
+        analysis_tab = tk.Frame(self.workspace_tabs, bg=C_BG)
+        self.workspace_tabs.add(execution_tab, text="仿真执行  SIMULATION")
+        self.workspace_tabs.add(analysis_tab, text="调度分析  SCHEDULING")
+
+        body = tk.Frame(execution_tab, bg=C_BG)
         body.pack(fill=tk.BOTH, expand=True, padx=6, pady=(4, 2))
 
         # 左栏 — 订单输入
@@ -247,6 +307,25 @@ class Cr5AssemblyApp:
 
         # 右栏 — 日志 + 指标
         self._build_log_panel(body)
+
+        from app.dashboard import SchedulingDashboard
+
+        self.scheduling_dashboard = SchedulingDashboard(
+            analysis_tab,
+            order_provider=lambda: list(self.orders),
+            log_callback=self._log,
+            colors={
+                "bg": C_BG,
+                "panel": C_PANEL,
+                "border": C_PANEL_BORDER,
+                "text": C_TEXT,
+                "dim": C_TEXT_DIM,
+                "accent": C_ACCENT,
+                "green": C_GREEN,
+                "blue": C_BLUE,
+                "button": C_BUTTON,
+            },
+        )
 
     # ---- 左栏：订单输入 ----
     def _build_order_panel(self, parent):
@@ -267,11 +346,12 @@ class Cr5AssemblyApp:
         ).pack(side=tk.LEFT)
         tk.Frame(inner, bg=C_PANEL_BORDER, height=1).pack(fill=tk.X, padx=10, pady=(4, 6))
 
-        # 产品按钮
+        # 产品类型快捷选择
+        self.product_type_var = tk.StringVar(value="A")
         for ptype, name, spec, color in [
-            ("A", "A 型配电柜", "3ELM / 6SCR", "#3fb950"),
-            ("B", "B 型配电柜", "5ELM / 10SCR", "#58a6ff"),
-            ("C", "C 型配电柜", "6ELM / 12SCR", "#d29922"),
+            ("A", "A 型电控箱", "标准节拍", "#3fb950"),
+            ("B", "B 型电控箱", "增强节拍", "#58a6ff"),
+            ("C", "C 型电控箱", "复杂节拍", "#d29922"),
         ]:
             frm = tk.Frame(inner, bg=C_PANEL)
             frm.pack(fill=tk.X, padx=10, pady=2)
@@ -281,32 +361,84 @@ class Cr5AssemblyApp:
                 font=(FONT_MONO, 9, "bold"), bg=C_BUTTON, fg=color,
                 activebackground=C_BUTTON_HOVER, activeforeground=color,
                 relief=tk.FLAT, cursor="hand2", anchor=tk.W,
-                command=lambda t=ptype: self._add_order(t),
+                command=lambda t=ptype: self._select_product_type(t),
             )
             btn.pack(fill=tk.X, ipady=8)
 
         # 分隔
         tk.Frame(inner, bg=C_PANEL_BORDER, height=1).pack(fill=tk.X, padx=10, pady=8)
 
-        # 优先级
-        pf = tk.Frame(inner, bg=C_PANEL)
-        pf.pack(fill=tk.X, padx=10)
-        tk.Label(pf, text="PRIORITY (1-10):", font=(FONT_MONO, 8), fg=C_TEXT_DIM, bg=C_PANEL).pack(side=tk.LEFT)
-        self.priority_var = tk.IntVar(value=1)
-        s = tk.Spinbox(
-            pf, from_=1, to=10, textvariable=self.priority_var, width=4,
-            bg=C_INPUT_BG, fg=C_TEXT, font=(FONT_MONO, 10),
+        def form_row(label):
+            row = tk.Frame(inner, bg=C_PANEL)
+            row.pack(fill=tk.X, padx=10, pady=2)
+            tk.Label(
+                row, text=label, width=13, anchor=tk.W,
+                font=(FONT_MONO, 8), fg=C_TEXT_DIM, bg=C_PANEL,
+            ).pack(side=tk.LEFT)
+            return row
+
+        order_row = form_row("ORDER ID:")
+        self.order_id_var = tk.StringVar(value="")
+        tk.Entry(
+            order_row, textvariable=self.order_id_var,
+            bg=C_INPUT_BG, fg=C_TEXT, insertbackground=C_TEXT,
+            font=(FONT_MONO, 9), relief=tk.FLAT,
+        ).pack(side=tk.RIGHT, fill=tk.X, expand=True)
+
+        type_row = form_row("PRODUCT TYPE:")
+        self.product_type_combo = ttk.Combobox(
+            type_row,
+            textvariable=self.product_type_var,
+            values=("A", "B", "C"),
+            state="readonly",
+            width=8,
+            font=(FONT_MONO, 9),
+        )
+        self.product_type_combo.pack(side=tk.RIGHT)
+
+        quantity_row = form_row("QUANTITY:")
+        self.quantity_var = tk.IntVar(value=1)
+        tk.Spinbox(
+            quantity_row, from_=1, to=99,
+            textvariable=self.quantity_var, width=5,
+            bg=C_INPUT_BG, fg=C_TEXT, font=(FONT_MONO, 9),
             buttonbackground=C_BUTTON, relief=tk.FLAT,
             insertbackground=C_TEXT,
-        )
-        s.pack(side=tk.RIGHT)
+        ).pack(side=tk.RIGHT)
+
+        priority_row = form_row("PRIORITY 1-10:")
+        self.priority_var = tk.IntVar(value=1)
+        tk.Spinbox(
+            priority_row, from_=1, to=10,
+            textvariable=self.priority_var, width=5,
+            bg=C_INPUT_BG, fg=C_TEXT, font=(FONT_MONO, 9),
+            buttonbackground=C_BUTTON, relief=tk.FLAT,
+            insertbackground=C_TEXT,
+        ).pack(side=tk.RIGHT)
+
+        due_row = form_row("DUE TIME (s):")
+        self.due_time_var = tk.DoubleVar(value=0)
+        tk.Spinbox(
+            due_row, from_=0, to=86400, increment=30,
+            textvariable=self.due_time_var, width=7,
+            bg=C_INPUT_BG, fg=C_TEXT, font=(FONT_MONO, 9),
+            buttonbackground=C_BUTTON, relief=tk.FLAT,
+            insertbackground=C_TEXT,
+        ).pack(side=tk.RIGHT)
+
+        tk.Label(
+            inner,
+            text="填好后可直接 START；ADD 用于累计多笔订单",
+            font=(FONT_UI, 8), fg=C_BLUE, bg=C_PANEL,
+            wraplength=230, justify=tk.LEFT,
+        ).pack(fill=tk.X, padx=10, pady=(5, 0))
 
         # 操作按钮
         bf = tk.Frame(inner, bg=C_PANEL)
         bf.pack(fill=tk.X, padx=10, pady=(8, 4))
 
         tk.Button(
-            bf, text="▶  提交订单  SUBMIT", font=(FONT_MONO, 9, "bold"),
+            bf, text="＋ 加入订单队列  ADD", font=(FONT_MONO, 9, "bold"),
             bg="#238636", fg="white", activebackground="#2ea043",
             relief=tk.FLAT, cursor="hand2",
             command=self._submit_selected_order,
@@ -386,10 +518,12 @@ class Cr5AssemblyApp:
 
         self.robot_widgets = {}
         robots_def = [
-            ("R1", "FEED/UNLOAD", "上料定位"),
-            ("R2", "ASSEMBLE", "元件装配"),
-            ("R3", "SCREW/INSPECT", "锁付检测"),
-            ("R4", "SORT/REWORK", "分拣返修"),
+            ("R1", "BOX/TERMINAL", "箱体与端子"),
+            ("R2", "PCB", "PCB吸装"),
+            ("R3", "MODULE/MOVE", "模块与转移"),
+            ("CAMERA", "INSPECT", "视觉检测"),
+            ("R4", "SCREW", "螺钉锁付"),
+            ("R5", "SORT", "质量分拣"),
         ]
         for rid, rtype, rname in robots_def:
             card = tk.Frame(cards, bg=C_INPUT_BG, relief=tk.FLAT, bd=1, highlightbackground=C_PANEL_BORDER, highlightthickness=1)
@@ -412,7 +546,7 @@ class Cr5AssemblyApp:
             sl = tk.Label(body, text="IDLE", font=(FONT_MONO, 9, "bold"), fg=C_GREEN, bg=C_INPUT_BG)
             sl.pack(pady=(1, 0))
 
-            tl = tk.Label(body, text="-", font=(FONT_UI, 7), fg=C_TEXT_DIM, bg=C_INPUT_BG, wraplength=100)
+            tl = tk.Label(body, text="-", font=(FONT_UI, 7), fg=C_TEXT_DIM, bg=C_INPUT_BG, wraplength=80)
             tl.pack(pady=(2, 6))
 
             self.robot_widgets[rid] = {
@@ -462,8 +596,9 @@ class Cr5AssemblyApp:
 
         self.metrics_labels = {}
         items = [
-            ("makespan", "MAKESPAN"), ("utilization", "UTIL %"),
-            ("conflicts", "CONFLICTS"), ("completed", "COMPLETED"),
+            ("makespan", "MAKESPAN"), ("utilization", "AVG UTIL %"),
+            ("waiting", "AVG WAIT"), ("conflicts", "CONFLICTS"),
+            ("completed", "COMPLETED"), ("failed", "FAILED"),
         ]
         for i, (key, label) in enumerate(items):
             row, col = i // 2, i % 2
@@ -485,17 +620,35 @@ class Cr5AssemblyApp:
         bs = {"font": (FONT_MONO, 9, "bold"), "relief": tk.FLAT, "cursor": "hand2"}
         bp = {"side": tk.LEFT, "padx": 3, "pady": 5, "ipadx": 14, "ipady": 3}
 
+        self.cop_btn = tk.Button(
+            bar,
+            text="◉  启动/连接 COP" if self.scene_linked else "◉  OFFLINE MOCK",
+            bg=C_BLUE if self.scene_linked else C_BUTTON,
+            fg="black" if self.scene_linked else C_TEXT_DIM,
+            activebackground="#79b8ff",
+            command=self._launch_or_connect_coppelia,
+            state=tk.NORMAL if self.scene_linked else tk.DISABLED,
+            **bs,
+        )
+        self.cop_btn.pack(**{**bp, "padx": (10, 3)})
+
         self.start_btn = tk.Button(
             bar, text="▶  START", bg="#238636", fg="white",
             activebackground="#2ea043", command=self._start_execution, **bs,
         )
-        self.start_btn.pack(**{**bp, "padx": (10, 3)})
+        self.start_btn.pack(**bp)
 
         self.pause_btn = tk.Button(
             bar, text="⏸  PAUSE", bg=C_AMBER, fg="black",
             activebackground="#c48f1a", command=self._toggle_pause, **bs,
         )
         self.pause_btn.pack(**bp)
+
+        self.stop_btn = tk.Button(
+            bar, text="■  STOP", bg=C_RED, fg="white",
+            activebackground="#da3633", command=self._stop_execution, **bs,
+        )
+        self.stop_btn.pack(**bp)
 
         self.reset_btn = tk.Button(
             bar, text="↺  RESET", bg=C_BUTTON, fg=C_TEXT,
@@ -556,30 +709,89 @@ class Cr5AssemblyApp:
     # ============================================================
     # 订单操作
     # ============================================================
-    def _add_order(self, product_type: str):
-        priority = self.priority_var.get()
-        order = Order(
-            order_id=f"{product_type}{len(self.orders)+1:03d}",
-            product_type=product_type, priority=priority, quantity=1,
-        )
-        self.orders.append(order)
-        self.order_parser.add_order(order)
-        self.order_listbox.insert(tk.END, f"  {order.order_id}  |  TYPE-{product_type}  |  PRI={priority}")
-        self._log(f"NEW ORDER: {order.order_id} TYPE={product_type} PRI={priority}")
+    def _select_product_type(self, product_type: str):
+        self.product_type_var.set(product_type)
+        self._log(f"PRODUCT TYPE SELECTED: {product_type}")
 
-    def _submit_selected_order(self):
-        if not self.orders:
-            messagebox.showwarning("WARNING", "No orders in queue")
-            return
-        self._start_execution()
+    def _next_order_id(self, product_type: str) -> str:
+        existing = {order.order_id for order in self.orders}
+        while True:
+            self._order_counter += 1
+            candidate = f"{product_type}{self._order_counter:03d}"
+            if candidate not in existing:
+                return candidate
+
+    def _register_order(
+        self,
+        order: Order,
+        urgent: bool = False,
+        parser_already_added: bool = False,
+    ) -> None:
+        order = self.order_parser.parse_dict(order.to_dict())
+        if any(item.order_id == order.order_id for item in self.orders):
+            raise ValueError(f"订单编号重复: {order.order_id}")
+        if self.running and self.scene_linked:
+            raise RuntimeError(
+                "当前 CoppeliaSim 周期只有一套实体工件，运行中不能插入新订单；"
+                "请在本轮完成后 RESET，或在调度分析页进行多订单分析。"
+            )
+
+        if not parser_already_added:
+            self.order_parser.add_order(order)
+        self.orders.append(order)
+        if self.running and self.orchestrator is not None:
+            self.orchestrator.add_order(order, urgent=urgent)
+            self.tasks = list(self.orchestrator.tasks)
+            self._log(
+                f"LIVE ORDER ADDED: {order.order_id}"
+                + (" [URGENT]" if urgent else ""),
+                "warn" if urgent else "info",
+            )
+        else:
+            self._log(
+                f"ORDER QUEUED: {order.order_id} TYPE={order.product_type} "
+                f"QTY={order.quantity} PRI={order.priority}"
+            )
+        self._refresh_order_list()
+        self._refresh_task_tree()
+        self.scheduling_dashboard.mark_stale()
+
+    def _submit_selected_order(self) -> bool:
+        try:
+            product_type = self.product_type_var.get().strip().upper()
+            order_id = self.order_id_var.get().strip()
+            if not order_id:
+                order_id = self._next_order_id(product_type)
+            order = Order(
+                order_id=order_id,
+                product_type=product_type,
+                priority=int(self.priority_var.get()),
+                quantity=int(self.quantity_var.get()),
+                due_time=float(self.due_time_var.get()),
+            )
+            self._register_order(order)
+            self.order_id_var.set("")
+            return True
+        except Exception as exc:
+            messagebox.showerror("订单输入错误", str(exc))
+            return False
 
     def _insert_urgent_order(self):
-        order = Order(order_id=f"URG-{len(self.orders)+1:02d}", product_type="A", priority=10, quantity=1)
-        self.orders.append(order)
-        self.order_parser.add_order(order)
-        self.order_listbox.insert(tk.END, f"  {order.order_id}  |  !!URGENT!!  |  PRI=10")
-        self._log(f"!!! URGENT ORDER INSERTED: {order.order_id}", "warn")
-        self.status_bar.configure(text="URGENT ORDER PENDING", fg=C_RED)
+        try:
+            product_type = self.product_type_var.get().strip().upper()
+            order = Order(
+                order_id=self.order_id_var.get().strip()
+                or f"URG-{self._next_order_id(product_type)}",
+                product_type=product_type,
+                priority=10,
+                quantity=max(int(self.quantity_var.get()), 1),
+                due_time=float(self.due_time_var.get()),
+            )
+            self._register_order(order, urgent=True)
+            self.order_id_var.set("")
+            self.status_bar.configure(text="URGENT ORDER ACCEPTED", fg=C_RED)
+        except Exception as exc:
+            messagebox.showerror("急单输入错误", str(exc))
 
     def _load_demo_orders(self):
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -593,14 +805,190 @@ class Cr5AssemblyApp:
 
     def _load_orders(self, path: str):
         try:
+            if self.running and self.scene_linked:
+                raise RuntimeError(
+                    "CoppeliaSim 运行中不能加载新订单；请完成后 RESET，"
+                    "或先停止仿真再加载。"
+                )
             new = self.order_parser.parse_file(path)
-            self.orders.extend(new)
             for o in new:
-                self.order_listbox.insert(tk.END, f"  {o.order_id}  |  TYPE-{o.product_type}  |  PRI={o.priority}")
+                self._register_order(o, parser_already_added=True)
             self._log(f"LOADED {len(new)} ORDERS FROM {os.path.basename(path)}")
         except Exception as e:
             self._log(f"LOAD FAILED: {e}", "error")
             messagebox.showerror("ERROR", str(e))
+
+    # ============================================================
+    # CoppeliaSim 启动与连接
+    # ============================================================
+    def _launch_or_connect_coppelia(self):
+        if not self.scene_linked:
+            return
+        if self._scene_ready:
+            self._on_coppelia_connected(self.sim_bridge.contract_report)
+            return
+        if self._connection_in_progress:
+            return
+
+        self._connection_in_progress = True
+        self.cop_btn.configure(state=tk.DISABLED, text="◌  CONNECTING...")
+        self._connection_label.configure(text="COP: CONNECTING", fg=C_AMBER)
+        self.status_bar.configure(text="STARTING COPPELIASIM...", fg=C_AMBER)
+        self._log("CONNECTING TO COPPELIASIM...")
+        threading.Thread(
+            target=self._connect_coppelia_worker,
+            name="coppeliasim-connector",
+            daemon=True,
+        ).start()
+
+    def _connect_coppelia_worker(self):
+        endpoint_present = self.coppelia_manager.endpoint_reachable(
+            self.host, self.port
+        )
+        if endpoint_present:
+            if self.sim_bridge.connect(self.host, self.port):
+                self._ui_queue.put(
+                    ("coppelia_connected", self.sim_bridge.contract_report)
+                )
+                return
+            self._ui_queue.put(
+                (
+                    "coppelia_failed",
+                    "检测到 CoppeliaSim 已运行，但当前场景契约不匹配："
+                    + self.sim_bridge.last_error,
+                )
+            )
+            return
+
+        try:
+            process = self.coppelia_manager.launch()
+        except Exception as exc:
+            self._ui_queue.put(("coppelia_failed", str(exc)))
+            return
+
+        self._ui_queue.put(("log", ("CoppeliaSim process launched\n", "info")))
+        deadline = time.monotonic() + self.coppelia_manager.startup_timeout
+        last_error = "ZMQ endpoint is not ready"
+        while time.monotonic() < deadline:
+            if not self.coppelia_manager.is_owned_process_running():
+                self._ui_queue.put(
+                    (
+                        "coppelia_failed",
+                        f"CoppeliaSim exited during startup (code={process.returncode})",
+                    )
+                )
+                return
+            time.sleep(0.5)
+            if not self.coppelia_manager.endpoint_reachable(
+                self.host, self.port
+            ):
+                continue
+            if self.sim_bridge.connect(self.host, self.port):
+                self._ui_queue.put(
+                    ("coppelia_connected", self.sim_bridge.contract_report)
+                )
+                return
+            last_error = self.sim_bridge.last_error
+
+        self._ui_queue.put(
+            (
+                "coppelia_failed",
+                "等待 CoppeliaSim 场景就绪超时：" + last_error,
+            )
+        )
+
+    def _on_coppelia_connected(self, report: dict):
+        self._connection_in_progress = False
+        self._scene_ready = True
+        self.cop_btn.configure(state=tk.NORMAL, text="✓  COP CONNECTED")
+        self._connection_label.configure(text="COP: CONNECTED", fg=C_GREEN)
+        self.status_bar.configure(text="COPPELIASIM READY", fg=C_GREEN)
+        self._log(
+            "COPPELIASIM CONTRACT OK — "
+            f"{report.get('target_count', '?')} TARGETS / "
+            f"{len(report.get('robots', {}))} ROBOTS",
+            "ok",
+        )
+        if self._pending_start:
+            self._prepare_scene_for_execution()
+
+    def _prepare_scene_for_execution(self):
+        if self._scene_preparation_in_progress:
+            return
+        self._scene_preparation_in_progress = True
+        self.start_btn.configure(state=tk.DISABLED, text="◌  PREPARING MOTION")
+        self.status_bar.configure(text="VALIDATING R1-R5 PATHS...", fg=C_AMBER)
+        self._log("VALIDATING R1-R5 PLANS AND ENTERING SIMULATION READY...")
+
+        def prepare():
+            try:
+                if not self.sim_bridge.is_connected():
+                    raise RuntimeError("CoppeliaSim connection was lost")
+                sim = self.sim_bridge.sim
+                if sim.getSimulationState() != sim.simulation_stopped:
+                    if not self.sim_bridge.stop_simulation():
+                        raise RuntimeError(
+                            self.sim_bridge.last_error or "无法复位运行中的仿真"
+                        )
+                from robot_control.simulation_executor import SimulationCellExecutor
+
+                executor = SimulationCellExecutor(self.sim_bridge)
+                evidence = executor.prepare_cycle()
+                self._ui_queue.put(("scene_prepared", (executor, evidence)))
+            except Exception as exc:
+                self._ui_queue.put(("coppelia_failed", str(exc)))
+
+        threading.Thread(
+            target=prepare,
+            name="scene-preparation",
+            daemon=True,
+        ).start()
+
+    def _on_scene_prepared(self, payload):
+        executor, evidence = payload
+        self._scene_preparation_in_progress = False
+        self.base_robot_executor = executor
+        self.robot_executor = executor
+        self._log(
+            "SIMULATION MOTION READY — "
+            f"{evidence.get('path_points_total', '?')} VALIDATED PATH POINTS",
+            "ok",
+        )
+        self._begin_execution()
+
+    def _connection_failed(self, message: str):
+        self._connection_in_progress = False
+        self._scene_preparation_in_progress = False
+        self._scene_ready = False
+        self._pending_start = False
+        self.cop_btn.configure(state=tk.NORMAL, text="◉  RETRY COP")
+        self.start_btn.configure(state=tk.NORMAL, text="▶  START")
+        self._connection_label.configure(text="COP: ERROR", fg=C_RED)
+        self.status_bar.configure(text="COPPELIASIM ERROR", fg=C_RED)
+        self._log(f"COPPELIASIM ERROR: {message}", "error")
+        messagebox.showerror("CoppeliaSim 连接失败", message)
+
+    def _stop_scene_async(self):
+        if not self.scene_linked or not self._scene_ready:
+            return
+        executor = self.robot_executor
+        bridge = self.sim_bridge
+
+        def stop_scene():
+            try:
+                if not bridge.is_connected():
+                    self._scene_ready = False
+                    return
+                if isinstance(executor, SceneAwareExecutor):
+                    executor.stop_simulation()
+                else:
+                    bridge.stop_simulation()
+            except Exception as exc:
+                self._ui_queue.put(
+                    ("log", (f"Scene stop warning: {exc}\n", "warn"))
+                )
+
+        threading.Thread(target=stop_scene, daemon=True).start()
 
     # ============================================================
     # 执行引擎
@@ -609,106 +997,148 @@ class Cr5AssemblyApp:
         if self.running:
             return
         if not self.orders:
-            self._log("NO ORDERS TO EXECUTE", "warn")
+            self.status_bar.configure(text="ADDING CURRENT ORDER...", fg=C_AMBER)
+            if not self._submit_selected_order():
+                self.status_bar.configure(text="ORDER INPUT ERROR", fg=C_RED)
+                return
+            self._log("START AUTO-SUBMITTED THE CURRENT ORDER", "ok")
+        if self.tasks:
+            messagebox.showwarning("需要复位", "当前批次已有任务记录，请先点击 RESET。")
             return
+        if self.scene_linked:
+            if len(self.orders) != 1 or sum(order.quantity for order in self.orders) != 1:
+                messagebox.showwarning(
+                    "仿真批次限制",
+                    "当前运动场景包含一套实体工件，请每次执行 1 个订单、数量 1；"
+                    "完成后点击 RESET 再执行下一单。",
+                )
+                self.status_bar.configure(text="ONE UNIT PER SIM CYCLE", fg=C_AMBER)
+                return
+            self._pending_start = True
+            self.start_btn.configure(state=tk.DISABLED, text="◌  CONNECTING COP")
+            self.status_bar.configure(text="CONNECTING COPPELIASIM...", fg=C_AMBER)
+            self._log("START REQUESTED — waiting for CoppeliaSim connection")
+            if self._scene_ready:
+                self._prepare_scene_for_execution()
+            else:
+                self._launch_or_connect_coppelia()
+            return
+        self._begin_execution()
 
+    def _begin_execution(self):
+        if self.running:
+            return
+        self.scheduler = Scheduler()
+        # SimulationCellExecutor moves the real scene workpieces itself.  A
+        # SceneAwareExecutor wrapper would also reveal template products in the
+        # legacy embedded stage script, creating duplicate geometry.
+        self.robot_executor = self.base_robot_executor
+        self.orchestrator = CellOrchestrator(
+            self.scheduler,
+            self.robot_executor,
+        )
+        owner = self.orchestrator
+        owner.add_event_callback(
+            lambda event: self._ui_queue.put(
+                ("orchestrator_event", (owner, event))
+            )
+        )
         self.running = True
         self.paused = False
-        self._stop_event.clear()
+        self._pending_start = False
         self.start_btn.configure(state=tk.DISABLED, text="●  RUNNING")
-        self._mode_label.configure(text="RUN", bg=C_GREEN)
+        self._mode_label.configure(
+            text="COP MOTION" if self.scene_linked else "MOCK RUN",
+            bg=C_GREEN,
+        )
         self.status_bar.configure(text="EXECUTING...", fg=C_GREEN)
 
         self._log("=" * 50)
         self._log(f"EXECUTION STARTED — {len(self.orders)} ORDERS")
-
-        new_tasks = self.scheduler.generate_tasks(self.orders)
-        self.tasks.extend(new_tasks)
+        new_tasks = owner.start(list(self.orders))
+        self.tasks = list(owner.tasks)
         self._refresh_task_tree()
+        self._refresh_order_list()
         self._log(f"GENERATED {len(new_tasks)} TASKS")
 
-        threading.Thread(target=self._execution_loop, daemon=True).start()
-
-    def _execution_loop(self):
-        while not self._stop_event.is_set():
-            if self.paused:
-                time.sleep(0.1)
-                continue
-
-            robots = self.robot_executor.get_robot_states()
-            pending = [t for t in self.tasks if t.status in (
-                TaskStatus.PENDING.value, TaskStatus.WAITING.value,
-            )]
-
-            if not pending:
-                running_tasks = [t for t in self.tasks if t.status == TaskStatus.RUNNING.value]
-                if not running_tasks:
-                    self._ui_queue.put(("done", None))
-                    break
-                time.sleep(0.1)
-                continue
-
-            self.tasks = self.scheduler.schedule(self.tasks, robots)
-            self._ui_queue.put(("refresh_tasks", None))
-
-            for task in self.tasks:
-                if task.status == TaskStatus.RUNNING.value:
-                    idle_robots = [r for r in robots if r.status == "idle"]
-                    valid = [r for r in task.available_robots if r in [ir.robot_id for ir in idle_robots]]
-                    if valid:
-                        rid = valid[0]
-                        self.robot_executor.execute_task_async(
-                            task, lambda r, t=task: self._on_task_done(t, r),
-                        )
-                        pn = PROCESS_LABELS.get(task.process, task.process)
-                        self._ui_queue.put(("log", (f"  {task.task_id} → {rid}  {pn}  [{task.target_point}]\n", "info")))
-                        self._ui_queue.put(("refresh_tasks", None))
-                        self._ui_queue.put(("refresh_robots", None))
-            time.sleep(0.3)
-
-        self._ui_queue.put(("finish", None))
-
-    def _on_task_done(self, task: Task, result: TaskResult):
-        self.tasks = self.scheduler.on_task_complete(result, self.tasks, self.robot_executor.get_robot_states())
-        qi = f"  QLTY={result.quality_result}" if result.quality_result else ""
-        dur = result.end_time - result.start_time
-        self._log(f"  DONE {result.task_id} [{result.robot_id}] {dur:.1f}s{qi}")
-        self._ui_queue.put(("refresh_tasks", None))
-        self._ui_queue.put(("refresh_robots", None))
-        self._ui_queue.put(("update_metrics", None))
-
     def _toggle_pause(self):
+        if not self.running or self.orchestrator is None:
+            return
         self.paused = not self.paused
         if self.paused:
+            self.orchestrator.pause()
             self._log("⏸  PAUSED", "warn")
             self.pause_btn.configure(text="▶  RESUME")
             self.status_bar.configure(text="PAUSED", fg=C_AMBER)
         else:
+            self.orchestrator.resume()
             self._log("▶  RESUMED")
             self.pause_btn.configure(text="⏸  PAUSE")
             self.status_bar.configure(text="EXECUTING...", fg=C_GREEN)
 
+    def _stop_execution(self):
+        self._pending_start = False
+        if self.orchestrator is not None:
+            self.orchestrator.stop()
+        self.running = False
+        self.paused = False
+        self.start_btn.configure(state=tk.DISABLED, text="RESET REQUIRED")
+        self.pause_btn.configure(text="⏸  PAUSE")
+        self.status_bar.configure(text="STOPPING...", fg=C_RED)
+        self._log("STOP REQUESTED", "warn")
+        if self.scene_linked and self.coppelia_manager.is_owned_process_running():
+            threading.Thread(
+                target=self.coppelia_manager.terminate_owned_process,
+                name="coppeliasim-stop",
+                daemon=True,
+            ).start()
+            self._scene_ready = False
+        else:
+            self._stop_scene_async()
+
     def _reset(self):
-        self._stop_event.set()
+        previous = self.orchestrator
+        if previous is not None:
+            previous.stop()
+        self.orchestrator = None
+        if self.scene_linked and self.coppelia_manager.is_owned_process_running():
+            try:
+                self.sim_bridge.disconnect()
+            except Exception:
+                pass
+            self.coppelia_manager.terminate_owned_process()
+            self.sim_bridge = SimBridge(host=self.host, port=self.port)
+            self._scene_ready = False
+            self._connection_label.configure(text="COP: OFFLINE", fg=C_RED)
+            self.cop_btn.configure(state=tk.NORMAL, text="◉  启动/连接 COP")
+        else:
+            self._stop_scene_async()
         self.running = False
         self.paused = False
         self.orders.clear()
         self.tasks.clear()
         self.order_parser.clear()
+        self.scheduler = Scheduler()
+        self.base_robot_executor = MockRobotExecutor()
+        self.robot_executor = self.base_robot_executor
         self.order_listbox.delete(0, tk.END)
         for item in self.task_tree.get_children():
             self.task_tree.delete(item)
         self.start_btn.configure(state=tk.NORMAL, text="▶  START")
         self.pause_btn.configure(text="⏸  PAUSE")
-        self._mode_label.configure(text="MOCK", bg=C_AMBER)
+        self._mode_label.configure(
+            text="COP SIM" if self.scene_linked else "MOCK",
+            bg=C_AMBER,
+        )
         self.status_bar.configure(text="READY", fg=C_GREEN)
         for k in self.metrics_labels:
             self.metrics_labels[k].configure(text="--")
+        self.scheduling_dashboard.reset()
         self._log("=" * 50)
         self._log("SYSTEM RESET")
 
     def _simulate_fault(self, robot_id: str):
-        self.robot_executor.set_robot_fault(robot_id)
+        self.base_robot_executor.set_robot_fault(robot_id)
         self.tasks = self.scheduler.handle_robot_fault(robot_id, self.tasks)
         self._log(f"!!! FAULT INJECTED: {robot_id} — TASKS REASSIGNED", "error")
         self._refresh_task_tree()
@@ -717,27 +1147,103 @@ class Cr5AssemblyApp:
     # ============================================================
     # UI 刷新
     # ============================================================
-    def _on_state_change(self):
-        self._ui_queue.put(("refresh_tasks", None))
-        self._ui_queue.put(("refresh_robots", None))
-
     def _process_ui_queue(self):
         try:
             while True:
                 action, data = self._ui_queue.get_nowait()
                 if action == "log":
                     self._log_direct(*data)
-                elif action == "refresh_tasks":
-                    self._refresh_task_tree()
-                elif action == "refresh_robots":
-                    self._refresh_robot_panel()
                 elif action == "update_metrics":
                     self._update_metrics()
-                elif action == "done":
-                    self._on_all_done()
+                elif action == "orchestrator_event":
+                    self._handle_orchestrator_event(*data)
+                elif action == "coppelia_connected":
+                    self._on_coppelia_connected(data)
+                elif action == "scene_prepared":
+                    self._on_scene_prepared(data)
+                elif action == "coppelia_failed":
+                    self._connection_failed(data)
         except queue.Empty:
             pass
         self.root.after(200, self._process_ui_queue)
+
+    def _handle_orchestrator_event(
+        self,
+        owner: CellOrchestrator,
+        event: OrchestratorEvent,
+    ):
+        if owner is not self.orchestrator:
+            return
+        self.tasks = list(owner.tasks)
+        if event.kind == "task_dispatched":
+            task = next(
+                (item for item in self.tasks if item.task_id == event.task_id),
+                None,
+            )
+            if task is not None:
+                robot = task.available_robots[0] if task.available_robots else "-"
+                process = PROCESS_LABELS.get(task.process, task.process)
+                self._log(
+                    f"DISPATCH {task.task_id} → {robot}  {process} "
+                    f"[{task.target_point}]"
+                )
+        elif event.kind == "task_completed" and event.result is not None:
+            result = event.result
+            quality = (
+                f" QLTY={result.quality_result}"
+                if result.quality_result
+                else ""
+            )
+            level = "ok" if result.status == TaskStatus.FINISHED.value else "error"
+            self._log(
+                f"DONE {result.task_id} [{result.robot_id}] "
+                f"STATUS={result.status}{quality}",
+                level,
+            )
+        elif event.kind == "order_added":
+            self._log(event.message, "warn")
+        elif event.kind in {"finished", "failed", "stopped"}:
+            self._on_all_done(event.kind, event.message)
+
+        self._refresh_task_tree()
+        self._refresh_order_list()
+        self._refresh_robot_panel()
+        self._update_metrics()
+
+    def _refresh_order_list(self):
+        self.order_listbox.delete(0, tk.END)
+        for order in self.orders:
+            prefix = order.order_id + "-"
+            related = [
+                task
+                for task in self.tasks
+                if task.order_id == order.order_id
+                or task.order_id.startswith(prefix)
+            ]
+            total = len(related)
+            completed = sum(
+                task.status == TaskStatus.FINISHED.value
+                for task in related
+            )
+            if any(task.status == TaskStatus.FAILED.value for task in related):
+                status, color = "失败", C_RED
+            elif related and completed == total:
+                status, color = "完成", C_GREEN
+            elif any(task.status == TaskStatus.RUNNING.value for task in related):
+                status, color = "执行中", C_AMBER
+            elif related and completed:
+                status, color = "处理中", C_BLUE
+            elif related:
+                status, color = "等待", C_ORANGE
+            else:
+                status, color = "已排队", C_TEXT_DIM
+            progress = f"{completed}/{total}" if total else "0/-"
+            self.order_listbox.insert(
+                tk.END,
+                f" {order.order_id} | {order.product_type}×{order.quantity} "
+                f"| P{order.priority} | {status} {progress}",
+            )
+            self.order_listbox.itemconfig(tk.END, fg=color)
 
     def _refresh_task_tree(self):
         for item in self.task_tree.get_children():
@@ -768,51 +1274,143 @@ class Cr5AssemblyApp:
             w["task_label"].configure(text=txt, fg=color)
 
     def _update_metrics(self):
-        finished = [t for t in self.tasks if t.status == TaskStatus.FINISHED.value]
-        total = len(self.tasks)
-        self.metrics_labels["completed"].configure(text=f"{len(finished)}/{total}")
-        if finished:
-            dur = sum(max(t.duration, 0) for t in self.tasks if t.status == TaskStatus.FINISHED.value)
-            self.metrics_labels["makespan"].configure(text=f"{dur:.0f}s")
-        robots = self.robot_executor.get_robot_states()
-        busy = sum(1 for r in robots if r.status == "busy")
-        if robots:
-            self.metrics_labels["utilization"].configure(text=f"{busy / len(robots) * 100:.0f}%")
+        from app.dashboard import compute_runtime_kpi
 
-    def _on_all_done(self):
+        try:
+            robots = self.robot_executor.get_robot_states()
+        except Exception:
+            robots = []
+        results = (
+            self.orchestrator.results_by_task
+            if self.orchestrator is not None
+            else {}
+        )
+        kpi = compute_runtime_kpi(
+            self.tasks,
+            results,
+            conflict_count=getattr(self.scheduler, "conflict_count", 0),
+            robot_ids=[robot.robot_id for robot in robots],
+        )
+        self.metrics_labels["makespan"].configure(text=f"{kpi['makespan']:.1f}s")
+        self.metrics_labels["utilization"].configure(
+            text=f"{kpi['average_utilization'] * 100:.1f}%"
+        )
+        self.metrics_labels["waiting"].configure(
+            text=f"{kpi['avg_waiting_time']:.1f}s"
+        )
+        self.metrics_labels["conflicts"].configure(text=str(kpi["conflict_count"]))
+        self.metrics_labels["completed"].configure(
+            text=f"{kpi['completed']}/{kpi['total']}"
+        )
+        self.metrics_labels["failed"].configure(text=str(kpi["failed"]))
+
+    def _on_all_done(self, status="finished", message=""):
         self.running = False
-        self._stop_event.set()
-        self.start_btn.configure(state=tk.NORMAL, text="▶  START")
-        self._mode_label.configure(text="MOCK", bg=C_AMBER)
-        self.status_bar.configure(text="ALL TASKS COMPLETE", fg=C_GREEN)
+        self.paused = False
+        self.start_btn.configure(state=tk.DISABLED, text="RESET REQUIRED")
+        self.pause_btn.configure(text="⏸  PAUSE")
+        if status == "finished":
+            status_text, color = "ALL ORDERS COMPLETE", C_GREEN
+        elif status == "failed":
+            status_text, color = "EXECUTION FAILED", C_RED
+        else:
+            status_text, color = "EXECUTION STOPPED", C_AMBER
+        self._mode_label.configure(
+            text="COP SIM" if self.scene_linked else "MOCK",
+            bg=C_AMBER,
+        )
+        self.status_bar.configure(text=status_text, fg=color)
         finished = [t for t in self.tasks if t.status == TaskStatus.FINISHED.value]
         failed = [t for t in self.tasks if t.status == TaskStatus.FAILED.value]
-        self._log(f"EXECUTION COMPLETE — DONE: {len(finished)} | FAILED: {len(failed)}", "ok")
+        self._log(
+            f"{status_text} — DONE: {len(finished)} | FAILED: {len(failed)}"
+            + (f" | {message}" if message else ""),
+            "ok" if status == "finished" else "warn",
+        )
+        self._refresh_order_list()
         self._update_metrics()
+        if not (
+            self.scene_linked
+            and self.coppelia_manager.is_owned_process_running()
+        ):
+            self._stop_scene_async()
+        else:
+            self._log(
+                "FINAL COPPELIASIM STATE HELD — press RESET for a clean cycle",
+                "info",
+            )
 
     # ============================================================
     # 导出
     # ============================================================
     def _export_data(self):
         path = filedialog.asksaveasfilename(
-            title="Export Data", defaultextension=".csv",
-            filetypes=[("CSV", "*.csv"), ("JSON", "*.json")],
+            title="Export Data", defaultextension=".json",
+            filetypes=[("JSON", "*.json"), ("CSV", "*.csv")],
         )
         if not path:
             return
         try:
+            results = (
+                self.orchestrator.results_by_task
+                if self.orchestrator is not None
+                else {}
+            )
+            from app.dashboard import compute_runtime_kpi
+
+            try:
+                robot_ids = [
+                    robot.robot_id
+                    for robot in self.robot_executor.get_robot_states()
+                ]
+            except Exception:
+                robot_ids = []
+            runtime_kpi = compute_runtime_kpi(
+                self.tasks,
+                results,
+                conflict_count=getattr(self.scheduler, "conflict_count", 0),
+                robot_ids=robot_ids,
+            )
             if path.endswith(".csv"):
                 import csv
                 with open(path, "w", newline="", encoding="utf-8") as f:
                     w = csv.writer(f)
-                    w.writerow(["task_id", "order_id", "robot_id", "process", "status", "duration"])
+                    w.writerow([
+                        "task_id", "order_id", "robot_id", "process", "status",
+                        "planned_duration", "start_time", "end_time",
+                        "actual_duration", "quality_result", "message",
+                    ])
                     for t in self.tasks:
-                        w.writerow([t.task_id, t.order_id,
-                                    t.available_robots[0] if t.available_robots else "",
-                                    t.process, t.status, t.duration])
+                        result = results.get(t.task_id)
+                        w.writerow([
+                            t.task_id, t.order_id,
+                            result.robot_id if result else (
+                                t.available_robots[0] if t.available_robots else ""
+                            ),
+                            t.process, result.status if result else t.status, t.duration,
+                            result.start_time if result else "",
+                            result.end_time if result else "",
+                            max(result.end_time - result.start_time, 0.0) if result else "",
+                            result.quality_result if result else "",
+                            result.message if result else "",
+                        ])
             else:
                 with open(path, "w", encoding="utf-8") as f:
-                    json.dump([t.to_dict() for t in self.tasks], f, ensure_ascii=False, indent=2)
+                    json.dump(
+                        {
+                            "orders": [order.to_dict() for order in self.orders],
+                            "tasks": [task.to_dict() for task in self.tasks],
+                            "results": {
+                                task_id: result.to_dict()
+                                for task_id, result in results.items()
+                            },
+                            "runtime_kpi": runtime_kpi,
+                            "scheduling_analysis": self.scheduling_dashboard.export_data(),
+                        },
+                        f,
+                        ensure_ascii=False,
+                        indent=2,
+                    )
             self._log(f"DATA EXPORTED: {path}", "ok")
             messagebox.showinfo("EXPORT OK", f"Saved to:\n{path}")
         except Exception as e:
@@ -820,6 +1418,17 @@ class Cr5AssemblyApp:
 
     def run(self):
         self.root.mainloop()
+
+    def _on_window_close(self):
+        self._pending_start = False
+        if self.orchestrator is not None:
+            self.orchestrator.stop()
+        try:
+            self.sim_bridge.disconnect()
+        except Exception:
+            pass
+        self.coppelia_manager.terminate_owned_process()
+        self.root.destroy()
 
 
 def main():

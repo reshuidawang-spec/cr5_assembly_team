@@ -110,7 +110,7 @@ local function publishStatus(text)
     if ros_ok and pub_status then
         local ok,err = pcall(simROS2.publish, pub_status, {data=text})
         if not ok then
-            print('[ROS2 BRIDGE V2 PUB ERROR] '..tostring(err))
+            print('[ROS2 BRIDGE V3 PUB ERROR] '..tostring(err))
         end
     end
     log(text)
@@ -191,8 +191,8 @@ function sysCall_init()
 
     local ok, modOrErr = pcall(require, 'simROS2')
     if not ok then
-        print('[ROS2 BRIDGE V2 ERROR] require("simROS2") failed: '..tostring(modOrErr))
-        print('[ROS2 BRIDGE V2 ERROR] 必须从 source 过 ROS2 的终端启动 CoppeliaSim。')
+        print('[ROS2 BRIDGE V3 ERROR] require("simROS2") failed: '..tostring(modOrErr))
+        print('[ROS2 BRIDGE V3 ERROR] 必须从 source 过 ROS2 的终端启动 CoppeliaSim。')
         ros_ok = false
         return
     end

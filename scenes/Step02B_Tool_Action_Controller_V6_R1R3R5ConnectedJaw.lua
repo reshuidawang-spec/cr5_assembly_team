@@ -1,7 +1,7 @@
 sim = require('sim')
 
 -- =========================================================
--- Step02B_Tool_Action_Controller_V5_R1R3R5ConnectedJaw.lua
+-- Step02B_Tool_Action_Controller_V6_R1R3R5ConnectedJaw.lua
 --
 -- 适配当前末端工具：
 -- R1：宽口可调夹爪，同时夹箱体和端子排
@@ -398,7 +398,7 @@ local function handle(cmd)
 end
 
 function sysCall_init()
-    print('===== Step02B Tool Action Controller V5 R1 Box+Terminal =====')
+    print('===== Step02B Tool Action Controller V6 R1 Box+Terminal =====')
     print('[INFO] Keep this script enabled.')
     print('[INFO] Command signal: '..CMD_SIGNAL)
 

@@ -549,13 +549,10 @@ class DiscreteEventExperiment:
                 residencies.append(max(sort_task.end_time - transfer.start_time, 0.0))
             if not inspect:
                 continue
-            if "sort_defect" in by_process:
-                clearance_waits.append(max(by_process["sort_defect"].start_time - inspect.end_time, 0.0))
-            elif "screw" in by_process and "sort_good" in by_process:
+            if "screw" in by_process and sort_task:
                 screw = by_process["screw"]
-                sort_good = by_process["sort_good"]
                 wait_after_inspect = max(screw.start_time - inspect.end_time, 0.0)
-                wait_after_screw = max(sort_good.start_time - screw.end_time, 0.0)
+                wait_after_screw = max(sort_task.start_time - screw.end_time, 0.0)
                 clearance_waits.append(wait_after_inspect + wait_after_screw)
 
         avg_residency = sum(residencies) / len(residencies) if residencies else 0.0

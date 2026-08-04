@@ -10,10 +10,9 @@ scheduler:
   # The five robots are fixed-role resources in the current scene.
   cross_type_reassign: false
 
-  # CAMERA branches the flow:
-  # OK -> R4 screw fastening -> R5 good sorting.
-  # NG -> R5 defect sorting directly, without R4 screw fastening.
-  sort_trigger_process: branch_by_quality
+  # CAMERA records the quality result. Every product is fastened by R4 first,
+  # then R5 selects the good or defect conveyor from the stored result.
+  sort_trigger_process: screw_then_branch_by_quality
 
   scoring:
     priority_weight: 0.45

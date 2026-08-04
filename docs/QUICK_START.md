@@ -6,7 +6,7 @@
 
 ## 1. 场景是什么
 
-一个在 CoppeliaSim 中运行的**五台 CR5A 机械臂协同装配仿真场景**，通过 ROS2 与外部 Python 控制程序通信。
+一个在 CoppeliaSim 中运行的**五台 CR5A 机械臂协同装配仿真场景**。默认 GUI 通过 ZMQ Remote API 控制场景模型，不连接真实机械臂。
 
 ```
 /FiveCR5A_Cell          ← 场景根节点
@@ -30,7 +30,7 @@
 | R4 | 锁端子排螺钉 | 电动螺丝刀 `R4T` |
 | R5 | 检测后分拣（合格→合格品传送带，缺陷→缺陷品传送带） | 宽口夹爪 `R5T` |
 
-完整流程：R1 箱体 → R2 PCB → R3 模块 → R1 端子排 → R3 搬运 → 相机检测 → R4 锁付 → R5 分拣
+完整流程：R1 箱体 → R2 PCB → R1 端子排 → R3 模块 → R3 搬运 → 相机检测 → R4 锁付并回 HOME → R5 分拣
 
 ## 3. 场景搭建三步骤
 
@@ -113,15 +113,39 @@ ros2 topic pub /compact_cell/joint_cmd std_msgs/msg/String "{data: 'ALL HOME'}" 
 | R4 | `/FiveCR5A_Cell/Targets/R4_Targets/` |
 | R5 | `/FiveCR5A_Cell/Targets/R5_Targets/` |
 
-## 6. 启动方式
+## 6. 一体化软件启动方式
 
-**不能直接双击 CoppeliaSim！** 必须从 ROS2 终端启动：
+推荐直接启动软件：
 
 ```bash
-source /opt/ros/humble/setup.bash
-cd /opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04
-./coppeliaSim.sh
+cd /home/zhu/cr5_assembly_team
+python3 run_demo.py
 ```
+
+软件主窗口包含 `仿真执行` 和 `调度分析` 两个页签。填写订单号、产品类型、数量 1、优先级和交期后，直接点击底部 START；队列为空时 START 会自动提交当前表单。软件会自动启动或连接 CoppeliaSim、加载当前场景、校验场景指纹及 R1～R5 五套运动计划，并在界面中更新订单进度、任务队列、资源状态、检测结果、日志和实际 KPI。
+
+点击 START 后，底部状态应依次显示 `CONNECTING COPPELIASIM`、`PREPARING SIMULATION`、`EXECUTING` 和 `ALL ORDERS COMPLETE`。连接异常会在 5 秒内返回明确错误，不会无限卡住。修改代码后必须关闭旧的软件窗口并重新运行，已启动的 Python 进程不会自动加载新代码。
+
+当前 GUI 会让 CoppeliaSim 内的五台机械臂依次完成箱体上料、PCB 安装、端子安装、模块安装、产品转运、相机检测、锁付和分拣。场景只有一套实体工件，因此每轮只接受一个订单、数量 1；全部完成后点击 RESET 再开始下一单。完全离线、无机械臂运动的界面调试使用：
+
+```bash
+python3 run_demo.py --mock
+```
+
+需要比较多订单调度方案时，在 `仿真执行` 页用 ADD 累计多笔订单，再切换到 `调度分析` 页点击“分析当前订单”。分析页会显示 Baseline 与 Proposed 指标及推荐任务时间线，但不会驱动机械臂。EXPORT 默认生成包含订单、执行结果、实际 KPI 和调度分析的统一 JSON。
+
+`--scene-replay` 也只回放工艺状态，不执行关节轨迹；`--real` 会明确拒绝运行，整个工程不会连接物理机械臂。
+
+### 手动启动 CoppeliaSim
+
+正常使用无需手动启动。确有需要时运行：
+
+```bash
+/opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04/coppeliaSim.sh \
+  /home/zhu/cr5_assembly_team/scenes/compact_cell1ttt.ttt
+```
+
+不要在终端中直接输入 `.ttt` 文件路径；它是场景数据，不是可执行程序。
 
 ## 7. 场景当前能力
 
@@ -133,13 +157,16 @@ cd /opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04
 - 产品装配阶段显示
 - 关节运动控制（手动点动 + 绝对设定 + 回零）
 - APP/TCP 工艺目标点
+- GUI 内启动/连接 CoppeliaSim
+- GUI 订单录入、动态调度、状态回传和场景阶段联动
+- R1～R5 五套场景绑定运动计划
+- 调度器驱动完整 8 工序运动闭环
+- 运行时关节、工作空间和碰撞检查
 
-### ❌ 待开发（3号负责）
-- 逆运动学自动求解
-- 自动路径规划
-- APP→TCP→APP 自动运动
-- 避障
-- 多臂调度
+### ❌ 待开发
+- 新场景/新点位的逆运动学自动求解与在线路径生成
+- 多件工件同时驻留场景的连续流水执行
+- 任意物理机械臂连接或控制
 
 ## 8. 详细文档
 

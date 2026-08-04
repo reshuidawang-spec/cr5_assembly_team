@@ -60,7 +60,7 @@ local P = {
     pcbSupply      = {-1.22, -0.42},
     moduleSupply   = {-0.78, -0.20},
     assembly       = {-1.08,  0.12},
-    inspection     = { 0.35,  0.05},
+    inspection     = {-0.04,  0.00},
     goodPlace      = { 0.85, -1.10},
     defectPlace    = {-0.15, -1.12},
 }
@@ -235,7 +235,7 @@ function sysCall_init()
     makePair(gR3,'R3_PRODUCT_PLACE_INSPECTION', {P.inspection[1],P.inspection[2],BOX_CENTER_Z}, {0,0,0},COLORS.R3)
 
     -- R4：螺钉锁付
-    local screwTcp = {P.inspection[1]+0.020,P.inspection[2]-0.035,BOX_TOP_Z+TERMINAL_H+0.030}
+    local screwTcp = {P.inspection[1]+0.070,P.inspection[2]-0.035,BOX_TOP_Z+TERMINAL_H+0.030}
     local screwPress = {screwTcp[1],screwTcp[2],screwTcp[3]-0.030}
     local screwApp = appOf(screwTcp,SCREW_APP_LIFT)
 

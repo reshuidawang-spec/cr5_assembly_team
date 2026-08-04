@@ -12,8 +12,8 @@ _PRODUCT_PROCESSES = {
         "processes": [
             (ProcessType.BOX_FEED, "box_supply_area", "R1_BOX_PLACE_TCP", ["R1"], 6, ["box_supply_area", "assembly_fixture"]),
             (ProcessType.PCB_INSTALL, "pcb_supply_area", "R2_PCB_PLACE_TCP", ["R2"], 8, ["pcb_supply_area", "assembly_fixture"]),
-            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 7, ["module_supply_area", "assembly_fixture"]),
             (ProcessType.TERMINAL_INSTALL, "terminal_supply_area", "R1_TERMINAL_PLACE_TCP", ["R1"], 7, ["terminal_supply_area", "assembly_fixture"]),
+            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 7, ["module_supply_area", "assembly_fixture"]),
             (ProcessType.TRANSFER_TO_INSPECTION, "transfer_area", "R3_PRODUCT_PLACE_INSPECTION_TCP", ["R3"], 8, ["assembly_fixture", "inspection_platform_area"]),
             (ProcessType.INSPECT, "camera_area", "CAMERA_INSPECTION_CENTER", ["CAMERA"], 5, ["inspection_platform_area", "camera_area"]),
         ],
@@ -22,8 +22,8 @@ _PRODUCT_PROCESSES = {
         "processes": [
             (ProcessType.BOX_FEED, "box_supply_area", "R1_BOX_PLACE_TCP", ["R1"], 7, ["box_supply_area", "assembly_fixture"]),
             (ProcessType.PCB_INSTALL, "pcb_supply_area", "R2_PCB_PLACE_TCP", ["R2"], 10, ["pcb_supply_area", "assembly_fixture"]),
-            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 9, ["module_supply_area", "assembly_fixture"]),
             (ProcessType.TERMINAL_INSTALL, "terminal_supply_area", "R1_TERMINAL_PLACE_TCP", ["R1"], 8, ["terminal_supply_area", "assembly_fixture"]),
+            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 9, ["module_supply_area", "assembly_fixture"]),
             (ProcessType.TRANSFER_TO_INSPECTION, "transfer_area", "R3_PRODUCT_PLACE_INSPECTION_TCP", ["R3"], 9, ["assembly_fixture", "inspection_platform_area"]),
             (ProcessType.INSPECT, "camera_area", "CAMERA_INSPECTION_CENTER", ["CAMERA"], 6, ["inspection_platform_area", "camera_area"]),
         ],
@@ -32,19 +32,31 @@ _PRODUCT_PROCESSES = {
         "processes": [
             (ProcessType.BOX_FEED, "box_supply_area", "R1_BOX_PLACE_TCP", ["R1"], 8, ["box_supply_area", "assembly_fixture"]),
             (ProcessType.PCB_INSTALL, "pcb_supply_area", "R2_PCB_PLACE_TCP", ["R2"], 12, ["pcb_supply_area", "assembly_fixture"]),
-            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 10, ["module_supply_area", "assembly_fixture"]),
             (ProcessType.TERMINAL_INSTALL, "terminal_supply_area", "R1_TERMINAL_PLACE_TCP", ["R1"], 10, ["terminal_supply_area", "assembly_fixture"]),
+            (ProcessType.MODULE_INSTALL, "module_supply_area", "R3_MODULE_PLACE_TCP", ["R3"], 10, ["module_supply_area", "assembly_fixture"]),
             (ProcessType.TRANSFER_TO_INSPECTION, "transfer_area", "R3_PRODUCT_PLACE_INSPECTION_TCP", ["R3"], 10, ["assembly_fixture", "inspection_platform_area"]),
             (ProcessType.INSPECT, "camera_area", "CAMERA_INSPECTION_CENTER", ["CAMERA"], 7, ["inspection_platform_area", "camera_area"]),
         ],
     },
 }
 
-# 检测结果分支：OK 先由 R4 锁付再 R5 分拣；NG 直接由 R5 分拣。
+# 检测结果先保存；所有产品由 R4 锁付后，再由 R5 按 OK/NG 分拣。
 _POST_INSPECTION_PROCESSES = {
     ProcessType.SCREW: ("inspection_screw_area", "R4_SCREW_PRESS", ["R4"], 9, ["inspection_screw_area", "inspection_platform_area"]),
     ProcessType.SORT_GOOD: ("good_conveyor_area", "R5_GOOD_PLACE_TCP", ["R5"], 5, ["inspection_platform_area", "good_conveyor_area"]),
     ProcessType.SORT_DEFECT: ("defect_conveyor_area", "R5_DEFECT_PLACE_TCP", ["R5"], 5, ["inspection_platform_area", "defect_conveyor_area"]),
+}
+
+_SCENE_COMMANDS = {
+    ProcessType.BOX_FEED: "R1_BOX_PLACED",
+    ProcessType.PCB_INSTALL: "R2_PCB_PLACED",
+    ProcessType.MODULE_INSTALL: "R3_MODULE_PLACED",
+    ProcessType.TERMINAL_INSTALL: "R1_TERMINAL_PLACED",
+    ProcessType.TRANSFER_TO_INSPECTION: "R3_PRODUCT_TO_INSPECTION",
+    ProcessType.INSPECT: "CAMERA_GOOD_OR_DEFECT",
+    ProcessType.SCREW: "R4_SCREW_DONE",
+    ProcessType.SORT_GOOD: "R5_SORT_GOOD_DONE",
+    ProcessType.SORT_DEFECT: "R5_SORT_DEFECT_DONE",
 }
 
 
@@ -99,6 +111,7 @@ class MockScheduler(IScheduler):
                             else TaskStatus.WAITING.value
                         ),
                         required_areas=list(required_areas),
+                        scene_command=_SCENE_COMMANDS[process],
                     )
                     tasks.append(task)
                     prev_id = task.task_id
@@ -185,9 +198,32 @@ class MockScheduler(IScheduler):
             if quality_result not in ("OK", "NG"):
                 self._notify()
                 return tasks
+            process = ProcessType.SCREW
+            area, point, available_robots, duration, required_areas = _POST_INSPECTION_PROCESSES[process]
+            tasks.append(Task(
+                task_id=self._next_task_id(),
+                order_id=completed_task.order_id,
+                product_type=completed_task.product_type,
+                process=process.value,
+                target_area=area,
+                target_point=point,
+                available_robots=list(available_robots),
+                duration=duration,
+                predecessors=[completed_task.task_id],
+                priority=completed_task.priority,
+                status=TaskStatus.PENDING.value,
+                required_areas=list(required_areas),
+                scene_command=_SCENE_COMMANDS[process],
+            ))
+        elif (
+            completed_task
+            and completed_task.process == ProcessType.SCREW.value
+            and result.status == TaskStatus.FINISHED.value
+            and self._quality_by_order.get(completed_task.order_id) in ("OK", "NG")
+        ):
             process = (
-                ProcessType.SCREW
-                if quality_result == "OK"
+                ProcessType.SORT_GOOD
+                if self._quality_by_order[completed_task.order_id] == "OK"
                 else ProcessType.SORT_DEFECT
             )
             area, point, available_robots, duration, required_areas = _POST_INSPECTION_PROCESSES[process]
@@ -204,27 +240,7 @@ class MockScheduler(IScheduler):
                 priority=completed_task.priority,
                 status=TaskStatus.PENDING.value,
                 required_areas=list(required_areas),
-            ))
-        elif (
-            completed_task
-            and completed_task.process == ProcessType.SCREW.value
-            and result.status == TaskStatus.FINISHED.value
-            and self._quality_by_order.get(completed_task.order_id) == "OK"
-        ):
-            area, point, available_robots, duration, required_areas = _POST_INSPECTION_PROCESSES[ProcessType.SORT_GOOD]
-            tasks.append(Task(
-                task_id=self._next_task_id(),
-                order_id=completed_task.order_id,
-                product_type=completed_task.product_type,
-                process=ProcessType.SORT_GOOD.value,
-                target_area=area,
-                target_point=point,
-                available_robots=list(available_robots),
-                duration=duration,
-                predecessors=[completed_task.task_id],
-                priority=completed_task.priority,
-                status=TaskStatus.PENDING.value,
-                required_areas=list(required_areas),
+                scene_command=_SCENE_COMMANDS[process],
             ))
         self._notify()
         return tasks

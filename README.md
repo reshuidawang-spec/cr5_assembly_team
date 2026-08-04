@@ -8,20 +8,21 @@
 
 ## 1. 当前项目状态
 
-仓库目前已经包含两部分可以独立使用、正在继续集成的资产：
+仓库当前已经形成一条可直接运行的纯仿真闭环：
 
 | 部分 | 当前内容 | 状态 |
 |---|---|---|
-| 五臂 CoppeliaSim 场景 | 五台 CR5A、供料区、装配夹具、检测/锁付平台、固定相机、双传送带、末端工具、APP/TCP 目标点、ROS2 命令桥接与关节点动 | 场景资产与 Lua 脚本已提交 |
-| Python 调度与演示程序 | 订单解析、五臂细粒度工序链、区域互斥、动态调度、故障实验、Mock 执行器和界面 | Mock/离线仿真可运行，真实 ROS2/CoppeliaSim 执行层仍需接通 |
+| 五臂 CoppeliaSim 场景 | 五台 CR5A、供料区、装配夹具、检测/锁付平台、固定相机、双传送带、末端工具、工件和已验证关节路径 | 当前场景与五套运动计划已绑定并通过整轮验收 |
+| Python 调度与演示程序 | 订单解析、五臂细粒度工序链、区域互斥、动态调度、统一编排器、CoppeliaSim 执行器和界面 | START 可自动启动场景，完成 8 道任务并回传订单、任务、资源、质量和 KPI 状态 |
 
-当前不能将“场景已搭建”理解为整套系统已经自动运行。以下能力仍属于后续集成任务：
+当前执行边界如下：
 
 - 自动逆运动学与轨迹规划；
-- 多机械臂实时避碰；
-- Python 调度器向 ROS2/CoppeliaSim 下发真实任务；
-- 真实抓取、吸附、锁付和视觉检测结果回传；
-- 完整订单驱动的自动连续运行。
+- 任意新场景或新点位的在线路径生成；
+- 多件工件同时驻留场景的连续流水执行；
+- 任何物理机械臂连接或控制。
+
+当前主流程使用当前场景哈希对应的离线验证路径、运行时碰撞检查和确定性步进，只控制 CoppeliaSim 内的模型，不连接真实机械臂。场景目前只有一套实体工件，因此每轮限定为一个订单、数量 1；完成后点击 RESET，再执行下一单。
 
 ---
 
@@ -32,9 +33,9 @@ R1 抓取箱体并放入装配夹具
     ↓
 R2 吸取 PCB 并装入箱体
     ↓
-R3 安装控制模块
-    ↓
 R1 安装端子排
+    ↓
+R3 安装控制模块
     ↓
 R3 将完整装配体转移到检测/锁付平台
     ↓
@@ -73,7 +74,8 @@ R5 根据先前检测结果分拣到合格品或缺陷品传送带
 - `Step02B_Tool_Action_Controller_V6_R1R3R5ConnectedJaw.lua`：控制末端工具与工件绑定/释放；
 - `ROS2_CompactCell_Bridge_V3_ColorCycle.lua`：工艺命令 ROS2 桥接；
 - `ROS2_Joint_Jog_Controller_R1_R5.lua`：R1～R5 关节点动；
-- `compact_cell1ttt.ttt`：当前场景文件。
+- `compact_cell1ttt.ttt`：由上述最新脚本重建并通过结构验收的当前场景文件；
+- `configs/scene_contract.yaml`：场景哈希、对象数量和内嵌脚本版本基线。
 
 完整搭建和使用方法见：
 
@@ -90,6 +92,7 @@ configs/
 ├── points.yaml
 ├── product_types.yaml
 ├── robots.yaml
+├── scene_contract.yaml
 └── scheduler.yaml
 
 scheduler/
@@ -106,45 +109,58 @@ scheduler/
 - [四种方案与故障对比](docs/FOUR_SCHEME_FAULT_COMPARISON.md)
 - [4号调度模块方案说明](docs/4号调度模块方案说明.md)
 
-### 3.3 Mock 演示与测试
+### 3.3 一体化 GUI、仿真运动与测试
 
-`mock/` 用于在真实 ROS2 和 CoppeliaSim 执行层尚未接通时验证订单、任务状态和调度闭环。
+默认 GUI 是“订单 + 调度 + 五臂 CoppeliaSim 执行 + 数据看板”的一体化软件。主窗口包含两个页签：`仿真执行` 自动启动/连接当前场景，校验场景指纹和 R1～R5 五套路径，并实时展示订单进度、任务状态、六个资源状态、质量结果、日志与实际 KPI；`调度分析` 对当前订单队列运行 Baseline 串行方案和 Proposed 动态并行方案，展示总完成时间、平均等待、加权延期、冲突、并行效率及推荐任务时间线。两页共用正式订单解析器、产品配置和调度实验模型。`orchestration/` 中的统一编排器负责“生成任务 → 调度 → 恰好一次派发 → 完成回传 → 动态生成锁付/分拣任务”，并保存执行结果供 KPI 和统一导出使用。
 
 ```bash
-python3 run_demo.py
-python3 run_demo.py --headless
+python3 run_demo.py                 # 一体化 GUI；自动启动/连接 CoppeliaSim 并执行五臂运动
+python3 run_demo.py --mock          # 完全离线 GUI
+python3 run_demo.py --headless      # 无界面调度闭环 + Mock 执行
+python3 run_demo.py --scene-check   # 连接已打开的场景并只读检查契约
+python3 run_demo.py --scene-replay  # Mock 动作 + 真实场景状态信号
+python3 run_demo.py --real          # 明确拒绝物理机械臂连接
+```
+
+仿真执行顺序：填写订单号、产品类型、数量 1、优先级和交期，直接点击底部 START。队列为空时 START 会自动提交当前表单。若 CoppeliaSim 未运行，软件会根据 `configs/runtime.yaml` 自动加载环境和当前场景；严格场景契约及五套运动计划通过后，依次执行 R1 箱体、R2 PCB、R1 端子、R3 模块、R3 转运、CAMERA 检测、R4 锁付和 R5 分拣。完成后保留最终场景，点击 RESET 才开始下一轮。
+
+多订单分析顺序：在 `仿真执行` 页用 ADD 加入多笔订单，然后切换到 `调度分析` 页并点击“分析当前订单”。该模式只做离散事件调度，不驱动 CoppeliaSim，所以允许多订单和数量大于 1。底部 EXPORT 默认导出统一 JSON，其中同时包含订单、执行任务、任务结果、实际 KPI 和最近一次调度分析；CSV 用于导出逐任务执行明细。
+
+默认 GUI 会发送关节轨迹给 CoppeliaSim 模型；`--mock` 和 `--scene-replay` 不会执行机械臂轨迹。`configs/motion_validation.yaml` 明确将仿真运动打开、物理机械臂运动关闭；`--real` 不存在绕过方式。
+
+完整仿真验收（需有图形桌面）可运行：
+
+```bash
+python3 scripts/simulation_cycle_smoke.py --quality OK --timeout 900
+python3 scripts/gui_integration_smoke.py
 ```
 
 调度测试：
 
 ```bash
-python3 -m pytest tests/test_scheduler_v2.py
+python3 -m unittest discover -s tests -q
 ```
 
 装配流程和故障实验脚本位于 `scripts/`。
 
 ---
 
-## 4. ROS2 与 CoppeliaSim 启动
+## 4. CoppeliaSim 启动
 
 推荐环境：
 
 - Ubuntu 22.04；
-- ROS2 Humble；
 - CoppeliaSim Edu 4.10；
 - Python 3。
 
-CoppeliaSim 必须从已经加载 ROS2 环境的终端启动：
+正常情况下只需运行 `python3 run_demo.py`，GUI 会自动启动 CoppeliaSim。需要手动打开时，可以使用：
 
 ```bash
-source /opt/ros/humble/setup.bash
-source ~/dobot_ws/install/setup.bash
-
-cd /opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04
-./coppeliaSim.sh
+/opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04/coppeliaSim.sh \
+  /home/zhu/cr5_assembly_team/scenes/compact_cell1ttt.ttt
 ```
 
-若直接双击启动，`simROS2` 可能因缺少 ROS2 动态库而加载失败。
+`.ttt` 是 CoppeliaSim 场景文件，不能作为 shell 命令直接执行。默认 GUI 的运动路径通过 CoppeliaSim ZMQ Remote API 控制仿真模型，不经过物理机械臂驱动。
 
 ---
 
@@ -182,17 +198,16 @@ cd /opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04
 
 ## 6. 推荐下一步
 
-1. 使用 `compact_cell1ttt.ttt` 验证七个 Lua 脚本和对象命名；
-2. 固化 R1～R5 的关节名、TCP 名和目标点名；
-3. 实现 Python 调度任务到 ROS2 topic 的适配层；
-4. 接收 CoppeliaSim 完成信号并推进任务状态；
-5. 加入 MoveIt2 或自定义轨迹规划与共享区域避碰；
-6. 完成订单输入到五臂连续装配、检测、锁付和分拣的端到端演示。
+1. 以 `configs/scene_contract.yaml` 中的当前场景哈希为基线，重新规划 R1～R5 的 APP/TCP/Home 运动；
+2. 对每条轨迹执行自碰撞、机器人间碰撞、夹具/工件间隙和共享区域互斥验证；
+3. 将通过验证的轨迹清单写入 `configs/motion_validation.yaml`，再接入真实运动执行器；
+4. 接收真实运动、夹具和视觉完成结果并推进统一编排器状态；
+5. 完成订单输入到五臂连续装配、检测、锁付和分拣的端到端实机演示。
 
 ---
 
 ## 7. 仓库说明
 
-动态调度测试相关说明集中放在 `scheduling_algorithm_test/`；正式开发仍以仓库根目录下的同名模块为准，避免维护多套副本。
+动态调度测试相关说明集中放在 `scheduling_algorithm_test/`；正式开发仍以仓库根目录下的同名模块为准，避免维护多套副本。`scripts/dynamic_order_window.py` 和 `scripts/run_coppelia_order_demo.py` 是旧的独立演示入口，不参与正式一体化流程。`change/` 是历史分支快照和补丁归档，不参与 `run_demo.py` 的运行或导入。
 
 ROS2 的 `build/`、`install/`、`log/`，以及 Python 缓存、IDE 临时文件不应提交。

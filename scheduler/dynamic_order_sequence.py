@@ -161,7 +161,11 @@ def summarize_order_sequence(
             0.0,
         )
         quality_result = _quality_from_branch(ordered)
-        branch = "NG → R5缺陷品分拣" if quality_result == "NG" else "OK → R4锁付 → R5良品分拣"
+        branch = (
+            "NG → R4锁付 → R5缺陷品分拣"
+            if quality_result == "NG"
+            else "OK → R4锁付 → R5良品分拣"
+        )
         attrs = order_attributes.get(order_id, {})
         pending_rows.append(
             OrderSequenceRow(

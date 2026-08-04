@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
+from typing import Any, List, Optional
 
 
 class TaskStatus(str, Enum):
@@ -85,6 +85,7 @@ class Task:
     priority: int = 1
     status: str = "pending"
     required_areas: List[str] = field(default_factory=list)
+    scene_command: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -100,6 +101,7 @@ class Task:
             "priority": self.priority,
             "status": self.status,
             "required_areas": self.required_areas,
+            "scene_command": self.scene_command,
         }
 
 
@@ -114,6 +116,7 @@ class TaskResult:
     end_time: float = 0.0
     message: str = ""
     quality_result: str = ""
+    metrics: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -124,6 +127,7 @@ class TaskResult:
             "end_time": self.end_time,
             "message": self.message,
             "quality_result": self.quality_result,
+            "metrics": self.metrics,
         }
 
 

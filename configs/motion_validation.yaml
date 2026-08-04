@@ -1,0 +1,15 @@
+schema_version: 1
+
+scene_sha256: 04ef194b139ead545a433db4b87b863c4d86325c24e0ed98a425e588cb68345a
+motion_enabled: false
+reason: >-
+  Physical robot motion is intentionally disabled. This project now runs only
+  validated CoppeliaSim trajectories and does not connect to a robot driver.
+
+simulation_motion_enabled: true
+validated_plans:
+  R1: robot_control/plans/r1_complete_cycle_plan.json
+  R2: robot_control/plans/r2_pcb_cycle_plan.json
+  R3: robot_control/plans/r3_gripper_cycle_plan.json
+  R4: robot_control/plans/r4_screw_cycle_plan.json
+  R5: robot_control/plans/r5_sort_cycle_plan.json

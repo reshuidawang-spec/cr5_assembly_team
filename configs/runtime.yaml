@@ -1,0 +1,16 @@
+schema_version: 1
+
+coppeliasim:
+  executable: /opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04/coppeliaSim.sh
+  scene: scenes/compact_cell1ttt.ttt
+  setup_scripts:
+    - /opt/ros/humble/setup.bash
+    - /home/zhu/dobot_ws/install/setup.bash
+  host: 127.0.0.1
+  port: 23000
+  startup_timeout: 30
+
+gui:
+  # Pure simulation: direct CoppeliaSim joint trajectories, with no physical
+  # robot driver or controller address in the execution path.
+  execution_mode: coppeliasim_motion

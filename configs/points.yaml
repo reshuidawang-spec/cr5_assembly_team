@@ -5,243 +5,243 @@ R1_HOME_REF:
   robot: R1
   area: r1_home
   action: home
-  position: [-1.47, 0.67, 0.80]
+  position: [-1.55, 0.55, 0.70]
   description: "R1 home reference"
 
 R1_BOX_PICK_APP:
   robot: R1
   area: box_supply_area
   action: box_pick_approach
-  position: [-1.80, 0.35, 0.55]
+  position: [-1.86, 0.22, 0.432]
   description: "Box pick approach"
 
 R1_BOX_PICK_TCP:
   robot: R1
   area: box_supply_area
   action: box_pick
-  position: [-1.80, 0.35, 0.30]
+  position: [-1.86, 0.22, 0.252]
   description: "Box pick TCP"
 
 R1_BOX_PLACE_APP:
   robot: R1
   area: assembly_fixture
   action: box_place_approach
-  position: [-1.15, 0.20, 0.55]
+  position: [-1.08, 0.12, 0.432]
   description: "Box place approach"
 
 R1_BOX_PLACE_TCP:
   robot: R1
   area: assembly_fixture
   action: box_feed
-  position: [-1.15, 0.20, 0.30]
+  position: [-1.08, 0.12, 0.252]
   description: "Place box into assembly fixture"
 
 R1_TERMINAL_PICK_APP:
   robot: R1
   area: terminal_supply_area
   action: terminal_pick_approach
-  position: [-1.90, 0.10, 0.45]
+  position: [-1.82, -0.02, 0.446]
   description: "Terminal block pick approach"
 
 R1_TERMINAL_PICK_TCP:
   robot: R1
   area: terminal_supply_area
   action: terminal_pick
-  position: [-1.90, 0.10, 0.24]
+  position: [-1.82, -0.02, 0.266]
   description: "Terminal block pick TCP"
 
 R1_TERMINAL_PLACE_APP:
   robot: R1
   area: assembly_fixture
   action: terminal_place_approach
-  position: [-1.09, 0.13, 0.50]
+  position: [-1.06, 0.085, 0.4785]
   description: "Terminal block place approach"
 
 R1_TERMINAL_PLACE_TCP:
   robot: R1
   area: assembly_fixture
   action: terminal_install
-  position: [-1.09, 0.13, 0.34]
+  position: [-1.06, 0.085, 0.2985]
   description: "Install terminal block"
 
 R2_HOME_REF:
   robot: R2
   area: r2_home
   action: home
-  position: [-1.55, -0.15, 0.80]
+  position: [-1.55, -0.20, 0.70]
   description: "R2 home reference"
 
 R2_PCB_PICK_APP:
   robot: R2
   area: pcb_supply_area
   action: pcb_pick_approach
-  position: [-1.28, -0.28, 0.45]
+  position: [-1.22, -0.42, 0.416]
   description: "PCB pick approach"
 
 R2_PCB_PICK_TCP:
   robot: R2
   area: pcb_supply_area
   action: pcb_pick
-  position: [-1.28, -0.28, 0.22]
+  position: [-1.22, -0.42, 0.236]
   description: "PCB pick TCP"
 
 R2_PCB_PLACE_APP:
   robot: R2
   area: assembly_fixture
   action: pcb_place_approach
-  position: [-1.15, 0.20, 0.50]
+  position: [-1.08, 0.12, 0.4704]
   description: "PCB place approach"
 
 R2_PCB_PLACE_TCP:
   robot: R2
   area: assembly_fixture
   action: pcb_install
-  position: [-1.15, 0.20, 0.29]
+  position: [-1.08, 0.12, 0.2904]
   description: "Install PCB"
 
 R3_HOME_REF:
   robot: R3
   area: r3_home
   action: home
-  position: [-0.55, 0.28, 0.80]
+  position: [-0.60, 0.35, 0.70]
   description: "R3 home reference"
 
 R3_MODULE_PICK_APP:
   robot: R3
   area: module_supply_area
   action: module_pick_approach
-  position: [-0.85, -0.05, 0.45]
+  position: [-0.78, -0.20, 0.451]
   description: "Control module pick approach"
 
 R3_MODULE_PICK_TCP:
   robot: R3
   area: module_supply_area
   action: module_pick
-  position: [-0.85, -0.05, 0.24]
+  position: [-0.78, -0.20, 0.271]
   description: "Control module pick TCP"
 
 R3_MODULE_PLACE_APP:
   robot: R3
   area: assembly_fixture
   action: module_place_approach
-  position: [-1.12, 0.22, 0.50]
+  position: [-1.105, 0.145, 0.4833]
   description: "Control module place approach"
 
 R3_MODULE_PLACE_TCP:
   robot: R3
   area: assembly_fixture
   action: module_install
-  position: [-1.12, 0.22, 0.34]
+  position: [-1.105, 0.145, 0.3033]
   description: "Install control module"
 
 R3_PRODUCT_PICK_APP:
   robot: R3
   area: assembly_fixture
   action: product_pick_approach
-  position: [-1.15, 0.20, 0.60]
+  position: [-1.08, 0.12, 0.432]
   description: "Assembly product pick approach"
 
 R3_PRODUCT_PICK_TCP:
   robot: R3
   area: assembly_fixture
   action: product_pick
-  position: [-1.15, 0.20, 0.34]
+  position: [-1.08, 0.12, 0.252]
   description: "Assembly product pick TCP"
 
 R3_PRODUCT_PLACE_INSPECTION_APP:
   robot: R3
   area: inspection_platform_area
   action: product_place_inspection_approach
-  position: [0.15, 0.05, 0.60]
+  position: [-0.04, 0.00, 0.432]
   description: "Inspection platform place approach"
 
 R3_PRODUCT_PLACE_INSPECTION_TCP:
   robot: R3
   area: inspection_platform_area
   action: transfer_to_inspection
-  position: [0.15, 0.05, 0.34]
+  position: [-0.04, 0.00, 0.252]
   description: "Place assembly product on inspection platform"
 
 R4_HOME_REF:
   robot: R4
   area: r4_home
   action: home
-  position: [0.58, 0.25, 0.80]
+  position: [0.62, 0.25, 0.70]
   description: "R4 home reference"
 
 R4_SCREW_APP:
   robot: R4
   area: inspection_screw_area
   action: screw_approach
-  position: [0.21, -0.02, 0.55]
+  position: [0.03, -0.035, 0.499]
   description: "Screw approach"
 
 R4_SCREW_TCP:
   robot: R4
   area: inspection_screw_area
   action: screw_touch
-  position: [0.21, -0.02, 0.36]
+  position: [0.03, -0.035, 0.339]
   description: "Screw touch point"
 
 R4_SCREW_PRESS:
   robot: R4
   area: inspection_screw_area
   action: screw
-  position: [0.21, -0.02, 0.33]
+  position: [0.03, -0.035, 0.309]
   description: "Screw press point"
 
 R5_HOME_REF:
   robot: R5
   area: r5_home
   action: home
-  position: [0.15, -0.50, 0.80]
+  position: [0.35, -0.45, 0.70]
   description: "R5 home reference"
 
 R5_PRODUCT_PICK_APP:
   robot: R5
   area: inspection_platform_area
   action: product_pick_approach
-  position: [0.15, 0.05, 0.60]
+  position: [-0.04, 0.00, 0.432]
   description: "Inspection product pick approach"
 
 R5_PRODUCT_PICK_TCP:
   robot: R5
   area: inspection_platform_area
   action: product_pick
-  position: [0.15, 0.05, 0.34]
+  position: [-0.04, 0.00, 0.252]
   description: "Inspection product pick TCP"
 
 R5_GOOD_PLACE_APP:
   robot: R5
   area: good_conveyor_area
   action: good_place_approach
-  position: [0.65, -1.10, 0.62]
+  position: [0.85, -1.10, 0.432]
   description: "Good conveyor place approach"
 
 R5_GOOD_PLACE_TCP:
   robot: R5
   area: good_conveyor_area
   action: sort_good
-  position: [0.65, -1.10, 0.42]
+  position: [0.85, -1.10, 0.252]
   description: "Good conveyor place TCP"
 
 R5_DEFECT_PLACE_APP:
   robot: R5
   area: defect_conveyor_area
   action: defect_place_approach
-  position: [-0.35, -1.12, 0.62]
+  position: [-0.15, -1.12, 0.432]
   description: "Defect conveyor place approach"
 
 R5_DEFECT_PLACE_TCP:
   robot: R5
   area: defect_conveyor_area
   action: sort_defect
-  position: [-0.35, -1.12, 0.42]
+  position: [-0.15, -1.12, 0.252]
   description: "Defect conveyor place TCP"
 
 CAMERA_INSPECTION_CENTER:
   resource: CAMERA
   area: camera_area
   action: inspect
-  position: [0.15, 0.05, 0.55]
+  position: [-0.04, 0.00, 0.408]
   description: "Fixed camera inspection center"

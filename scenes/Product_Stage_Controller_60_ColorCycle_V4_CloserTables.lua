@@ -30,16 +30,19 @@ local RESET_ON_START = true
 local ADVANCE_COLOR_ON_RESET = true
 local CONVEYOR_ENABLED = true
 
--- 右侧工作台右移后的输送带产品起止点
+-- 右侧工作台和良品输送带调整后的产品起止点。
+-- goodStart 与 R5 的实际放置中心一致，启动输送时不再横向跳回旧坐标。
 local PRODUCT_ON_BELT_Z = 0.270
-local goodStart   = { 0.85, -1.10, PRODUCT_ON_BELT_Z}
-local goodEnd     = { 0.85, -2.20, PRODUCT_ON_BELT_Z}
+local goodStart   = { 0.98, -1.06, PRODUCT_ON_BELT_Z}
+local goodEnd     = { 0.98, -2.20, PRODUCT_ON_BELT_Z}
 local defectStart = {-0.15, -1.12, PRODUCT_ON_BELT_Z}
 local defectEnd   = {-1.25, -1.12, PRODUCT_ON_BELT_Z}
 local conveyorSpeed = 0.18
 
 local activeProduct = -1
 local activeConveyor = nil
+local activeStart = nil
+local activeEnd = nil
 local conveyorStartTime = 0.0
 
 local COLOR_CAMERA_VIEW = {0.75, 0.92, 1.00}
@@ -234,6 +237,8 @@ local function resetInitialState()
 
     activeProduct = -1
     activeConveyor = nil
+    activeStart = nil
+    activeEnd = nil
     conveyorStartTime = sim.getSimulationTime()
 
     sim.clearStringSignal('cell_product_state')
@@ -306,17 +311,21 @@ local function handleConveyorState(state)
 
     if state == 'good' then
         setProductStage('Inspection_ControlBox_Product',4)
-        setWorldPosition(product,goodStart)
+        local p = sim.getObjectPosition(product,-1)
         activeProduct = product
         activeConveyor = 'good'
+        activeStart = {p[1],p[2],p[3]}
+        activeEnd = {p[1],goodEnd[2],p[3]}
         conveyorStartTime = sim.getSimulationTime()
         print('[CONVEYOR] good started')
 
     elseif state == 'defect' then
         setProductStage('Inspection_ControlBox_Product',4)
-        setWorldPosition(product,defectStart)
+        local p = sim.getObjectPosition(product,-1)
         activeProduct = product
         activeConveyor = 'defect'
+        activeStart = {p[1],p[2],p[3]}
+        activeEnd = {defectEnd[1],p[2],p[3]}
         conveyorStartTime = sim.getSimulationTime()
         print('[CONVEYOR] defect started')
     end
@@ -380,12 +389,8 @@ function sysCall_actuation()
         sim.clearStringSignal('cell_conveyor_state')
     end
 
-    if CONVEYOR_ENABLED and activeProduct ~= -1 then
-        if activeConveyor == 'good' then
-            moveAlongLine(activeProduct,goodStart,goodEnd,conveyorSpeed)
-        elseif activeConveyor == 'defect' then
-            moveAlongLine(activeProduct,defectStart,defectEnd,conveyorSpeed)
-        end
+    if CONVEYOR_ENABLED and activeProduct ~= -1 and activeStart and activeEnd then
+        moveAlongLine(activeProduct,activeStart,activeEnd,conveyorSpeed)
     end
 end
 

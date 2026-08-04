@@ -18,13 +18,6 @@ A:
       duration: 8
       required_areas: [pcb_supply_area, assembly_fixture]
       scene_done_cmd: R2_PCB_PLACED
-    - process: module_install
-      area: module_supply_area
-      point: R3_MODULE_PLACE_TCP
-      available_robots: [R3]
-      duration: 7
-      required_areas: [module_supply_area, assembly_fixture]
-      scene_done_cmd: R3_MODULE_PLACED
     - process: terminal_install
       area: terminal_supply_area
       point: R1_TERMINAL_PLACE_TCP
@@ -32,6 +25,13 @@ A:
       duration: 7
       required_areas: [terminal_supply_area, assembly_fixture]
       scene_done_cmd: R1_TERMINAL_PLACED
+    - process: module_install
+      area: module_supply_area
+      point: R3_MODULE_PLACE_TCP
+      available_robots: [R3]
+      duration: 7
+      required_areas: [module_supply_area, assembly_fixture]
+      scene_done_cmd: R3_MODULE_PLACED
     - process: transfer_to_inspection
       area: transfer_area
       point: R3_PRODUCT_PLACE_INSPECTION_TCP
@@ -45,7 +45,6 @@ A:
       available_robots: [CAMERA]
       duration: 5
       required_areas: [inspection_platform_area, camera_area]
-      scene_done_cmd: CAMERA_GOOD_OR_DEFECT
   component_count: 4
   screw_count: 4
   inspection_points: 1
@@ -67,13 +66,6 @@ B:
       duration: 10
       required_areas: [pcb_supply_area, assembly_fixture]
       scene_done_cmd: R2_PCB_PLACED
-    - process: module_install
-      area: module_supply_area
-      point: R3_MODULE_PLACE_TCP
-      available_robots: [R3]
-      duration: 9
-      required_areas: [module_supply_area, assembly_fixture]
-      scene_done_cmd: R3_MODULE_PLACED
     - process: terminal_install
       area: terminal_supply_area
       point: R1_TERMINAL_PLACE_TCP
@@ -81,6 +73,13 @@ B:
       duration: 8
       required_areas: [terminal_supply_area, assembly_fixture]
       scene_done_cmd: R1_TERMINAL_PLACED
+    - process: module_install
+      area: module_supply_area
+      point: R3_MODULE_PLACE_TCP
+      available_robots: [R3]
+      duration: 9
+      required_areas: [module_supply_area, assembly_fixture]
+      scene_done_cmd: R3_MODULE_PLACED
     - process: transfer_to_inspection
       area: transfer_area
       point: R3_PRODUCT_PLACE_INSPECTION_TCP
@@ -94,7 +93,6 @@ B:
       available_robots: [CAMERA]
       duration: 6
       required_areas: [inspection_platform_area, camera_area]
-      scene_done_cmd: CAMERA_GOOD_OR_DEFECT
   component_count: 4
   screw_count: 4
   inspection_points: 1
@@ -116,13 +114,6 @@ C:
       duration: 12
       required_areas: [pcb_supply_area, assembly_fixture]
       scene_done_cmd: R2_PCB_PLACED
-    - process: module_install
-      area: module_supply_area
-      point: R3_MODULE_PLACE_TCP
-      available_robots: [R3]
-      duration: 10
-      required_areas: [module_supply_area, assembly_fixture]
-      scene_done_cmd: R3_MODULE_PLACED
     - process: terminal_install
       area: terminal_supply_area
       point: R1_TERMINAL_PLACE_TCP
@@ -130,6 +121,13 @@ C:
       duration: 10
       required_areas: [terminal_supply_area, assembly_fixture]
       scene_done_cmd: R1_TERMINAL_PLACED
+    - process: module_install
+      area: module_supply_area
+      point: R3_MODULE_PLACE_TCP
+      available_robots: [R3]
+      duration: 10
+      required_areas: [module_supply_area, assembly_fixture]
+      scene_done_cmd: R3_MODULE_PLACED
     - process: transfer_to_inspection
       area: transfer_area
       point: R3_PRODUCT_PLACE_INSPECTION_TCP
@@ -143,7 +141,6 @@ C:
       available_robots: [CAMERA]
       duration: 7
       required_areas: [inspection_platform_area, camera_area]
-      scene_done_cmd: CAMERA_GOOD_OR_DEFECT
   component_count: 4
   screw_count: 4
   inspection_points: 1
@@ -158,7 +155,7 @@ post_inspection:
       A: 9
       B: 11
       C: 13
-    condition: "inspect_result == OK"
+    condition: "inspect_result in [OK, NG]"
     required_areas: [inspection_screw_area, inspection_platform_area]
     scene_done_cmd: R4_SCREW_DONE
   - process: sort_good
@@ -166,7 +163,7 @@ post_inspection:
     point: R5_GOOD_PLACE_TCP
     available_robots: [R5]
     duration: 5
-    condition: "inspect_result == OK"
+    condition: "screw_finished and inspect_result == OK"
     required_areas: [inspection_platform_area, good_conveyor_area]
     scene_done_cmd: R5_SORT_GOOD_DONE
   - process: sort_defect
@@ -174,6 +171,6 @@ post_inspection:
     point: R5_DEFECT_PLACE_TCP
     available_robots: [R5]
     duration: 5
-    condition: "inspect_result == NG"
+    condition: "screw_finished and inspect_result == NG"
     required_areas: [inspection_platform_area, defect_conveyor_area]
     scene_done_cmd: R5_SORT_DEFECT_DONE

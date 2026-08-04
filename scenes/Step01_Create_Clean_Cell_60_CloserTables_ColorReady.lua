@@ -121,8 +121,8 @@ local robotBases = {
     -- 修正版：R1/R2/R3 全部收回左侧圆形工作台内
     R1 = {-1.60,  0.65, 0.17},
     R2 = {-1.56, -0.22, 0.17},
-    R3 = {-0.62,  0.40, 0.17},
-    R4 = { 0.78,  0.25, 0.17},
+    R3 = {-0.60,  0.40, 0.17},
+    R4 = { 0.65,  0.25, 0.17},
     R5 = { 0.35, -0.50, 0.17}
 }
 
@@ -146,7 +146,8 @@ local P = {
     moduleSupply   = {-0.78, -0.20},
 
     assembly       = {-1.08,  0.12},
-    inspection     = { 0.35,  0.05},
+    -- Shared handoff point validated for fixed-base R3, R4 and R5.
+    inspection     = {-0.04,  0.00},
 
     cameraColumn   = { 0.10,  0.55},
 
@@ -460,6 +461,12 @@ local function makeFixedCamera(parent)
         g
     )
 
+    -- The present workflow receives inspection quality from the application,
+    -- so the camera is visual-only.  Move the complete station (lens, column,
+    -- brackets and view marker) beyond every R1--R5 workspace.  The runtime
+    -- applies the same absolute group position to existing .ttt scenes.
+    setWorldPosition(g, {1.80, 1.50, 0.0})
+
     return g
 end
 
@@ -540,7 +547,7 @@ local function createScene()
     makeAssembledControlBox('Inspection_ControlBox_Product', P.inspection[1], P.inspection[2], PRODUCT_BOTTOM_Z, groups.Parts, COLOR_BOX)
 
     -- 传送带
-    makeConveyor('Good_Conveyor', {0.85, -1.72, 0.18}, 1.25, 0.36, 'Y', groups.Conveyors)
+    makeConveyor('Good_Conveyor', {0.98, -1.68, 0.18}, 1.25, 0.36, 'Y', groups.Conveyors)
     makeConveyor('Defect_Conveyor', {-0.75, -1.12, 0.18}, 1.20, 0.36, 'X', groups.Conveyors)
 
     print('[OK] Separated-table 60% cell created. No targets. No grippers.')

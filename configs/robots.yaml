@@ -5,7 +5,7 @@ robots:
     name: "Box and terminal-block robot"
     model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [-1.47, 0.67, 0]
+    position: [-1.60, 0.65, 0.19]
     base_object: R1_Base
     home_pose: [0, 0, 0, 0, 0, 0]
     home_point: R1_HOME_REF
@@ -18,20 +18,20 @@ robots:
     name: "PCB installation robot"
     model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [-1.55, -0.15, 0]
+    position: [-1.56, -0.22, 0.19]
     base_object: R2_Base
     home_pose: [0, 0, 0, 0, 0, 0]
     home_point: R2_HOME_REF
     capabilities: [pcb_install, pick_and_place]
-    end_effector: gripper
+    end_effector: vacuum
     work_area: [pcb_supply_area, assembly_fixture]
-    tip: R2_gripper_tip
+    tip: R2_vacuum_tip
 
   R3:
     name: "Module installation and transfer robot"
     model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [-0.55, 0.28, 0]
+    position: [-0.60, 0.40, 0.19]
     base_object: R3_Base
     home_pose: [0, 0, 0, 0, 0, 0]
     home_point: R3_HOME_REF
@@ -44,7 +44,7 @@ robots:
     name: "Terminal screw fastening robot"
     model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [0.58, 0.25, 0]
+    position: [0.65, 0.25, 0.19]
     base_object: R4_Base
     home_pose: [0, 0, 0, 0, 0, 0]
     home_point: R4_HOME_REF
@@ -57,7 +57,7 @@ robots:
     name: "Post-inspection sorting robot"
     model: DOBOT CR5A
     model_file: cr5_robot_fixed.urdf
-    position: [0.15, -0.50, 0]
+    position: [0.35, -0.50, 0.19]
     base_object: R5_Base
     home_pose: [0, 0, 0, 0, 0, 0]
     home_point: R5_HOME_REF

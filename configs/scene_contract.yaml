@@ -1,0 +1,26 @@
+schema_version: 1
+
+scene:
+  file: compact_cell1ttt.ttt
+  size: 3107664
+  sha256: 04ef194b139ead545a433db4b87b863c4d86325c24e0ed98a425e588cb68345a
+  root: /FiveCR5A_Cell
+
+counts:
+  robots: 5
+  arm_joints_per_robot: 6
+  process_targets: 35
+  target_tree_dummies: 42
+  cell_objects: 197
+
+embedded_scripts:
+  - Product_Stage_Controller_60_ColorCycle_V4_CloserTables.lua
+  - Step02B_Tool_Action_Controller_V6_R1R3R5ConnectedJaw.lua
+  - ROS2_CompactCell_Bridge_V3_ColorCycle.lua
+  - ROS2_Joint_Jog_Controller_R1_R5.lua
+
+notes:
+  - Target coordinates are stored in configs/points.yaml.
+  - This scene is the exact scene fingerprint referenced by all five motion plans.
+  - Supply and process-product visibility is controlled by the embedded stage script.
+  - R1-R5 execution performs scene-fingerprint, workspace, clearance, and runtime collision checks.

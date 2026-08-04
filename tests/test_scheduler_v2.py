@@ -36,6 +36,12 @@ class SchedulerV2Tests(unittest.TestCase):
         self.assertEqual(by_process["terminal_install"].target_point, "R1_TERMINAL_PLACE_TCP")
         self.assertEqual(by_process["transfer_to_inspection"].target_point, "R3_PRODUCT_PLACE_INSPECTION_TCP")
         self.assertEqual(by_process["inspect"].target_point, "CAMERA_INSPECTION_CENTER")
+        self.assertEqual(by_process["box_feed"].scene_command, "R1_BOX_PLACED")
+        self.assertEqual(by_process["inspect"].scene_command, "")
+        self.assertEqual(
+            by_process["inspect"].to_dict()["scene_command"],
+            "",
+        )
         self.assertNotIn("screw", by_process)
         self.assertIn("assembly_fixture", by_process["box_feed"].required_areas)
         self.assertIn("inspection_platform_area", by_process["inspect"].required_areas)
@@ -44,8 +50,13 @@ class SchedulerV2Tests(unittest.TestCase):
         ng_branch = TaskGenerator().build_post_inspection_task(by_process["inspect"], "NG")
         self.assertEqual(ok_branch.process, "screw")
         self.assertEqual(ok_branch.available_robots, ["R4"])
-        self.assertEqual(ng_branch.process, "sort_defect")
-        self.assertEqual(ng_branch.available_robots, ["R5"])
+        self.assertEqual(ok_branch.scene_command, "R4_SCREW_DONE")
+        self.assertEqual(ng_branch.process, "screw")
+        self.assertEqual(ng_branch.available_robots, ["R4"])
+        self.assertEqual(
+            TaskGenerator().build_post_inspection_task(ng_branch, "NG").process,
+            "sort_defect",
+        )
 
     def test_waiting_aging_increases_task_score(self):
         generator = TaskGenerator()
@@ -95,7 +106,7 @@ class SchedulerV2Tests(unittest.TestCase):
         normal_task = next(task for task in tasks if task.process == "terminal_install")
         inspect = next(task for task in tasks if task.process == "inspect")
         screw = generator.build_post_inspection_task(inspect, "OK")
-        sort_defect = generator.build_post_inspection_task(inspect, "NG")
+        sort_defect = generator.build_post_inspection_task(screw, "NG")
         weights = {
             "priority_weight": 0.0,
             "due_weight": 0.0,
@@ -267,7 +278,41 @@ class SchedulerV2Tests(unittest.TestCase):
         branches = [task.process for task in tasks if task.process.startswith("sort_")]
         self.assertEqual(branches, ["sort_good"])
 
-    def test_mock_scheduler_sorts_directly_after_inspection(self):
+    def test_real_scheduler_screws_before_defect_sorting(self):
+        scheduler = Scheduler()
+        tasks = scheduler.generate_tasks([Order("A100", "A", 1)])
+        inspect = next(task for task in tasks if task.process == "inspect")
+        inspect.status = TaskStatus.RUNNING.value
+        scheduler.on_task_complete(
+            TaskResult(
+                inspect.task_id,
+                "CAMERA",
+                TaskStatus.FINISHED.value,
+                end_time=30,
+                quality_result="NG",
+            ),
+            tasks,
+            [],
+        )
+        self.assertFalse(any(task.process.startswith("sort_") for task in tasks))
+        screw = next(task for task in tasks if task.process == "screw")
+        self.assertEqual(screw.predecessors, [inspect.task_id])
+        screw.status = TaskStatus.RUNNING.value
+        scheduler.on_task_complete(
+            TaskResult(
+                screw.task_id,
+                "R4",
+                TaskStatus.FINISHED.value,
+                end_time=40,
+            ),
+            tasks,
+            [],
+        )
+        sort_defect = next(task for task in tasks if task.process == "sort_defect")
+        self.assertEqual(sort_defect.predecessors, [screw.task_id])
+        self.assertEqual(sort_defect.scene_command, "R5_SORT_DEFECT_DONE")
+
+    def test_mock_scheduler_screws_before_defect_sorting(self):
         scheduler = MockScheduler()
         tasks = scheduler.generate_tasks([Order("A100", "A", 1)])
         self.assertFalse(any(task.process.startswith("sort_") for task in tasks))
@@ -279,8 +324,23 @@ class SchedulerV2Tests(unittest.TestCase):
             quality_result="NG",
         )
         scheduler.on_task_complete(inspect_result, tasks, [])
+        self.assertFalse(any(task.process.startswith("sort_") for task in tasks))
+        screw = next(task for task in tasks if task.process == "screw")
+        self.assertEqual(screw.scene_command, "R4_SCREW_DONE")
+        scheduler.on_task_complete(
+            TaskResult(
+                screw.task_id,
+                "R4",
+                TaskStatus.FINISHED.value,
+            ),
+            tasks,
+            [],
+        )
         branches = [task.process for task in tasks if task.process.startswith("sort_")]
         self.assertEqual(branches, ["sort_defect"])
+        sort_defect = next(task for task in tasks if task.process == "sort_defect")
+        self.assertEqual(sort_defect.predecessors, [screw.task_id])
+        self.assertEqual(sort_defect.scene_command, "R5_SORT_DEFECT_DONE")
 
     def test_parallel_fifo_is_a_fair_parallel_baseline(self):
         experiment = DiscreteEventExperiment()
@@ -324,9 +384,9 @@ class SchedulerV2Tests(unittest.TestCase):
         ])
         chains = {row.order_id: row.process_chain for row in rows}
         self.assertIn("inspect → screw → sort_good", chains["OK_A"])
-        self.assertIn("inspect → sort_defect", chains["NG_B"])
+        self.assertIn("inspect → screw → sort_defect", chains["NG_B"])
         ng_records = [record.process for record in result.records if record.order_id == "NG_B"]
-        self.assertNotIn("screw", ng_records)
+        self.assertIn("screw", ng_records)
 
     def test_quality_branch_clears_platform_at_correct_step(self):
         experiment = DiscreteEventExperiment()
@@ -346,16 +406,12 @@ class SchedulerV2Tests(unittest.TestCase):
 
         for records in records_by_order.values():
             inspect = next(record for record in records if record.process == "inspect")
+            screw = next(record for record in records if record.process == "screw")
             sort_task = next(
                 record for record in records if record.process in ("sort_good", "sort_defect")
             )
-            if sort_task.process == "sort_defect":
-                self.assertEqual(sort_task.start_time, inspect.end_time)
-                self.assertFalse(any(record.process == "screw" for record in records))
-            else:
-                screw = next(record for record in records if record.process == "screw")
-                self.assertEqual(screw.start_time, inspect.end_time)
-                self.assertEqual(sort_task.start_time, screw.end_time)
+            self.assertEqual(screw.start_time, inspect.end_time)
+            self.assertEqual(sort_task.start_time, screw.end_time)
 
     def test_station_residency_prevents_overlapping_products(self):
         experiment = DiscreteEventExperiment()
@@ -437,6 +493,7 @@ class SchedulerV2Tests(unittest.TestCase):
         self.assertLess(ordered_processes.index("inspect"), ordered_processes.index("sort_defect"))
         self.assertLess(ordered_processes.index("inspect"), ordered_processes.index("screw"))
         self.assertLess(ordered_processes.index("screw"), ordered_processes.index("sort_good"))
+        self.assertLess(ordered_processes.index("screw"), ordered_processes.index("sort_defect"))
         self.assertEqual(sequence[0]["topology_level"], 1)
         self.assertEqual(max(row["level"] for row in sequence), 12)
 

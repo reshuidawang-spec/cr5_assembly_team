@@ -22,7 +22,7 @@ class ISimBridge(ABC):
     """
 
     @abstractmethod
-    def connect(self, host: str = "127.0.0.1", port: int = 19997) -> bool:
+    def connect(self, host: str = "127.0.0.1", port: int = 23000) -> bool:
         """连接 CoppeliaSim"""
         ...
 
