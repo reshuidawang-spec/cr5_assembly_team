@@ -1,50 +1,49 @@
 {
   "updated_at": 0,
+  "description": "A-B-A material-changeover demo: finish five A units, insert two B units, then finish remaining A units.",
   "scoring": {
     "priority_weight": 0.45,
-    "due_weight": 0.30,
+    "due_weight": 0.3,
     "lateness_risk_weight": 0.18,
     "waiting_weight": 0.15,
-    "post_inspection_clearance_bonus": 0.40,
+    "post_inspection_clearance_bonus": 0.4,
     "screw_clearance_bonus": 0.35,
-    "urgent_due_boost": 0.20
+    "urgent_due_boost": 0.2
+  },
+  "quality_policy": {
+    "defects_per_100": 2
+  },
+  "material_switch": {
+    "changeover_seconds": 3,
+    "enabled_types": ["A", "B"]
   },
   "orders": [
     {
-      "order_id": "A001",
+      "order_id": "A_FIRST",
       "product_type": "A",
-      "quantity": 3,
+      "quantity": 5,
       "priority": 1,
       "arrival_time": 0,
-      "due_time": 300,
+      "due_time": 260,
       "quality": "AUTO"
     },
     {
-      "order_id": "B001",
+      "order_id": "B_SWITCH",
       "product_type": "B",
-      "quantity": 1,
-      "priority": 2,
-      "arrival_time": 0,
-      "due_time": 340,
-      "quality": "AUTO"
-    },
-    {
-      "order_id": "C001",
-      "product_type": "C",
       "quantity": 2,
-      "priority": 2,
-      "arrival_time": 0,
-      "due_time": 410,
+      "priority": 6,
+      "arrival_time": 205,
+      "due_time": 380,
       "quality": "AUTO"
     },
     {
-      "order_id": "URG_C001",
-      "product_type": "C",
-      "quantity": 1,
-      "priority": 5,
-      "arrival_time": 20,
-      "due_time": 115,
-      "quality": "OK"
+      "order_id": "A_REMAIN",
+      "product_type": "A",
+      "quantity": 5,
+      "priority": 1,
+      "arrival_time": 360,
+      "due_time": 650,
+      "quality": "AUTO"
     }
   ]
 }

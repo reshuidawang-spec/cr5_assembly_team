@@ -7,6 +7,7 @@ fixed process route inside each A/B/C product.
 
 from __future__ import annotations
 
+import os
 import sys
 import json
 import subprocess
@@ -18,7 +19,11 @@ from tkinter import messagebox, ttk
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scheduler.dynamic_order_sequence import DynamicOrderInput, plan_dynamic_order_sequence  # noqa: E402
+from scheduler.dynamic_order_sequence import (  # noqa: E402
+    DynamicOrderInput,
+    plan_dynamic_order_sequence,
+    quality_evaluation,
+)
 
 
 PROCESS_LABELS = {
@@ -89,10 +94,11 @@ class DynamicOrderWindow:
         body = tk.Frame(self.root, bg=self.bg)
         body.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        left_outer, left = self._panel(body, "订单输入")
+        left_outer, left_holder = self._panel(body, "订单输入")
         left_outer.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 8))
         left_outer.configure(width=310)
         left_outer.pack_propagate(False)
+        left = self._scrollable_panel(left_holder)
         self._build_input_panel(left)
 
         center = tk.Frame(body, bg=self.bg)
@@ -118,6 +124,40 @@ class DynamicOrderWindow:
         tk.Frame(inner, bg=self.line, height=1).pack(fill=tk.X, padx=10, pady=(0, 8))
         return outer, inner
 
+    def _scrollable_panel(self, parent: tk.Frame) -> tk.Frame:
+        wrapper = tk.Frame(parent, bg=self.panel)
+        wrapper.pack(fill=tk.BOTH, expand=True)
+        canvas = tk.Canvas(wrapper, bg=self.panel, highlightthickness=0, bd=0)
+        scrollbar = ttk.Scrollbar(wrapper, orient=tk.VERTICAL, command=canvas.yview)
+        content = tk.Frame(canvas, bg=self.panel)
+        window_id = canvas.create_window((0, 0), window=content, anchor=tk.NW)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        def update_scrollregion(_event: tk.Event | None = None) -> None:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def update_content_width(event: tk.Event) -> None:
+            canvas.itemconfigure(window_id, width=event.width)
+
+        def on_mousewheel(event: tk.Event) -> None:
+            delta = getattr(event, "delta", 0)
+            if delta:
+                canvas.yview_scroll(int(-1 * (delta / 120)), "units")
+            elif getattr(event, "num", None) == 4:
+                canvas.yview_scroll(-3, "units")
+            elif getattr(event, "num", None) == 5:
+                canvas.yview_scroll(3, "units")
+
+        content.bind("<Configure>", update_scrollregion)
+        canvas.bind("<Configure>", update_content_width)
+        canvas.bind("<Enter>", lambda _event: canvas.bind_all("<MouseWheel>", on_mousewheel))
+        canvas.bind("<Leave>", lambda _event: canvas.unbind_all("<MouseWheel>"))
+        canvas.bind("<Button-4>", on_mousewheel)
+        canvas.bind("<Button-5>", on_mousewheel)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        return content
+
     def _label(self, parent: tk.Widget, text: str) -> None:
         tk.Label(parent, text=text, bg=self.panel, fg=self.dim, font=("Microsoft YaHei", 9)).pack(anchor=tk.W, padx=12, pady=(6, 2))
 
@@ -129,6 +169,8 @@ class DynamicOrderWindow:
         self.due_var = tk.DoubleVar(value=260.0)
         self.quality_var = tk.StringVar(value="AUTO")
         self.now_var = tk.DoubleVar(value=20.0)
+        self.defects_per_100_var = tk.DoubleVar(value=2.0)
+        self.changeover_seconds_var = tk.DoubleVar(value=3.0)
         self.priority_weight_var = tk.DoubleVar(value=0.45)
         self.due_weight_var = tk.DoubleVar(value=0.30)
         self.lateness_weight_var = tk.DoubleVar(value=0.18)
@@ -155,14 +197,22 @@ class DynamicOrderWindow:
         self._label(parent, "预计检测结果")
         ttk.Combobox(parent, textvariable=self.quality_var, values=("AUTO", "OK", "NG"), state="readonly").pack(fill=tk.X, padx=12)
 
+        self._label(parent, "AUTO次品数 / 100台")
+        tk.Spinbox(parent, from_=0, to=100, increment=1, textvariable=self.defects_per_100_var, bg="#0d1117", fg=self.text, insertbackground=self.text).pack(fill=tk.X, padx=12)
+
+        self._label(parent, "物料换型等待秒数")
+        tk.Spinbox(parent, from_=0, to=20, increment=1, textvariable=self.changeover_seconds_var, bg="#0d1117", fg=self.text, insertbackground=self.text).pack(fill=tk.X, padx=12)
+
         self._label(parent, "当前仿真时间（用于急单插入）")
         tk.Entry(parent, textvariable=self.now_var, bg="#0d1117", fg=self.text, insertbackground=self.text).pack(fill=tk.X, padx=12)
 
         btns = tk.Frame(parent, bg=self.panel)
         btns.pack(fill=tk.X, padx=12, pady=12)
         tk.Button(btns, text="添加普通订单", command=self._add_order, bg="#238636", fg="white", relief=tk.FLAT).pack(fill=tk.X, pady=3, ipady=5)
+        tk.Button(btns, text="插入B换型订单", command=self._insert_b_changeover_order, bg="#2ea043", fg="white", relief=tk.FLAT).pack(fill=tk.X, pady=3, ipady=5)
         tk.Button(btns, text="插入急单", command=self._add_urgent_order, bg=self.red, fg="white", relief=tk.FLAT).pack(fill=tk.X, pady=3, ipady=5)
         tk.Button(btns, text="开始仿真演示", command=self._start_coppelia_demo, bg=self.blue, fg="white", relief=tk.FLAT).pack(fill=tk.X, pady=3, ipady=5)
+        tk.Button(btns, text="载入A-B-A换型流程", command=self._load_ab_changeover_orders, bg="#8957e5", fg="white", relief=tk.FLAT).pack(fill=tk.X, pady=3, ipady=5)
         tk.Button(btns, text="载入先前演示订单", command=self._load_demo_orders, bg="#21262d", fg=self.text, relief=tk.FLAT).pack(fill=tk.X, pady=3, ipady=5)
         tk.Button(btns, text="清空", command=self._clear_orders, bg="#21262d", fg=self.text, relief=tk.FLAT).pack(fill=tk.X, pady=3, ipady=5)
 
@@ -323,6 +373,42 @@ class DynamicOrderWindow:
         except Exception as exc:
             messagebox.showerror("急单输入错误", str(exc))
 
+    def _insert_b_changeover_order(self) -> None:
+        try:
+            now = float(self.now_var.get())
+            order_id = f"B_SWITCH_{self.next_index:03d}"
+            self.next_index += 1
+            self.orders.append(
+                DynamicOrderInput(
+                    order_id=order_id,
+                    product_type="B",
+                    quantity=max(int(self.quantity_var.get()), 1),
+                    priority=max(int(self.priority_var.get()), 5),
+                    arrival_time=now,
+                    due_time=now + 120.0,
+                    quality=self.quality_var.get(),  # type: ignore[arg-type]
+                )
+            )
+            self._refresh()
+            self._sync_orders_to_running_demo()
+        except Exception as exc:
+            messagebox.showerror("B换型订单输入错误", str(exc))
+
+    def _load_ab_changeover_orders(self) -> None:
+        self.orders = [
+            DynamicOrderInput("A_FIRST", "A", 5, 1, 260, 0, "AUTO"),
+            DynamicOrderInput("B_SWITCH", "B", 2, 6, 380, 205, "AUTO"),
+            DynamicOrderInput("A_REMAIN", "A", 5, 1, 650, 360, "AUTO"),
+        ]
+        self.product_var.set("B")
+        self.quantity_var.set(2)
+        self.priority_var.set(6)
+        self.due_var.set(380.0)
+        self.now_var.set(205.0)
+        self.next_index = 1
+        self._refresh()
+        self._sync_orders_to_running_demo()
+
     def _load_demo_orders(self) -> None:
         self.orders = [
             DynamicOrderInput("A001", "A", 1, 1, 260, 0, "AUTO"),
@@ -355,6 +441,8 @@ class DynamicOrderWindow:
         log_path = output_dir / "dynamic_order_window_coppelia.log"
         err_path = output_dir / "dynamic_order_window_coppelia.err"
         self._write_orders_json()
+        if not self._ensure_coppelia_started():
+            return
 
         with log_path.open("w", encoding="utf-8") as out, err_path.open("w", encoding="utf-8") as err:
             process = subprocess.Popen(
@@ -374,12 +462,17 @@ class DynamicOrderWindow:
         self.demo_process = process
         self.demo_started_at = time.monotonic()
         self.summary_var.set(
-            f"{self.summary_var.get()}\n\n已启动 CoppeliaSim 演示\nPID: {process.pid}\nA=黄 B=绿 C=蓝"
+            f"{self.summary_var.get()}\n\n已启动 CoppeliaSim 演示\nPID: {process.pid}\n"
+            "流程：小车送料 → 物料到位 → 五臂协同装配 → 检测/锁付/分拣"
         )
         messagebox.showinfo(
             "仿真已启动",
-            "已按当前窗口订单启动 CoppeliaSim 演示。\n"
-            "颜色：A=黄，B=绿，C=蓝。\n"
+            "已按当前窗口订单启动 CoppeliaSim 演示。\n\n"
+            "演示流程：\n"
+            "1. 对应型号小车先移动到供料位；\n"
+            "2. 对应型号物料出现在 R1 上料位；\n"
+            "3. 五臂开始协同装配、检测、锁付和分拣。\n\n"
+            "颜色：小车是什么颜色，实际零件就是什么颜色；急单仅在订单标记中显示为红色。\n"
             f"进程号：{process.pid}",
         )
 
@@ -388,6 +481,13 @@ class DynamicOrderWindow:
         payload = {
             "updated_at": time.time(),
             "scoring": self._scoring_weights(),
+            "quality_policy": {
+                "defects_per_100": max(float(self.defects_per_100_var.get()), 0.0),
+            },
+            "material_switch": {
+                "changeover_seconds": max(float(self.changeover_seconds_var.get()), 0.0),
+                "enabled_types": ["A", "B"],
+            },
             "orders": [
                 {
                     "order_id": order.order_id,
@@ -405,6 +505,64 @@ class DynamicOrderWindow:
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+
+    def _candidate_coppelia_executables(self) -> list[Path]:
+        candidates: list[Path] = []
+        if os.environ.get("COPPELIASIM_EXE"):
+            candidates.append(Path(os.environ["COPPELIASIM_EXE"]))
+        if os.environ.get("COPPELIASIM_ROOT"):
+            root = Path(os.environ["COPPELIASIM_ROOT"])
+            candidates.extend([root / "coppeliaSim.sh", root / "coppeliaSim"])
+        candidates.extend(
+            [
+                Path("/opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04/coppeliaSim.sh"),
+                Path("/opt/CoppeliaSim/coppeliaSim.sh"),
+                Path.home() / "CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04" / "coppeliaSim.sh",
+                Path.home() / "CoppeliaSim" / "coppeliaSim.sh",
+            ]
+        )
+        return candidates
+
+    def _find_coppelia_executable(self) -> Path | None:
+        for candidate in self._candidate_coppelia_executables():
+            if candidate.exists():
+                return candidate
+        return None
+
+    def _find_scene_path(self) -> Path | None:
+        if os.environ.get("CR5_SCENE_PATH"):
+            scene = Path(os.environ["CR5_SCENE_PATH"])
+            if scene.exists():
+                return scene
+        for scene in [ROOT / "scenes" / "compact_cell1ttt.ttt", ROOT / "scenes" / "compact_cell.ttt"]:
+            if scene.exists():
+                return scene
+        return None
+
+    def _ensure_coppelia_started(self) -> bool:
+        exe = self._find_coppelia_executable()
+        scene = self._find_scene_path()
+        if exe is None:
+            messagebox.showwarning(
+                "未找到 CoppeliaSim",
+                "未找到 CoppeliaSim 可执行文件。\n"
+                "Ubuntu 默认设置示例：\n"
+                "  export COPPELIASIM_ROOT=/opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04\n"
+                "或直接设置：\n"
+                "  export COPPELIASIM_EXE=/opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04/coppeliaSim.sh",
+            )
+            return False
+        args = [str(exe)]
+        if scene is not None:
+            args.append(str(scene))
+        subprocess.Popen(
+            args,
+            cwd=str(exe.parent),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(6)
+        return True
 
     def _sync_orders_to_running_demo(self) -> None:
         if not self._demo_is_running():
@@ -462,7 +620,11 @@ class DynamicOrderWindow:
             return
 
         try:
-            result, rows = plan_dynamic_order_sequence(self.orders, self._scoring_weights())
+            result, rows = plan_dynamic_order_sequence(
+                self.orders,
+                self._scoring_weights(),
+                defects_per_100=max(float(self.defects_per_100_var.get()), 0.0),
+            )
         except Exception as exc:
             messagebox.showerror("调度失败", str(exc))
             return
@@ -526,11 +688,17 @@ class DynamicOrderWindow:
         )
 
         summary = result.summary_dict()
+        evaluation = quality_evaluation(
+            result,
+            defects_per_100=max(float(self.defects_per_100_var.get()), 0.0),
+        )
         self.summary_var.set(
             self.summary_var.get()
             + f"\n加权延期: {summary.get('weighted_tardiness', 0.0):.1f}"
             + f"\n检测平台平均驻留: {summary.get('inspection_platform_avg_residency_time', 0.0):.1f}s"
             + f"\n检测后平均等待清台: {summary.get('post_inspection_avg_clearance_wait', 0.0):.1f}s"
+            + f"\n良品/次品: {evaluation['good_count']:.0f}/{evaluation['defect_count']:.0f}"
+            + f"\n成功率: {evaluation['success_rate']:.1f}%"
         )
 
     def _fill_order_tree(self) -> None:

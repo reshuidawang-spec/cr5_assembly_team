@@ -215,14 +215,14 @@ R5_GOOD_PLACE_APP:
   robot: R5
   area: good_conveyor_area
   action: good_place_approach
-  position: [0.85, -1.10, 0.432]
+  position: [0.35, -1.10, 0.432]
   description: "Good conveyor place approach"
 
 R5_GOOD_PLACE_TCP:
   robot: R5
   area: good_conveyor_area
   action: sort_good
-  position: [0.85, -1.10, 0.252]
+  position: [0.35, -1.10, 0.252]
   description: "Good conveyor place TCP"
 
 R5_DEFECT_PLACE_APP:

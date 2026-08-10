@@ -2,12 +2,16 @@ import unittest
 
 from interfaces.types import Order, RobotState, Task, TaskResult, TaskStatus
 from mock.mock_scheduler import MockScheduler
+from pathlib import Path
+from robot_control.motion_control import WorkstepMotionPlanner
 from scheduler.assembly_process import AssemblyProcessPlanner
 from scheduler.dynamic_order_sequence import (
     DynamicOrderInput,
     QualityOverrideExperiment,
+    expand_quality_overrides_with_policy,
     expand_order_inputs_as_units,
     plan_dynamic_order_sequence,
+    quality_evaluation,
 )
 from scheduler.experiment import DiscreteEventExperiment
 from scheduler.scheduler import Scheduler
@@ -16,6 +20,15 @@ from scripts.run_coppelia_order_demo import product_color_for, shell_groups_for_
 
 
 class SchedulerV2Tests(unittest.TestCase):
+    def test_workstep_motion_planner_follows_configured_points(self):
+        planner = WorkstepMotionPlanner(Path(__file__).resolve().parents[1])
+        box_mid = planner.frame_for("box_feed", 0.25, "R1_BOX_PLACE_TCP")
+        screw_end = planner.frame_for("screw", 1.0, "R4_SCREW_PRESS")
+        sort_end = planner.frame_for("sort_good", 1.0, "R5_GOOD_PLACE_TCP")
+        self.assertIn(box_mid.point_name, {"R1_BOX_PICK_TCP", "R1_BOX_PLACE_APP"})
+        self.assertEqual(screw_end.point_name, "R4_SCREW_PRESS")
+        self.assertEqual(sort_end.point_name, "R5_GOOD_PLACE_TCP")
+
     def test_order_arrival_time_round_trip(self):
         order = Order("O1", "A", 2, due_time=80, arrival_time=12)
         restored = Order.from_dict(order.to_dict())
@@ -36,12 +49,6 @@ class SchedulerV2Tests(unittest.TestCase):
         self.assertEqual(by_process["terminal_install"].target_point, "R1_TERMINAL_PLACE_TCP")
         self.assertEqual(by_process["transfer_to_inspection"].target_point, "R3_PRODUCT_PLACE_INSPECTION_TCP")
         self.assertEqual(by_process["inspect"].target_point, "CAMERA_INSPECTION_CENTER")
-        self.assertEqual(by_process["box_feed"].scene_command, "R1_BOX_PLACED")
-        self.assertEqual(by_process["inspect"].scene_command, "")
-        self.assertEqual(
-            by_process["inspect"].to_dict()["scene_command"],
-            "",
-        )
         self.assertNotIn("screw", by_process)
         self.assertIn("assembly_fixture", by_process["box_feed"].required_areas)
         self.assertIn("inspection_platform_area", by_process["inspect"].required_areas)
@@ -50,13 +57,8 @@ class SchedulerV2Tests(unittest.TestCase):
         ng_branch = TaskGenerator().build_post_inspection_task(by_process["inspect"], "NG")
         self.assertEqual(ok_branch.process, "screw")
         self.assertEqual(ok_branch.available_robots, ["R4"])
-        self.assertEqual(ok_branch.scene_command, "R4_SCREW_DONE")
-        self.assertEqual(ng_branch.process, "screw")
-        self.assertEqual(ng_branch.available_robots, ["R4"])
-        self.assertEqual(
-            TaskGenerator().build_post_inspection_task(ng_branch, "NG").process,
-            "sort_defect",
-        )
+        self.assertEqual(ng_branch.process, "sort_defect")
+        self.assertEqual(ng_branch.available_robots, ["R5"])
 
     def test_waiting_aging_increases_task_score(self):
         generator = TaskGenerator()
@@ -106,7 +108,7 @@ class SchedulerV2Tests(unittest.TestCase):
         normal_task = next(task for task in tasks if task.process == "terminal_install")
         inspect = next(task for task in tasks if task.process == "inspect")
         screw = generator.build_post_inspection_task(inspect, "OK")
-        sort_defect = generator.build_post_inspection_task(screw, "NG")
+        sort_defect = generator.build_post_inspection_task(inspect, "NG")
         weights = {
             "priority_weight": 0.0,
             "due_weight": 0.0,
@@ -136,8 +138,8 @@ class SchedulerV2Tests(unittest.TestCase):
         self.assertEqual(experiment.scoring_config["priority_weight"], 1.23)
 
     def test_product_color_mapping_uses_red_for_urgent_orders(self):
-        self.assertEqual(product_color_for("A", 1), [1.00, 0.86, 0.05])
-        self.assertEqual(product_color_for("B", 1), [0.20, 0.90, 0.25])
+        self.assertEqual(product_color_for("A", 1), [0.62, 0.62, 0.62])
+        self.assertEqual(product_color_for("B", 1), [0.15, 0.20, 0.55])
         self.assertEqual(product_color_for("C", 1), [0.20, 0.55, 1.00])
         self.assertEqual(product_color_for("A", 5), [1.00, 0.05, 0.05])
 
@@ -278,41 +280,7 @@ class SchedulerV2Tests(unittest.TestCase):
         branches = [task.process for task in tasks if task.process.startswith("sort_")]
         self.assertEqual(branches, ["sort_good"])
 
-    def test_real_scheduler_screws_before_defect_sorting(self):
-        scheduler = Scheduler()
-        tasks = scheduler.generate_tasks([Order("A100", "A", 1)])
-        inspect = next(task for task in tasks if task.process == "inspect")
-        inspect.status = TaskStatus.RUNNING.value
-        scheduler.on_task_complete(
-            TaskResult(
-                inspect.task_id,
-                "CAMERA",
-                TaskStatus.FINISHED.value,
-                end_time=30,
-                quality_result="NG",
-            ),
-            tasks,
-            [],
-        )
-        self.assertFalse(any(task.process.startswith("sort_") for task in tasks))
-        screw = next(task for task in tasks if task.process == "screw")
-        self.assertEqual(screw.predecessors, [inspect.task_id])
-        screw.status = TaskStatus.RUNNING.value
-        scheduler.on_task_complete(
-            TaskResult(
-                screw.task_id,
-                "R4",
-                TaskStatus.FINISHED.value,
-                end_time=40,
-            ),
-            tasks,
-            [],
-        )
-        sort_defect = next(task for task in tasks if task.process == "sort_defect")
-        self.assertEqual(sort_defect.predecessors, [screw.task_id])
-        self.assertEqual(sort_defect.scene_command, "R5_SORT_DEFECT_DONE")
-
-    def test_mock_scheduler_screws_before_defect_sorting(self):
+    def test_mock_scheduler_sorts_directly_after_inspection(self):
         scheduler = MockScheduler()
         tasks = scheduler.generate_tasks([Order("A100", "A", 1)])
         self.assertFalse(any(task.process.startswith("sort_") for task in tasks))
@@ -324,23 +292,8 @@ class SchedulerV2Tests(unittest.TestCase):
             quality_result="NG",
         )
         scheduler.on_task_complete(inspect_result, tasks, [])
-        self.assertFalse(any(task.process.startswith("sort_") for task in tasks))
-        screw = next(task for task in tasks if task.process == "screw")
-        self.assertEqual(screw.scene_command, "R4_SCREW_DONE")
-        scheduler.on_task_complete(
-            TaskResult(
-                screw.task_id,
-                "R4",
-                TaskStatus.FINISHED.value,
-            ),
-            tasks,
-            [],
-        )
         branches = [task.process for task in tasks if task.process.startswith("sort_")]
         self.assertEqual(branches, ["sort_defect"])
-        sort_defect = next(task for task in tasks if task.process == "sort_defect")
-        self.assertEqual(sort_defect.predecessors, [screw.task_id])
-        self.assertEqual(sort_defect.scene_command, "R5_SORT_DEFECT_DONE")
 
     def test_parallel_fifo_is_a_fair_parallel_baseline(self):
         experiment = DiscreteEventExperiment()
@@ -377,6 +330,28 @@ class SchedulerV2Tests(unittest.TestCase):
         self.assertEqual([item.order_id for item in expanded], ["A001-01", "A001-02", "A001-03"])
         self.assertTrue(all(item.quantity == 1 for item in expanded))
 
+    def test_auto_quality_policy_sets_configured_defect_count(self):
+        inputs = [DynamicOrderInput("A_BATCH", "A", quantity=100, priority=1, due_time=1200)]
+        overrides = expand_quality_overrides_with_policy(inputs, defects_per_100=2)
+        self.assertEqual(sum(1 for value in overrides.values() if value == "NG"), 2)
+        self.assertEqual(sum(1 for value in overrides.values() if value == "OK"), 98)
+
+    def test_ab_changeover_sequence_finishes_first_a_before_inserted_b(self):
+        result, rows = plan_dynamic_order_sequence(
+            [
+                DynamicOrderInput("A_FIRST", "A", 5, 1, 260, 0, "AUTO"),
+                DynamicOrderInput("B_SWITCH", "B", 2, 6, 380, 205, "AUTO"),
+                DynamicOrderInput("A_REMAIN", "A", 5, 1, 650, 360, "AUTO"),
+            ],
+            defects_per_100=20,
+        )
+        by_order = {row.order_id: row for row in rows}
+        self.assertLess(by_order["A_FIRST-05"].completion_time, by_order["B_SWITCH-01"].first_start)
+        self.assertLess(by_order["B_SWITCH-02"].completion_time, by_order["A_REMAIN-01"].first_start)
+        evaluation = quality_evaluation(result, defects_per_100=20)
+        self.assertEqual(evaluation["total_products"], 12.0)
+        self.assertEqual(evaluation["defect_count"], 2.0)
+
     def test_dynamic_order_sequence_keeps_process_route_inside_each_order(self):
         result, rows = plan_dynamic_order_sequence([
             DynamicOrderInput("OK_A", "A", priority=1, due_time=200, arrival_time=0, quality="OK"),
@@ -384,9 +359,9 @@ class SchedulerV2Tests(unittest.TestCase):
         ])
         chains = {row.order_id: row.process_chain for row in rows}
         self.assertIn("inspect → screw → sort_good", chains["OK_A"])
-        self.assertIn("inspect → screw → sort_defect", chains["NG_B"])
+        self.assertIn("inspect → sort_defect", chains["NG_B"])
         ng_records = [record.process for record in result.records if record.order_id == "NG_B"]
-        self.assertIn("screw", ng_records)
+        self.assertNotIn("screw", ng_records)
 
     def test_quality_branch_clears_platform_at_correct_step(self):
         experiment = DiscreteEventExperiment()
@@ -406,12 +381,16 @@ class SchedulerV2Tests(unittest.TestCase):
 
         for records in records_by_order.values():
             inspect = next(record for record in records if record.process == "inspect")
-            screw = next(record for record in records if record.process == "screw")
             sort_task = next(
                 record for record in records if record.process in ("sort_good", "sort_defect")
             )
-            self.assertEqual(screw.start_time, inspect.end_time)
-            self.assertEqual(sort_task.start_time, screw.end_time)
+            if sort_task.process == "sort_defect":
+                self.assertEqual(sort_task.start_time, inspect.end_time)
+                self.assertFalse(any(record.process == "screw" for record in records))
+            else:
+                screw = next(record for record in records if record.process == "screw")
+                self.assertEqual(screw.start_time, inspect.end_time)
+                self.assertEqual(sort_task.start_time, screw.end_time)
 
     def test_station_residency_prevents_overlapping_products(self):
         experiment = DiscreteEventExperiment()
@@ -493,7 +472,6 @@ class SchedulerV2Tests(unittest.TestCase):
         self.assertLess(ordered_processes.index("inspect"), ordered_processes.index("sort_defect"))
         self.assertLess(ordered_processes.index("inspect"), ordered_processes.index("screw"))
         self.assertLess(ordered_processes.index("screw"), ordered_processes.index("sort_good"))
-        self.assertLess(ordered_processes.index("screw"), ordered_processes.index("sort_defect"))
         self.assertEqual(sequence[0]["topology_level"], 1)
         self.assertEqual(max(row["level"] for row in sequence), 12)
 

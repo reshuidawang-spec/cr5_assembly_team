@@ -155,7 +155,7 @@ post_inspection:
       A: 9
       B: 11
       C: 13
-    condition: "inspect_result in [OK, NG]"
+    condition: "inspect_result == OK"
     required_areas: [inspection_screw_area, inspection_platform_area]
     scene_done_cmd: R4_SCREW_DONE
   - process: sort_good
@@ -171,6 +171,6 @@ post_inspection:
     point: R5_DEFECT_PLACE_TCP
     available_robots: [R5]
     duration: 5
-    condition: "screw_finished and inspect_result == NG"
+    condition: "inspect_result == NG"
     required_areas: [inspection_platform_area, defect_conveyor_area]
     scene_done_cmd: R5_SORT_DEFECT_DONE
