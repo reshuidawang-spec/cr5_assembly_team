@@ -52,6 +52,10 @@ class Arm:
 
     def set_sequence(self, seq):
         self.seq = seq
+        self.seg_i = -1
+        self.done = False
+        self.wait_event = None
+        self.delay_frames = 0
         self.next_segment()
 
     def next_segment(self):

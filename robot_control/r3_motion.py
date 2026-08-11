@@ -51,7 +51,7 @@ R3_ACTIONS = frozenset({R3_MODULE_PLACED, R3_PRODUCT_TO_INSPECTION})
 PLAN_VERSION = 1
 PLAN_PATH = Path(__file__).with_name("plans") / "r3_gripper_cycle_plan.json"
 ROBOT_ID = "R3"
-SCENE_NAME = "compact_cell1ttt.ttt"
+SCENE_NAME = "compact_cell.ttt"
 
 TARGET_NAMES = (
     "R3_HOME_REF",

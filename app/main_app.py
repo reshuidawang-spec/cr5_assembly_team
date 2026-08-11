@@ -169,7 +169,10 @@ class Cr5AssemblyApp:
 
         # ---- 定时刷新 ----
         self._process_ui_queue()
-        self._refresh_robot_panel()
+        # Let Tk finish creating/mapping all widgets before the first bulk
+        # status update.  Performing label reconfiguration during __init__ can
+        # block on some X11/VMware desktop combinations.
+        self.root.after(200, self._refresh_robot_panel)
         self.root.protocol("WM_DELETE_WINDOW", self._on_window_close)
 
         mode = "COPPELIASIM MOTION MODE" if self.scene_linked else "OFFLINE MOCK MODE"
@@ -406,6 +409,16 @@ class Cr5AssemblyApp:
             insertbackground=C_TEXT,
         ).pack(side=tk.RIGHT)
 
+        ng_row = form_row("NG A UNIT:")
+        self.ng_unit_var = tk.IntVar(value=0)
+        tk.Spinbox(
+            ng_row, from_=0, to=3,
+            textvariable=self.ng_unit_var, width=5,
+            bg=C_INPUT_BG, fg=C_TEXT, font=(FONT_MONO, 9),
+            buttonbackground=C_BUTTON, relief=tk.FLAT,
+            insertbackground=C_TEXT,
+        ).pack(side=tk.RIGHT)
+
         priority_row = form_row("PRIORITY 1-10:")
         self.priority_var = tk.IntVar(value=1)
         tk.Spinbox(
@@ -425,13 +438,6 @@ class Cr5AssemblyApp:
             buttonbackground=C_BUTTON, relief=tk.FLAT,
             insertbackground=C_TEXT,
         ).pack(side=tk.RIGHT)
-
-        tk.Label(
-            inner,
-            text="填好后可直接 START；ADD 用于累计多笔订单",
-            font=(FONT_UI, 8), fg=C_BLUE, bg=C_PANEL,
-            wraplength=230, justify=tk.LEFT,
-        ).pack(fill=tk.X, padx=10, pady=(5, 0))
 
         # 操作按钮
         bf = tk.Frame(inner, bg=C_PANEL)
@@ -730,11 +736,16 @@ class Cr5AssemblyApp:
         order = self.order_parser.parse_dict(order.to_dict())
         if any(item.order_id == order.order_id for item in self.orders):
             raise ValueError(f"订单编号重复: {order.order_id}")
-        if self.running and self.scene_linked:
+        if self.running and self.scene_linked and not urgent:
             raise RuntimeError(
-                "当前 CoppeliaSim 周期只有一套实体工件，运行中不能插入新订单；"
-                "请在本轮完成后 RESET，或在调度分析页进行多订单分析。"
+                "当前 CoppeliaSim 流水批次运行中只能插入一台B型急单。"
             )
+
+        if self.running and self.scene_linked and urgent:
+            enqueue = getattr(self.base_robot_executor, "enqueue_urgent_order", None)
+            if enqueue is None:
+                raise RuntimeError("当前仿真执行器不支持运行中急单")
+            enqueue(order)
 
         if not parser_already_added:
             self.order_parser.add_order(order)
@@ -784,7 +795,7 @@ class Cr5AssemblyApp:
                 or f"URG-{self._next_order_id(product_type)}",
                 product_type=product_type,
                 priority=10,
-                quantity=max(int(self.quantity_var.get()), 1),
+                quantity=1,
                 due_time=float(self.due_time_var.get()),
             )
             self._register_order(order, urgent=True)
@@ -916,9 +927,13 @@ class Cr5AssemblyApp:
         if self._scene_preparation_in_progress:
             return
         self._scene_preparation_in_progress = True
-        self.start_btn.configure(state=tk.DISABLED, text="◌  PREPARING MOTION")
-        self.status_bar.configure(text="VALIDATING R1-R5 PATHS...", fg=C_AMBER)
-        self._log("VALIDATING R1-R5 PLANS AND ENTERING SIMULATION READY...")
+        self.start_btn.configure(state=tk.DISABLED, text="◌  PREPARING FLOW")
+        self.status_bar.configure(
+            text="PREPARING FIVE-ARM COORDINATED FLOW...",
+            fg=C_AMBER,
+        )
+        self._log("PREPARING LATEST FIVE-ARM COORDINATED FLOW...")
+        ng_unit_index = int(self.ng_unit_var.get())
 
         def prepare():
             try:
@@ -932,7 +947,38 @@ class Cr5AssemblyApp:
                         )
                 from robot_control.simulation_executor import SimulationCellExecutor
 
-                executor = SimulationCellExecutor(self.sim_bridge)
+                unit_order_ids = []
+                unit_order_types = []
+                for order in self.orders:
+                    if order.quantity == 1:
+                        unit_order_ids.append(order.order_id)
+                        unit_order_types.append(order.product_type)
+                    else:
+                        unit_order_ids.extend(
+                            f"{order.order_id}-{index + 1:02d}"
+                            for index in range(order.quantity)
+                        )
+                        unit_order_types.extend(
+                            order.product_type for _ in range(order.quantity)
+                        )
+                if ng_unit_index < 0 or ng_unit_index > len(unit_order_ids):
+                    raise ValueError(
+                        "NG A UNIT 必须为0，或不超过当前产品总数"
+                    )
+                quality_by_order = {
+                    order_id: (
+                        "NG" if index == ng_unit_index else "OK"
+                    )
+                    for index, order_id in enumerate(unit_order_ids, start=1)
+                }
+                executor = SimulationCellExecutor(
+                    self.sim_bridge,
+                    quality_by_order=quality_by_order,
+                    coordinated_cycle=True,
+                    front_half_only=False,
+                    coordinated_order_ids=unit_order_ids,
+                    coordinated_order_types=unit_order_types,
+                )
                 evidence = executor.prepare_cycle()
                 self._ui_queue.put(("scene_prepared", (executor, evidence)))
             except Exception as exc:
@@ -949,11 +995,17 @@ class Cr5AssemblyApp:
         self._scene_preparation_in_progress = False
         self.base_robot_executor = executor
         self.robot_executor = executor
-        self._log(
-            "SIMULATION MOTION READY — "
-            f"{evidence.get('path_points_total', '?')} VALIDATED PATH POINTS",
-            "ok",
-        )
+        if evidence.get("execution_mode") == "coordinated_cycle":
+            self._log(
+                "LATEST SCENE READY — FIVE-ARM COORDINATED PATHS LOADED",
+                "ok",
+            )
+        else:
+            self._log(
+                "SIMULATION MOTION READY — "
+                f"{evidence.get('path_points_total', '?')} VALIDATED PATH POINTS",
+                "ok",
+            )
         self._begin_execution()
 
     def _connection_failed(self, message: str):
@@ -1006,13 +1058,17 @@ class Cr5AssemblyApp:
             messagebox.showwarning("需要复位", "当前批次已有任务记录，请先点击 RESET。")
             return
         if self.scene_linked:
-            if len(self.orders) != 1 or sum(order.quantity for order in self.orders) != 1:
+            unit_count = sum(order.quantity for order in self.orders)
+            if not 1 <= unit_count <= 20:
                 messagebox.showwarning(
                     "仿真批次限制",
-                    "当前运动场景包含一套实体工件，请每次执行 1 个订单、数量 1；"
-                    "完成后点击 RESET 再执行下一单。",
+                    "当前流水线每批支持 1 到 20 个产品单元；"
+                    "请调整订单数量后重新开始。",
                 )
-                self.status_bar.configure(text="ONE UNIT PER SIM CYCLE", fg=C_AMBER)
+                self.status_bar.configure(
+                    text="PIPELINE LIMIT: 1-20 UNITS",
+                    fg=C_AMBER,
+                )
                 return
             self._pending_start = True
             self.start_btn.configure(state=tk.DISABLED, text="◌  CONNECTING COP")
@@ -1055,6 +1111,17 @@ class Cr5AssemblyApp:
 
         self._log("=" * 50)
         self._log(f"EXECUTION STARTED — {len(self.orders)} ORDERS")
+        if self.scene_linked:
+            ng_unit_index = int(self.ng_unit_var.get())
+            self._log(
+                "QUALITY PLAN: "
+                + (
+                    f"A{ng_unit_index}=NG, others=OK"
+                    if ng_unit_index
+                    else "ALL PRODUCTS=OK"
+                ),
+                "warn" if ng_unit_index else "info",
+            )
         new_tasks = owner.start(list(self.orders))
         self.tasks = list(owner.tasks)
         self._refresh_task_tree()

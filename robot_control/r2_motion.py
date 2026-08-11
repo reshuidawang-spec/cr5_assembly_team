@@ -34,7 +34,7 @@ R2_ACTIONS = frozenset({R2_PCB_PLACED})
 
 PLAN_VERSION = 1
 PLAN_PATH = Path(__file__).with_name("plans") / "r2_pcb_cycle_plan.json"
-SCENE_NAME = "compact_cell1ttt.ttt"
+SCENE_NAME = "compact_cell.ttt"
 ROBOT_ID = "R2"
 TARGET_NAMES = (
     "R2_PCB_PICK_APP",

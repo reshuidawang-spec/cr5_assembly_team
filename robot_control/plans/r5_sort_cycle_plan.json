@@ -5413,7 +5413,7 @@
    "r5_workspace_reason": "R5 good-sort payload/tool sweep in saved right-side layout reaches x≈1.224; previous x upper 0.98 was stale metadata."
   },
   "r5_wait_preposition_20260728": {
-   "source": "User-taught RViz captures for R5 wait posture in the saved new compact_cell1ttt.ttt scene.",
+   "source": "User-taught RViz captures for R5 wait posture in the saved current compact_cell.ttt scene.",
    "home_to_mid_capture": "data/manual_waypoints/rviz_plan_captures/r5_wait_from_home/rviz_plan_capture_20260728_185902_02.json",
    "home_to_mid_uses_first_half_only": true,
    "mid_to_wait_capture": "data/manual_waypoints/rviz_plan_captures/r5_wait_from_home/rviz_plan_capture_20260728_190500_03.json",

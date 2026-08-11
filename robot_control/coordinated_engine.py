@@ -16,6 +16,8 @@ import json
 import math
 import subprocess
 import sys
+import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Any, Optional
@@ -27,6 +29,7 @@ if str(ROOT) not in sys.path:
 from sim_bridge.coppelia_client import SimBridge
 
 COORD_SCRIPT = ROOT / "scripts" / "coordinated_front.py"
+PIPELINE_SCRIPT = ROOT / "scripts" / "coordinated_pipeline.py"
 
 # 协调流程阶段 (供 app 展示/轮询)
 PHASES = [
@@ -49,12 +52,43 @@ class CoordinatedEngine:
         self.script = Path(script)
         self._last_result: dict[str, Any] = {}
         self._running = False
+        self._urgent_lock = threading.RLock()
+        self._urgent_file: Optional[Path] = None
+        self._pending_urgent: list[dict[str, str]] = []
+
+    def enqueue_urgent_b(self, order_id: str) -> None:
+        """Send one B-type urgent unit to a running pipeline."""
+        request = {"order_id": str(order_id), "product_type": "B"}
+        with self._urgent_lock:
+            if self._urgent_file is None:
+                self._pending_urgent.append(request)
+                return
+            with self._urgent_file.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps(request, ensure_ascii=False) + "\n")
+
+    def _activate_urgent_file(self, path: Path) -> None:
+        with self._urgent_lock:
+            self._urgent_file = path
+            path.touch(exist_ok=True)
+            pending, self._pending_urgent = self._pending_urgent, []
+            if pending:
+                with path.open("a", encoding="utf-8") as stream:
+                    for request in pending:
+                        stream.write(
+                            json.dumps(request, ensure_ascii=False) + "\n"
+                        )
 
     # ------------------------------------------------------------------
     # 主入口: 运行一轮完整协调
     # ------------------------------------------------------------------
-    def run_cycle(self, quality: str = "good", start_from_wait: bool = False,
-                  timeout_s: int = 600) -> dict:
+    def run_cycle(
+        self,
+        quality: str = "good",
+        start_from_wait: bool = False,
+        timeout_s: int = 600,
+        order_count: int = 1,
+        defect_order_index: int = 0,
+    ) -> dict:
         """运行一轮完整五臂装配协调.
 
         quality: "good" 走合格品分拣路线; "defect" 走缺陷品路线(待实现).
@@ -63,19 +97,37 @@ class CoordinatedEngine:
         """
         self._running = True
         try:
-            cmd = [sys.executable, str(self.script)]
-            if start_from_wait:
+            count = int(order_count)
+            if count < 1:
+                raise ValueError("order_count must be positive")
+            defect_index = int(defect_order_index)
+            if defect_index < 0 or defect_index > count:
+                raise ValueError("defect_order_index is outside the batch")
+            selected_script = self.script if count == 1 else PIPELINE_SCRIPT
+            cmd = [sys.executable, str(selected_script)]
+            if count > 1:
+                cmd.extend(["--orders", str(count)])
+                if defect_index:
+                    cmd.extend(["--defect-order", str(defect_index)])
+            elif start_from_wait:
                 cmd.append("--start-from-wait")
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True, timeout=timeout_s,
-            )
+            with tempfile.TemporaryDirectory(prefix="cr5-urgent-", dir="/tmp") as temp:
+                urgent_file = Path(temp) / "urgent-orders.jsonl"
+                if count > 1:
+                    cmd.extend(["--urgent-file", str(urgent_file)])
+                self._activate_urgent_file(urgent_file)
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True, text=True, timeout=timeout_s,
+                )
             ok = result.returncode == 0
             self._last_result = {
                 "status": "ok" if ok else "failed",
                 "phase": PHASES[-1] if ok else "error",
                 "returncode": result.returncode,
                 "message": result.stdout[-500:] if ok else result.stderr[-500:],
+                "order_count": count,
+                "defect_order_index": defect_index,
             }
             return self._last_result
         except subprocess.TimeoutExpired:
@@ -85,6 +137,9 @@ class CoordinatedEngine:
             }
             return self._last_result
         finally:
+            with self._urgent_lock:
+                self._urgent_file = None
+                self._pending_urgent.clear()
             self._running = False
 
     def run_cycle_async(self, quality: str = "good", callback=None) -> None:

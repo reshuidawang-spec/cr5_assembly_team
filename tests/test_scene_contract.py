@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from scheduler.config_loader import load_yaml
+from sim_bridge.process_manager import CoppeliaProcessManager
 from sim_bridge.scene_objects import (
     POINTS,
     PROCESS_COMMANDS,
@@ -13,6 +14,7 @@ from sim_bridge.scene_objects import (
     ROBOT_TARGET_NAMES,
     ROBOT_TIPS,
     SCENE_ROOT,
+    SCENE_FILE,
     get_joint_alias,
     get_point_path,
 )
@@ -35,6 +37,12 @@ class SceneContractTests(unittest.TestCase):
         self.assertEqual(scene.stat().st_size, self.contract["scene"]["size"])
         self.assertEqual(digest, self.contract["scene"]["sha256"])
         self.assertEqual(self.contract["scene"]["root"], SCENE_ROOT)
+
+    def test_software_launcher_uses_the_contract_scene(self):
+        manager = CoppeliaProcessManager()
+        expected = ROOT / "scenes" / self.contract["scene"]["file"]
+        self.assertEqual(SCENE_FILE, self.contract["scene"]["file"])
+        self.assertEqual(manager.scene, expected)
 
     def test_point_config_exactly_covers_scene_target_contract(self):
         self.assertEqual(set(self.points), set(POINTS))

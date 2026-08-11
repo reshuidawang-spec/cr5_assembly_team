@@ -9,7 +9,7 @@ from __future__ import annotations
 
 
 SCENE_ROOT = "/FiveCR5A_Cell"
-SCENE_FILE = "compact_cell1ttt.ttt"
+SCENE_FILE = "compact_cell.ttt"
 ROBOT_IDS = ("R1", "R2", "R3", "R4", "R5")
 ARM_JOINT_ALIASES = tuple(f"joint{index}" for index in range(1, 7))
 

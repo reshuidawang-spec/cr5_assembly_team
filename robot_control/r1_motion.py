@@ -1,7 +1,7 @@
 """Validated R1 box and terminal motion for the five-CR5A CoppeliaSim cell.
 
 The checked-in plan contains joint-space samples generated and statically
-validated against ``compact_cell1ttt.ttt``. Runtime execution still checks the
+validated against ``compact_cell.ttt``. Runtime execution still checks the
 robot, payload, environment, self-collision, and R1 workspace. Grasping uses a
 contact-aligned rigid attachment whose world pose is preserved at the attach
 instant; this module does not claim real-world force validation.
@@ -42,7 +42,7 @@ R1_ACTIONS = frozenset(
 
 PLAN_VERSION = 2
 PLAN_PATH = Path(__file__).with_name("plans") / "r1_complete_cycle_plan.json"
-SCENE_NAME = "compact_cell1ttt.ttt"
+SCENE_NAME = "compact_cell.ttt"
 
 BOX_SUPPLY_POSITION = (-1.86, 0.22, 0.156)
 TERMINAL_SUPPLY_POSITION = (-1.82, -0.02, 0.1665)

@@ -98,18 +98,17 @@ function sysCall_init()
     -- B颜色差异化
     ------------------------------------------------
     print('应用B产品颜色...')
-    -- B箱体蓝色系
-    changeColor(Box_B,      {0.20, 0.45, 0.85})
+    -- B箱体红色系
+    changeColor(Box_B,      {0.85, 0.05, 0.05})
     -- B PCB 红橙色
     changeColor(PCB_B,      {1.00, 0.30, 0.10})
     -- B 控制模块深蓝
     changeColor(Module_B,   {0.15, 0.20, 0.55})
     -- B 端子排橙黄
     changeColor(Terminal_B, {0.95, 0.55, 0.10})
-    -- B 装配体蓝色
-    changeColor(Assembly_B,   {0.20, 0.45, 0.85})
-    -- B 检测体蓝色
-    changeColor(Inspection_B, {0.20, 0.45, 0.85})
+    -- B 装配体/检测体红色
+    changeColor(Assembly_B,   {0.85, 0.05, 0.05})
+    changeColor(Inspection_B, {0.85, 0.05, 0.05})
 
     ------------------------------------------------
     -- 添加B箱体黑色端盖（区分A型号）

@@ -5,17 +5,20 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from interfaces.robot_interface import IRobotExecutor
 from interfaces.types import Order, RobotState, Task, TaskResult, TaskStatus
 from orchestration.cell_orchestrator import CellOrchestrator
 from robot_control.motion_safety import motion_gate_status
+from robot_control.coordinated_engine import CoordinatedEngine, PIPELINE_SCRIPT
 from robot_control.r3_motion import (
     _quaternion_multiply,
     _rotate_vector,
     _surface_aligned_product_grasp_quaternion,
 )
 from robot_control.scene_aware_executor import SceneAwareExecutor
+from robot_control.simulation_executor import SimulationCellExecutor
 from scheduler.scheduler import Scheduler
 from sim_bridge.coppelia_client import SimBridge
 from sim_bridge.process_manager import CoppeliaProcessManager
@@ -381,6 +384,197 @@ class RuntimeIntegrationTests(unittest.TestCase):
         self.assertEqual(calls[0][0], [str(executable), str(scene)])
         self.assertEqual(calls[0][1]["cwd"], str(executable.parent))
         self.assertTrue(calls[0][1]["start_new_session"])
+
+    def test_coordinated_executor_covers_one_unit_scheduler_chain(self):
+        client = FakeClient()
+        bridge = SimBridge(
+            client_factory=lambda **kwargs: client,
+            validate_contract=False,
+        )
+        self.assertTrue(bridge.connect("localhost", 23000))
+        executor = SimulationCellExecutor(
+            bridge,
+            coordinated_cycle=True,
+            front_half_only=False,
+        )
+        evidence = executor.prepare_cycle()
+        self.assertEqual(evidence["execution_mode"], "coordinated_cycle")
+
+        box = Task(
+            "T1",
+            "ORDER-1",
+            "A",
+            "box_feed",
+            "box_supply_area",
+            "R1_BOX_PLACE_TCP",
+            ["R1"],
+            scene_command="R1_BOX_PLACED",
+        )
+        inspect = Task(
+            "T2",
+            "ORDER-1",
+            "A",
+            "inspect",
+            "camera_area",
+            "CAMERA_INSPECTION_CENTER",
+            ["CAMERA"],
+        )
+        screw = Task(
+            "T3",
+            "ORDER-1",
+            "A",
+            "screw",
+            "inspection_screw_area",
+            "R4_SCREW_PRESS",
+            ["R4"],
+            scene_command="R4_SCREW_DONE",
+        )
+        with patch(
+            "robot_control.coordinated_engine.CoordinatedEngine.run_cycle",
+            return_value={"status": "ok", "message": "done"},
+        ) as run_cycle:
+            self.assertEqual(
+                executor.execute_task(box).status,
+                TaskStatus.FINISHED.value,
+            )
+        run_cycle.assert_called_once_with(quality="good", order_count=1)
+        inspection_result = executor.execute_task(inspect)
+        self.assertEqual(inspection_result.status, TaskStatus.FINISHED.value)
+        self.assertEqual(inspection_result.quality_result, "OK")
+        self.assertEqual(
+            executor.execute_task(screw).status,
+            TaskStatus.FINISHED.value,
+        )
+
+    def test_coordinated_engine_selects_pipeline_for_multiple_orders(self):
+        completed = type(
+            "Completed",
+            (),
+            {"returncode": 0, "stdout": "PIPELINE COMPLETE", "stderr": ""},
+        )()
+        with patch(
+            "robot_control.coordinated_engine.subprocess.run",
+            return_value=completed,
+        ) as run:
+            result = CoordinatedEngine().run_cycle(order_count=3)
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["order_count"], 3)
+        command = run.call_args.args[0]
+        self.assertEqual(Path(command[1]), PIPELINE_SCRIPT)
+        self.assertEqual(command[2:4], ["--orders", "3"])
+        self.assertEqual(command[4], "--urgent-file")
+        self.assertTrue(command[5].endswith("urgent-orders.jsonl"))
+
+    def test_coordinated_engine_passes_one_defect_unit_to_pipeline(self):
+        completed = type(
+            "Completed",
+            (),
+            {"returncode": 0, "stdout": "PIPELINE COMPLETE", "stderr": ""},
+        )()
+        with patch(
+            "robot_control.coordinated_engine.subprocess.run",
+            return_value=completed,
+        ) as run:
+            result = CoordinatedEngine().run_cycle(
+                order_count=3,
+                defect_order_index=2,
+            )
+        self.assertEqual(result["defect_order_index"], 2)
+        command = run.call_args.args[0]
+        self.assertEqual(command[2:6], ["--orders", "3", "--defect-order", "2"])
+
+    def test_coordinated_executor_accepts_only_one_live_b_unit(self):
+        client = FakeClient()
+        bridge = SimBridge(
+            client_factory=lambda **kwargs: client,
+            validate_contract=False,
+        )
+        self.assertTrue(bridge.connect("localhost", 23000))
+        executor = SimulationCellExecutor(
+            bridge,
+            coordinated_cycle=True,
+            coordinated_order_ids=["A1", "A2", "A3"],
+            coordinated_order_types=["A", "A", "A"],
+        )
+        executor.prepare_cycle()
+        executor._coordinated_batch_status = "running"
+        urgent = Order("URG-B1", "B", 10, quantity=1)
+        executor.enqueue_urgent_order(urgent)
+        self.assertEqual(executor._pending_urgent_order_ids, ["URG-B1"])
+        with self.assertRaisesRegex(RuntimeError, "只接受一台"):
+            executor.enqueue_urgent_order(Order("URG-B2", "B", 10))
+        with self.assertRaisesRegex(ValueError, "只接受B型"):
+            fresh = SimulationCellExecutor(bridge, coordinated_cycle=True)
+            fresh._coordinated_batch_status = "running"
+            fresh.enqueue_urgent_order(Order("URG-A", "A", 10))
+
+    def test_coordinated_executor_runs_one_pipeline_for_three_orders(self):
+        client = FakeClient()
+        bridge = SimBridge(
+            client_factory=lambda **kwargs: client,
+            validate_contract=False,
+        )
+        self.assertTrue(bridge.connect("localhost", 23000))
+        executor = SimulationCellExecutor(
+            bridge,
+            coordinated_cycle=True,
+            front_half_only=False,
+            coordinated_order_ids=["O1", "O2", "O3"],
+        )
+        executor.prepare_cycle()
+
+        def box_task(task_id, order_id):
+            return Task(
+                task_id,
+                order_id,
+                "A",
+                "box_feed",
+                "box_supply_area",
+                "R1_BOX_PLACE_TCP",
+                ["R1"],
+                scene_command="R1_BOX_PLACED",
+            )
+
+        with patch(
+            "robot_control.coordinated_engine.CoordinatedEngine.run_cycle",
+            return_value={"status": "ok", "message": "three done"},
+        ) as run_cycle:
+            first = executor.execute_task(box_task("T1", "O1"))
+            second = executor.execute_task(box_task("T2", "O2"))
+        self.assertEqual(first.status, TaskStatus.FINISHED.value)
+        self.assertEqual(second.status, TaskStatus.FINISHED.value)
+        run_cycle.assert_called_once_with(quality="good", order_count=3)
+
+    def test_coordinated_executor_routes_selected_order_as_defect(self):
+        client = FakeClient()
+        bridge = SimBridge(
+            client_factory=lambda **kwargs: client,
+            validate_contract=False,
+        )
+        self.assertTrue(bridge.connect("localhost", 23000))
+        executor = SimulationCellExecutor(
+            bridge,
+            coordinated_cycle=True,
+            coordinated_order_ids=["A1", "A2", "A3"],
+            coordinated_order_types=["A", "A", "A"],
+            quality_by_order={"A2": "NG"},
+        )
+        executor.prepare_cycle()
+        task = Task(
+            "T1", "A1", "A", "box_feed", "box_supply_area",
+            "R1_BOX_PLACE_TCP", ["R1"], scene_command="R1_BOX_PLACED",
+        )
+        with patch(
+            "robot_control.coordinated_engine.CoordinatedEngine.run_cycle",
+            return_value={"status": "ok", "message": "defect done"},
+        ) as run_cycle:
+            result = executor.execute_task(task)
+        self.assertEqual(result.status, TaskStatus.FINISHED.value)
+        run_cycle.assert_called_once_with(
+            quality="good",
+            order_count=3,
+            defect_order_index=2,
+        )
 
 
 if __name__ == "__main__":

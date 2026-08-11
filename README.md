@@ -19,10 +19,10 @@
 
 - 自动逆运动学与轨迹规划；
 - 任意新场景或新点位的在线路径生成；
-- 多件工件同时驻留场景的连续流水执行；
+- 除“运行中的 A 型批次插入一台 B 型急单”外的任意在线订单变更；
 - 任何物理机械臂连接或控制。
 
-当前主流程使用当前场景哈希对应的离线验证路径、运行时碰撞检查和确定性步进，只控制 CoppeliaSim 内的模型，不连接真实机械臂。场景目前只有一套实体工件，因此每轮限定为一个订单、数量 1；完成后点击 RESET，再执行下一单。
+当前主流程使用当前场景对应的离线捕获路径、运行时碰撞检查和确定性步进，只控制 CoppeliaSim 内的模型，不连接真实机械臂。每批可预先加入 1～20 个产品单元；系统会为每个成品复制独立场景对象，并在上一单进入 R4/R5 后段后，让 R1/R2/R3 立即开始下一单，实现前后段重叠流水。
 
 ---
 
@@ -74,7 +74,7 @@ R5 根据先前检测结果分拣到合格品或缺陷品传送带
 - `Step02B_Tool_Action_Controller_V6_R1R3R5ConnectedJaw.lua`：控制末端工具与工件绑定/释放；
 - `ROS2_CompactCell_Bridge_V3_ColorCycle.lua`：工艺命令 ROS2 桥接；
 - `ROS2_Joint_Jog_Controller_R1_R5.lua`：R1～R5 关节点动；
-- `compact_cell1ttt.ttt`：由上述最新脚本重建并通过结构验收的当前场景文件；
+- `compact_cell.ttt`：当前五臂并行协同流程使用的最新版场景文件；
 - `configs/scene_contract.yaml`：场景哈希、对象数量和内嵌脚本版本基线。
 
 完整搭建和使用方法见：
@@ -122,9 +122,13 @@ python3 run_demo.py --scene-replay  # Mock 动作 + 真实场景状态信号
 python3 run_demo.py --real          # 明确拒绝物理机械臂连接
 ```
 
-仿真执行顺序：填写订单号、产品类型、数量 1、优先级和交期，直接点击底部 START。队列为空时 START 会自动提交当前表单。若 CoppeliaSim 未运行，软件会根据 `configs/runtime.yaml` 自动加载环境和当前场景；严格场景契约及五套运动计划通过后，依次执行 R1 箱体、R2 PCB、R1 端子、R3 模块、R3 转运、CAMERA 检测、R4 锁付和 R5 分拣。完成后保留最终场景，点击 RESET 才开始下一轮。
+仿真执行顺序：填写订单号、产品类型、数量、优先级和交期；单笔订单可直接点击 START，多笔订单先逐笔点击 ADD，最后点击 START。若 CoppeliaSim 未运行，软件会根据 `configs/runtime.yaml` 自动加载最新版场景。R1/R2/R3 完成一件产品并由 R3 清空装配夹具后，系统立即生成下一套箱体与物料；上一件产品同时由 CAMERA、R4、R5 完成检测、锁付和分拣。每批最多 20 个预置产品单元。
 
-多订单分析顺序：在 `仿真执行` 页用 ADD 加入多笔订单，然后切换到 `调度分析` 页并点击“分析当前订单”。该模式只做离散事件调度，不驱动 CoppeliaSim，所以允许多订单和数量大于 1。底部 EXPORT 默认导出统一 JSON，其中同时包含订单、执行任务、任务结果、实际 KPI 和最近一次调度分析；CSV 用于导出逐任务执行明细。
+当前在线急单验证模式为 `3A + 1B`：先输入一笔 A 型订单并将数量设为 3，点击 START；状态变为 `EXECUTING` 后选择 B 型并点击 `URGENT`。软件固定插入一台 B，锁存急单后停止放行下一台 A，等待当前在制品完成、产线清空和五臂进入安全等待位，再生产 B；B 完成后恢复剩余 A。运行中只接受一台、数量为 1 的 B 型急单。
+
+订单输入区的 `NG A UNIT` 用于指定三台 A 中的不良品：`0` 为全部良品，`1～3` 对应 A1～A3。NG 产品在 R4 锁付后由 R5 送往不良品区域，其余产品进入良品区。场景准备阶段会隐藏全部示教目标点，但保留其运动引用。
+
+多订单分析顺序：在 `仿真执行` 页用 ADD 加入多笔订单，然后切换到 `调度分析` 页并点击“分析当前订单”。分析页只做离散事件调度，不驱动 CoppeliaSim；仿真执行页则会按同一批订单驱动多产品流水场景。底部 EXPORT 默认导出统一 JSON，其中同时包含订单、执行任务、任务结果、实际 KPI 和最近一次调度分析；CSV 用于导出逐任务执行明细。
 
 默认 GUI 会发送关节轨迹给 CoppeliaSim 模型；`--mock` 和 `--scene-replay` 不会执行机械臂轨迹。`configs/motion_validation.yaml` 明确将仿真运动打开、物理机械臂运动关闭；`--real` 不存在绕过方式。
 
@@ -132,7 +136,7 @@ python3 run_demo.py --real          # 明确拒绝物理机械臂连接
 
 ```bash
 python3 scripts/simulation_cycle_smoke.py --quality OK --timeout 900
-python3 scripts/gui_integration_smoke.py
+python3 scripts/gui_integration_smoke.py --orders 3 --urgent-b
 ```
 
 调度测试：
@@ -157,7 +161,7 @@ python3 -m unittest discover -s tests -q
 
 ```bash
 /opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04/coppeliaSim.sh \
-  /home/zhu/cr5_assembly_team/scenes/compact_cell1ttt.ttt
+  /home/zhu/cr5_assembly_team/scenes/compact_cell.ttt
 ```
 
 `.ttt` 是 CoppeliaSim 场景文件，不能作为 shell 命令直接执行。默认 GUI 的运动路径通过 CoppeliaSim ZMQ Remote API 控制仿真模型，不经过物理机械臂驱动。
@@ -208,6 +212,6 @@ python3 -m unittest discover -s tests -q
 
 ## 7. 仓库说明
 
-动态调度测试相关说明集中放在 `scheduling_algorithm_test/`；正式开发仍以仓库根目录下的同名模块为准，避免维护多套副本。`scripts/dynamic_order_window.py` 和 `scripts/run_coppelia_order_demo.py` 是旧的独立演示入口，不参与正式一体化流程。`change/` 是历史分支快照和补丁归档，不参与 `run_demo.py` 的运行或导入。
+动态调度测试相关说明集中放在 `scheduling_algorithm_test/`；正式开发仍以仓库根目录下的同名模块为准，避免维护多套副本。`scripts/dynamic_order_window.py` 和 `scripts/run_coppelia_order_demo.py` 是旧的独立演示入口，不参与正式一体化流程。
 
 ROS2 的 `build/`、`install/`、`log/`，以及 Python 缓存、IDE 临时文件不应提交。
