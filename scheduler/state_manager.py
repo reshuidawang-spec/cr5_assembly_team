@@ -1,13 +1,5 @@
-"""Compatibility access to the application's single runtime state owner.
+"""状态管理器 —— 4号同学实现
 
-Runtime state is deliberately owned by :class:`CellOrchestrator`; keeping a
-second task/robot/lock store in ``scheduler`` would make the GUI and executor
-diverge.  The alias keeps older imports working while preserving one source of
-truth.
+管理系统全局状态：任务队列、机械臂状态、区域锁、日志。
 """
-
-from orchestration.cell_orchestrator import CellOrchestrator
-
-StateManager = CellOrchestrator
-
-__all__ = ["StateManager"]
+# TODO: 实现状态管理逻辑

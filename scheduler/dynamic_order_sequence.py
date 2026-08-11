@@ -96,6 +96,7 @@ def to_orders(order_inputs: Iterable[DynamicOrderInput]) -> List[Order]:
 def plan_dynamic_order_sequence(
     order_inputs: Iterable[DynamicOrderInput],
     scoring_weights: Dict[str, float] | None = None,
+    defects_per_100: float | None = None,
 ) -> Tuple[ExperimentResult, List[OrderSequenceRow]]:
     """Run the existing proposed scheduler and return an order-level sequence.
 
@@ -104,10 +105,90 @@ def plan_dynamic_order_sequence(
     """
 
     inputs = expand_order_inputs_as_units(order_inputs)
-    experiment = QualityOverrideExperiment(expand_quality_overrides(inputs), scoring_weights)
+    experiment = QualityOverrideExperiment(
+        expand_quality_overrides_with_policy(inputs, defects_per_100),
+        scoring_weights,
+    )
     result = experiment.run_proposed(to_orders(inputs))
     rows = summarize_order_sequence(result.records, _expanded_order_attributes(inputs))
     return result, rows
+
+
+def expand_quality_overrides_with_policy(
+    order_inputs: Iterable[DynamicOrderInput],
+    defects_per_100: float | None = None,
+) -> Dict[str, str]:
+    """Build deterministic quality overrides for explicit and AUTO orders.
+
+    Explicit OK/NG inputs always win.  When ``defects_per_100`` is provided,
+    AUTO orders are also assigned deterministic OK/NG labels so that GUI,
+    preview, CoppeliaSim animation, and final evaluation use the same quality
+    result.  For example, 100 AUTO units with ``defects_per_100=2`` generate
+    exactly two NG units spread across the sequence.
+    """
+
+    expanded = expand_order_inputs_as_units(order_inputs)
+    overrides = expand_quality_overrides(expanded)
+    if defects_per_100 is None:
+        return overrides
+
+    total_units = len(expanded)
+    auto_order_ids = [item.order_id for item in expanded if item.quality == "AUTO"]
+    if not auto_order_ids:
+        return overrides
+
+    explicit_ng = sum(1 for item in expanded if item.quality == "NG")
+    target_ng = round(max(float(defects_per_100), 0.0) * total_units / 100.0)
+    auto_ng = max(0, min(len(auto_order_ids), int(target_ng) - explicit_ng))
+
+    ng_positions: set[int] = set()
+    if auto_ng > 0:
+        span = len(auto_order_ids)
+        for index in range(auto_ng):
+            position = round((index + 1) * (span + 1) / (auto_ng + 1)) - 1
+            ng_positions.add(max(0, min(span - 1, position)))
+
+    for index, order_id in enumerate(auto_order_ids):
+        overrides[order_id] = "NG" if index in ng_positions else "OK"
+    return overrides
+
+
+def quality_evaluation(
+    result: ExperimentResult,
+    defects_per_100: float | None = None,
+) -> Dict[str, float]:
+    """Summarize quality and timing metrics for the demo window/report."""
+
+    completed_order_ids = {
+        record.order_id
+        for record in result.records
+        if record.process in ("sort_good", "sort_defect")
+    }
+    good_count = sum(
+        1
+        for record in result.records
+        if record.process == "sort_good" and record.order_id in completed_order_ids
+    )
+    defect_count = sum(
+        1
+        for record in result.records
+        if record.process == "sort_defect" and record.order_id in completed_order_ids
+    )
+    total = good_count + defect_count
+    success_rate = (good_count / total * 100.0) if total else 0.0
+    configured_defect_rate = max(float(defects_per_100 or 0.0), 0.0)
+    return {
+        "total_products": float(total),
+        "good_count": float(good_count),
+        "defect_count": float(defect_count),
+        "success_rate": success_rate,
+        "configured_defects_per_100": configured_defect_rate,
+        "configured_good_rate": max(0.0, 100.0 - configured_defect_rate),
+        "makespan": float(result.makespan),
+        "conflict_count": float(result.conflict_count),
+        "weighted_tardiness": float(result.weighted_tardiness),
+        "post_inspection_avg_clearance_wait": float(result.post_inspection_avg_clearance_wait),
+    }
 
 
 def expand_order_inputs_as_units(order_inputs: Iterable[DynamicOrderInput]) -> List[DynamicOrderInput]:
@@ -161,11 +242,7 @@ def summarize_order_sequence(
             0.0,
         )
         quality_result = _quality_from_branch(ordered)
-        branch = (
-            "NG → R4锁付 → R5缺陷品分拣"
-            if quality_result == "NG"
-            else "OK → R4锁付 → R5良品分拣"
-        )
+        branch = "NG → R5缺陷品分拣" if quality_result == "NG" else "OK → R4锁付 → R5良品分拣"
         attrs = order_attributes.get(order_id, {})
         pending_rows.append(
             OrderSequenceRow(

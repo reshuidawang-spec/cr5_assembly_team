@@ -14,6 +14,7 @@
 """
 import json
 import math
+import os
 import subprocess
 import sys
 import tempfile
@@ -88,6 +89,8 @@ class CoordinatedEngine:
         timeout_s: int = 600,
         order_count: int = 1,
         defect_order_index: int = 0,
+        keep_running: bool = False,
+        reuse_running: bool = False,
     ) -> dict:
         """运行一轮完整五臂装配协调.
 
@@ -109,23 +112,37 @@ class CoordinatedEngine:
                 cmd.extend(["--orders", str(count)])
                 if defect_index:
                     cmd.extend(["--defect-order", str(defect_index)])
-            elif start_from_wait:
-                cmd.append("--start-from-wait")
+            else:
+                if start_from_wait:
+                    cmd.append("--start-from-wait")
+                if keep_running:
+                    cmd.append("--keep-running")
+                if reuse_running:
+                    cmd.append("--reuse-running")
             with tempfile.TemporaryDirectory(prefix="cr5-urgent-", dir="/tmp") as temp:
                 urgent_file = Path(temp) / "urgent-orders.jsonl"
                 if count > 1:
                     cmd.extend(["--urgent-file", str(urgent_file)])
                 self._activate_urgent_file(urgent_file)
+                env = dict(os.environ)
+                env.setdefault("CR5_SKIP_SCENE_FINGERPRINT", "1")
                 result = subprocess.run(
                     cmd,
-                    capture_output=True, text=True, timeout=timeout_s,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout_s,
+                    env=env,
                 )
             ok = result.returncode == 0
+            stdout_tail = result.stdout[-500:] if result.stdout else ""
+            stderr_tail = result.stderr[-500:] if result.stderr else ""
             self._last_result = {
                 "status": "ok" if ok else "failed",
                 "phase": PHASES[-1] if ok else "error",
                 "returncode": result.returncode,
-                "message": result.stdout[-500:] if ok else result.stderr[-500:],
+                "message": stdout_tail if ok else (stderr_tail or stdout_tail),
+                "stdout": stdout_tail,
+                "stderr": stderr_tail,
                 "order_count": count,
                 "defect_order_index": defect_index,
             }

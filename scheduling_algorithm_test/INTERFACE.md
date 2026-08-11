@@ -35,6 +35,13 @@ output/dynamic_order_window_orders.json
     "screw_clearance_bonus": 0.35,
     "urgent_due_boost": 0.20
   },
+  "quality_policy": {
+    "defects_per_100": 2
+  },
+  "material_switch": {
+    "changeover_seconds": 3,
+    "enabled_types": ["A", "B"]
+  },
   "orders": [
     {
       "order_id": "A001",
@@ -74,3 +81,27 @@ python scripts/run_coppelia_order_demo.py \
 
 为了避免串色，装配区和检测区壳体按工位分区刷新颜色。
 
+## 6. A/B 换型与评价输出
+
+窗口会把物料换型和质量策略同步给仿真脚本：
+
+- `quality_policy.defects_per_100`：AUTO 检测时每 100 台设置几台次品；
+- `material_switch.changeover_seconds`：A/B 型号切换时等待几秒；
+- `material_switch.enabled_types`：当前演示参与换型的型号。
+
+仿真脚本结束后会生成：
+
+```text
+output/dynamic_order_evaluation.json
+```
+
+其中包含：
+
+- 总产品数；
+- 良品数量；
+- 次品数量；
+- 成功率；
+- 总完工时间；
+- 冲突数；
+- 检测后等待清台时间；
+- A/B 型号完成数量。

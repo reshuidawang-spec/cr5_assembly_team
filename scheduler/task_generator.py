@@ -45,16 +45,10 @@ class TaskGenerator:
         quality_result: str,
     ) -> Optional[Task]:
         process_name = ""
-        if source_task.process == "inspect" and quality_result in ("OK", "NG"):
-            process_name = "screw"
-        elif source_task.process == "screw":
-            process_name = (
-                "sort_good"
-                if quality_result == "OK"
-                else "sort_defect"
-                if quality_result == "NG"
-                else ""
-            )
+        if source_task.process == "inspect":
+            process_name = "screw" if quality_result == "OK" else "sort_defect" if quality_result == "NG" else ""
+        elif source_task.process == "screw" and quality_result == "OK":
+            process_name = "sort_good"
         if not process_name:
             return None
 
@@ -118,7 +112,6 @@ class TaskGenerator:
             priority=priority,
             status=TaskStatus.PENDING.value if not predecessor else TaskStatus.WAITING.value,
             required_areas=list(step.get("required_areas", [])),
-            scene_command=str(step.get("scene_done_cmd", "")),
         )
         self.task_due_times[task_id] = due_time
         self.task_arrival_times[task_id] = arrival_time

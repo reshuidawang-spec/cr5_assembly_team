@@ -337,15 +337,36 @@ def tip_pose_for_config(
     joints: list[int],
     config: Iterable[float],
 ) -> list[float]:
-    """Evaluate a visible TCP world pose without leaving joints modified."""
+    """Evaluate a visible TCP world pose without leaving joints modified.
+
+    Some CoppeliaSim CR5 joints retain a target position separately from the
+    stopped-scene joint scalar.  Path preparation calls this function many
+    times; if only the scalar position is restored, the next short
+    start/stop initialization cycle can briefly drive a joint back toward a
+    stale IK target.  Restoring both values keeps preparation invisible.
+    """
     original = [float(sim.getJointPosition(joint)) for joint in joints]
+    original_targets: list[float] = []
+    for joint, value in zip(joints, original):
+        try:
+            original_targets.append(float(sim.getJointTargetPosition(joint)))
+        except Exception:
+            original_targets.append(value)
     try:
         for joint, value in zip(joints, config):
             sim.setJointPosition(joint, float(value))
+            try:
+                sim.setJointTargetPosition(joint, float(value))
+            except Exception:
+                pass
         return [float(value) for value in sim.getObjectPose(tip, -1)]
     finally:
-        for joint, value in zip(joints, original):
+        for joint, value, target in zip(joints, original, original_targets):
             sim.setJointPosition(joint, value)
+            try:
+                sim.setJointTargetPosition(joint, target)
+            except Exception:
+                pass
 
 
 def build_tip_translation_path(

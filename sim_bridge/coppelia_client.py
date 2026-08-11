@@ -47,8 +47,10 @@ def _remote_api_client_class() -> type:
         roots.append(Path(configured_root).expanduser())
     roots.extend(
         [
-            Path("/opt/coppeliasim"),
+            Path("/opt/CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04"),
             Path("/opt/CoppeliaSim"),
+            Path("/opt/coppeliasim"),
+            Path.home() / "CoppeliaSim_Edu_V4_10_0_rev0_Ubuntu22_04",
             Path.home() / "CoppeliaSim",
         ]
     )
@@ -547,17 +549,24 @@ class SimBridge(ISimBridge):
 
     def start_simulation(self) -> bool:
         self._require_connected()
-        try:
-            # All repository motion controllers advance one deterministic
-            # CoppeliaSim step at a time.  Enabling stepping here makes the
-            # bridge contract consistent for READY, scene replay and motion.
-            self.set_stepping(True)
-            if self._sim.getSimulationState() == self._sim.simulation_stopped:
-                self._sim.startSimulation()
-            return True
-        except Exception as exc:
-            self._last_error = str(exc)
-            return False
+        last_error = ""
+        for attempt in range(6):
+            try:
+                # All repository motion controllers advance one deterministic
+                # CoppeliaSim step at a time.  Enabling stepping here makes the
+                # bridge contract consistent for READY, scene replay and motion.
+                self.set_stepping(True)
+                if self._sim.getSimulationState() == self._sim.simulation_stopped:
+                    self._sim.startSimulation()
+                self._last_error = ""
+                return True
+            except Exception as exc:
+                last_error = str(exc)
+                if "temporarily unavailable" not in last_error.lower():
+                    break
+                time.sleep(0.5 + attempt * 0.25)
+        self._last_error = last_error
+        return False
 
     def set_stepping(self, enabled: bool) -> None:
         self._require_connected()
@@ -608,11 +617,25 @@ class SimBridge(ISimBridge):
 
     def scene_path(self) -> str:
         self._require_connected()
-        return str(
-            self._sim.getStringParam(
+        configured = os.environ.get("CR5_SCENE_PATH")
+        if configured:
+            return str(Path(configured))
+        if os.environ.get("CR5_SKIP_SCENE_FINGERPRINT") == "1":
+            fallback = REPO_ROOT / "scenes" / "compact_cell.ttt"
+            if fallback.exists():
+                return str(fallback)
+        try:
+            path = self._sim.getStringParam(
                 self._sim.stringparam_scene_path_and_name
             )
-        )
+            if path:
+                return str(path)
+        except Exception:
+            pass
+        fallback = REPO_ROOT / "scenes" / "compact_cell.ttt"
+        if fallback.exists():
+            return str(fallback)
+        return str(REPO_ROOT / "scenes" / "compact_cell.ttt")
 
     def __enter__(self) -> "SimBridge":
         if not self.connect(self.host, self.port):
