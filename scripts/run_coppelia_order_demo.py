@@ -425,7 +425,7 @@ class CoppeliaSchedulerDisplay:
 
             os.environ["CR5_SKIP_SCENE_FINGERPRINT"] = "1"
             os.environ["CR5_SKIP_R1_READY_PREMOTION"] = "1"
-            os.environ.setdefault("CR5_SCENE_PATH", str(ROOT / "scenes" / "compact_cell1ttt.ttt"))
+            os.environ.setdefault("CR5_SCENE_PATH", str(ROOT / "scenes" / "compact_cell.ttt"))
             self.bridge = SimBridge(
                 validate_contract=False,
                 request_timeout=180.0,
@@ -473,7 +473,7 @@ class CoppeliaSchedulerDisplay:
         self.urgent_marker: int | None = None
 
     def _load_library_scene(self, coppeliasim_root: Path | None = None) -> None:
-        scene_path = ROOT / "scenes" / "compact_cell1ttt.ttt"
+        scene_path = ROOT / "scenes" / "compact_cell.ttt"
         cache_name = scene_path.name
         if not scene_path.exists():
             raise RuntimeError(f"library scene is missing: {scene_path}")
@@ -709,7 +709,7 @@ class CoppeliaSchedulerDisplay:
             "CoordinatedEngine + data/captured_paths replay"
         )
         os.environ["CR5_SKIP_SCENE_FINGERPRINT"] = "1"
-        os.environ.setdefault("CR5_SCENE_PATH", str(ROOT / "scenes" / "compact_cell1ttt.ttt"))
+        os.environ.setdefault("CR5_SCENE_PATH", str(ROOT / "scenes" / "compact_cell.ttt"))
 
         unit_groups = self._group_tasks_by_order_unit(tasks)
         urgent_announced = False

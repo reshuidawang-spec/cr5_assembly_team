@@ -34,7 +34,7 @@ R4_ACTIONS = frozenset({R4_SCREW_DONE})
 PLAN_VERSION = 1
 PLAN_PATH = Path(__file__).with_name("plans") / "r4_screw_cycle_plan.json"
 ROBOT_ID = "R4"
-SCENE_NAME = "compact_cell1ttt.ttt"
+SCENE_NAME = "compact_cell.ttt"
 TARGET_NAMES = (
     "R4_SCREW_APP",
     "R4_SCREW_TCP",
@@ -883,7 +883,7 @@ class R4MotionController:
     ) -> dict[str, Any]:
         """Return the scene-native R4 screwdriver objects for IK and rotation.
 
-        The new ``compact_cell1ttt.ttt`` scene already contains a complete
+        The current ``compact_cell.ttt`` scene already contains a complete
         screwdriver model (``/R4/R4T``) mounted to Link6, including a TCP
         dummy ``R4_tool_tip`` and a spin link ``R4T_screw_spin_link``.
         """

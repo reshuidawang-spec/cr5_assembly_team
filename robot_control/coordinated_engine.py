@@ -17,7 +17,10 @@ import math
 import os
 import subprocess
 import sys
+import tempfile
+import threading
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
@@ -28,6 +31,7 @@ if str(ROOT) not in sys.path:
 from sim_bridge.coppelia_client import SimBridge
 
 COORD_SCRIPT = ROOT / "scripts" / "coordinated_front.py"
+PIPELINE_SCRIPT = ROOT / "scripts" / "coordinated_pipeline.py"
 
 # 协调流程阶段 (供 app 展示/轮询)
 PHASES = [
@@ -50,6 +54,57 @@ class CoordinatedEngine:
         self.script = Path(script)
         self._last_result: dict[str, Any] = {}
         self._running = False
+        self._urgent_lock = threading.RLock()
+        self._urgent_file: Optional[Path] = None
+        self._pending_urgent: list[dict[str, str]] = []
+
+    def enqueue_urgent_b(self, order_id: str) -> None:
+        """Send one B-type urgent unit to a running pipeline."""
+        request = {"order_id": str(order_id), "product_type": "B"}
+        with self._urgent_lock:
+            if self._urgent_file is None:
+                self._pending_urgent.append(request)
+                return
+            with self._urgent_file.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps(request, ensure_ascii=False) + "\n")
+
+    def _activate_urgent_file(self, path: Path) -> None:
+        with self._urgent_lock:
+            self._urgent_file = path
+            path.touch(exist_ok=True)
+            pending, self._pending_urgent = self._pending_urgent, []
+            if pending:
+                with path.open("a", encoding="utf-8") as stream:
+                    for request in pending:
+                        stream.write(
+                            json.dumps(request, ensure_ascii=False) + "\n"
+                        )
+
+    @staticmethod
+    def _persist_execution_log(
+        command: list[str],
+        returncode: int | str,
+        stdout: str = "",
+        stderr: str = "",
+    ) -> Path:
+        """Persist complete child-process output for post-failure diagnosis."""
+        log_dir = ROOT / "log" / "runtime"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        path = log_dir / (
+            "coordinated_"
+            + datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            + ".log"
+        )
+        path.write_text(
+            "COMMAND: " + " ".join(command) + "\n"
+            + f"RETURN CODE: {returncode}\n"
+            + "\nSTDOUT\n"
+            + (stdout or "")
+            + "\nSTDERR\n"
+            + (stderr or ""),
+            encoding="utf-8",
+        )
+        return path
 
     # ------------------------------------------------------------------
     # 主入口: 运行一轮完整协调
@@ -59,6 +114,8 @@ class CoordinatedEngine:
         quality: str = "good",
         start_from_wait: bool = False,
         timeout_s: int = 600,
+        order_count: int = 1,
+        defect_order_index: int = 0,
         keep_running: bool = False,
         reuse_running: bool = False,
     ) -> dict:
@@ -70,39 +127,86 @@ class CoordinatedEngine:
         """
         self._running = True
         try:
-            cmd = [sys.executable, str(self.script)]
-            if start_from_wait:
-                cmd.append("--start-from-wait")
-            if keep_running:
-                cmd.append("--keep-running")
-            if reuse_running:
-                cmd.append("--reuse-running")
-            env = dict(os.environ)
-            env.setdefault("CR5_SKIP_SCENE_FINGERPRINT", "1")
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True, timeout=timeout_s, env=env,
-            )
+            count = int(order_count)
+            if count < 1:
+                raise ValueError("order_count must be positive")
+            defect_index = int(defect_order_index)
+            if defect_index < 0 or defect_index > count:
+                raise ValueError("defect_order_index is outside the batch")
+            selected_script = self.script if count == 1 else PIPELINE_SCRIPT
+            cmd = [sys.executable, str(selected_script)]
+            if count > 1:
+                cmd.extend(["--orders", str(count)])
+                if defect_index:
+                    cmd.extend(["--defect-order", str(defect_index)])
+            else:
+                if start_from_wait:
+                    cmd.append("--start-from-wait")
+                if keep_running:
+                    cmd.append("--keep-running")
+                if reuse_running:
+                    cmd.append("--reuse-running")
+            with tempfile.TemporaryDirectory(prefix="cr5-urgent-", dir="/tmp") as temp:
+                urgent_file = Path(temp) / "urgent-orders.jsonl"
+                if count > 1:
+                    cmd.extend(["--urgent-file", str(urgent_file)])
+                self._activate_urgent_file(urgent_file)
+                env = dict(os.environ)
+                env.setdefault("CR5_SKIP_SCENE_FINGERPRINT", "1")
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout_s,
+                    env=env,
+                )
             ok = result.returncode == 0
-            stdout_tail = result.stdout[-500:] if result.stdout else ""
-            stderr_tail = result.stderr[-500:] if result.stderr else ""
-            message = stdout_tail if ok else (stderr_tail or stdout_tail)
+            log_path = self._persist_execution_log(
+                cmd,
+                result.returncode,
+                result.stdout or "",
+                result.stderr or "",
+            )
+            stdout_tail = result.stdout[-2000:] if result.stdout else ""
+            stderr_tail = result.stderr[-2000:] if result.stderr else ""
+            detail = stdout_tail if ok else (stderr_tail or stdout_tail)
             self._last_result = {
                 "status": "ok" if ok else "failed",
                 "phase": PHASES[-1] if ok else "error",
                 "returncode": result.returncode,
-                "message": message,
+                "message": detail + f"\nfull log: {log_path}",
                 "stdout": stdout_tail,
                 "stderr": stderr_tail,
+                "log_path": str(log_path),
+                "order_count": count,
+                "defect_order_index": defect_index,
             }
             return self._last_result
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
+            stdout = exc.stdout or ""
+            stderr = exc.stderr or ""
+            if isinstance(stdout, bytes):
+                stdout = stdout.decode(errors="replace")
+            if isinstance(stderr, bytes):
+                stderr = stderr.decode(errors="replace")
+            log_path = self._persist_execution_log(
+                cmd,
+                "timeout",
+                stdout,
+                stderr,
+            )
             self._last_result = {
                 "status": "timeout", "phase": "error",
-                "message": f"协调流程超过 {timeout_s}s",
+                "message": (
+                    f"协调流程超过 {timeout_s}s；full log: {log_path}"
+                ),
+                "log_path": str(log_path),
             }
             return self._last_result
         finally:
+            with self._urgent_lock:
+                self._urgent_file = None
+                self._pending_urgent.clear()
             self._running = False
 
     def run_cycle_async(self, quality: str = "good", callback=None) -> None:

@@ -621,7 +621,7 @@ class SimBridge(ISimBridge):
         if configured:
             return str(Path(configured))
         if os.environ.get("CR5_SKIP_SCENE_FINGERPRINT") == "1":
-            fallback = REPO_ROOT / "scenes" / "compact_cell1ttt.ttt"
+            fallback = REPO_ROOT / "scenes" / "compact_cell.ttt"
             if fallback.exists():
                 return str(fallback)
         try:
@@ -632,7 +632,7 @@ class SimBridge(ISimBridge):
                 return str(path)
         except Exception:
             pass
-        fallback = REPO_ROOT / "scenes" / "compact_cell1ttt.ttt"
+        fallback = REPO_ROOT / "scenes" / "compact_cell.ttt"
         if fallback.exists():
             return str(fallback)
         return str(REPO_ROOT / "scenes" / "compact_cell.ttt")

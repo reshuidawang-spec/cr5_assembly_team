@@ -20,6 +20,8 @@ from sim_bridge.coppelia_client import SimBridge
 MAX_STEP = 5.0
 
 OUT = ROOT / "data" / "captured_paths"
+R5_GOOD_TRANSFER_PATH = "pick_to_good_app_avoid_r4wait"
+R5_GOOD_TRANSFER_SMOOTHING_PASSES = 2
 
 
 def _hit(res):
@@ -28,9 +30,44 @@ def _hit(res):
     return bool(res)
 
 
+def chaikin_smooth(points, passes=1):
+    """Round a joint-space polyline while preserving its exact endpoints.
+
+    Corner cutting stays inside each adjacent-point corridor.  This keeps the
+    taught R5/R4 avoidance side, whereas a direct arc crosses R4's wait pose.
+    """
+    result = [list(point) for point in points]
+    for _ in range(max(0, int(passes))):
+        if len(result) < 2:
+            break
+        rounded = [list(result[0])]
+        for first, second in zip(result, result[1:]):
+            rounded.append(
+                [
+                    0.75 * left + 0.25 * right
+                    for left, right in zip(first, second)
+                ]
+            )
+            rounded.append(
+                [
+                    0.25 * left + 0.75 * right
+                    for left, right in zip(first, second)
+                ]
+            )
+        rounded.append(list(result[-1]))
+        result = rounded
+    return result
+
+
 def load(name):
     d = json.load(open(OUT / f"{name}.json"))
-    return d["trajectories"][0]["points_deg"]
+    points = d["trajectories"][0]["points_deg"]
+    if name == R5_GOOD_TRANSFER_PATH:
+        return chaikin_smooth(
+            points,
+            R5_GOOD_TRANSFER_SMOOTHING_PASSES,
+        )
+    return points
 
 
 class Arm:
@@ -52,6 +89,10 @@ class Arm:
 
     def set_sequence(self, seq):
         self.seq = seq
+        self.seg_i = -1
+        self.done = False
+        self.wait_event = None
+        self.delay_frames = 0
         self.next_segment()
 
     def next_segment(self):
@@ -86,7 +127,14 @@ class Arm:
         if self.arc_pos >= self.total - 1e-9:
             return "end"
         step = self.step_deg
-        if self.seg_i >= 0 and self.seq[self.seg_i][1] == -1:
+        # R5 also uses reversed paths for its loaded outbound transfer, so keep
+        # its configured dense 2-degree step instead of treating every reverse
+        # segment as a fast empty-tool retreat.
+        if (
+            self.robot_id != "R5"
+            and self.seg_i >= 0
+            and self.seq[self.seg_i][1] == -1
+        ):
             step = self.step_deg * 1.5
         nxt = min(self.arc_pos + step, self.total)
         tgt = self.sample(nxt)
@@ -184,7 +232,7 @@ def main():
             product_state = ""
         return {
             "product_a": [1.00, 0.50, 0.20],
-            "product_b": [0.20, 0.60, 1.00],
+            "product_b": [0.85, 0.05, 0.05],
             "product_c": [0.20, 0.55, 1.00],
         }.get(product_state)
 
@@ -313,8 +361,9 @@ def main():
     R5_SEQ += [
         ("r5_wait_to_pick_app", 1),      # R4完成后: 先去产品上方
         ("r5_pick_descend", 1),          # 再垂直下降抓取
-        ("pick_to_good_app_avoid_r4wait", 1),
-        ("good_app_to_place_zfixed2", 1),
+        ("r5_pick_descend", -1),         # 抓取后先抬升末端
+        ("r5_wait_to_pick_app", -1),     # 沿安全通道退回等待位
+        ("good_place_to_wait_new", -1),  # 反走回程轨迹进入GOOD位
         ("good_place_to_wait_new", 1),
     ]
     arms = {
@@ -545,7 +594,7 @@ def main():
                 attached["r5prod"] = True
                 arm.wait_event = "R4_AT_WAIT"
                 print("  [R5 抓取完成, 等 R4 回等待点再搬运]")
-            elif name == "good_app_to_place_zfixed2" and d == 1 and attached["r5prod"]:
+            elif name == "good_place_to_wait_new" and d == -1 and attached["r5prod"]:
                 b.set_gripper_gap("R5", 0.158)
                 b.detach_object(product)
                 attached["r5prod"] = False

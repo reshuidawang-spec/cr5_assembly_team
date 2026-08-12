@@ -70,6 +70,9 @@ function sysCall_init()
     local boxPos = sim.getObjectPosition(boxB, -1)
     local HL = 0.105  -- 半长
     local HW = 0.075  -- 半宽
+    local BOX_HALF_HEIGHT = 0.036
+    local RED = {0.85, 0.05, 0.05}
+    local boxBottomZ = boxPos[3] - BOX_HALF_HEIGHT
     print(string.format('[OK] Box position: (%.3f, %.3f, %.3f)', boxPos[1], boxPos[2], boxPos[3]))
 
     -- ============================================
@@ -80,19 +83,19 @@ function sysCall_init()
     for _, h in ipairs(boxChildren) do
         local n = getAlias(h)
         if string.find(n, 'Bottom') then
-            setObjColor(h, {0.15, 0.15, 0.15}); coloredCount = coloredCount + 1
+            setObjColor(h, RED); coloredCount = coloredCount + 1
         elseif string.find(n, 'Front_Wall') then
-            setObjColor(h, {0.95, 0.40, 0.10}); coloredCount = coloredCount + 1
+            setObjColor(h, RED); coloredCount = coloredCount + 1
         elseif string.find(n, 'Back_Wall') then
-            setObjColor(h, {0.08, 0.15, 0.50}); coloredCount = coloredCount + 1
+            setObjColor(h, RED); coloredCount = coloredCount + 1
         elseif string.find(n, 'Left_Wall') then
-            setObjColor(h, {0.20, 0.25, 0.60}); coloredCount = coloredCount + 1
+            setObjColor(h, RED); coloredCount = coloredCount + 1
         elseif string.find(n, 'Right_Wall') then
-            setObjColor(h, {0.20, 0.25, 0.60}); coloredCount = coloredCount + 1
+            setObjColor(h, RED); coloredCount = coloredCount + 1
         elseif string.find(n, 'Post') then
-            setObjColor(h, {1.0, 0.84, 0.0}); coloredCount = coloredCount + 1
+            setObjColor(h, RED); coloredCount = coloredCount + 1
         elseif string.find(n, 'EndCover') then
-            setObjColor(h, {0.95, 0.35, 0.05}); coloredCount = coloredCount + 1
+            setObjColor(h, RED); coloredCount = coloredCount + 1
         end
     end
     print('[OK] Box panels recolored: ' .. coloredCount)
@@ -103,8 +106,9 @@ function sysCall_init()
     local flange = sim.createPrimitiveShape(
         sim.primitiveshape_cuboid, {0.23, 0.17, 0.006}, 0)
     sim.setObjectAlias(flange, 'B_Base_Flange')
-    setObjColor(flange, {0.12, 0.12, 0.14})
-    sim.setObjectPosition(flange, -1, {boxPos[1], boxPos[2], boxPos[3] - 0.039})
+    setObjColor(flange, RED)
+    -- 法兰底面与标准箱底齐平，不能进入装配夹具。
+    sim.setObjectPosition(flange, -1, {boxPos[1], boxPos[2], boxBottomZ + 0.003})
     sim.setObjectParent(flange, boxB, true)
     print('[OK] Bottom flange')
 
@@ -114,7 +118,7 @@ function sysCall_init()
     local function addRib(name, x, y, z, sx, sy, sz, color)
         local rib = sim.createPrimitiveShape(sim.primitiveshape_cuboid, {sx, sy, sz}, 0)
         sim.setObjectAlias(rib, name)
-        setObjColor(rib, color or {0.08, 0.12, 0.45})
+        setObjColor(rib, color or RED)
         sim.setObjectPosition(rib, -1, {x, y, z})
         sim.setObjectParent(rib, boxB, true)
     end
@@ -143,8 +147,9 @@ function sysCall_init()
     for j, c in ipairs(corners) do
         local g = sim.createPrimitiveShape(sim.primitiveshape_cuboid, {0.016, 0.016, 0.025}, 0)
         sim.setObjectAlias(g, 'B_Gusset_'..j)
-        setObjColor(g, {0.90, 0.45, 0.10})
-        sim.setObjectPosition(g, -1, {c[1], c[2], boxPos[3] - 0.042})
+        setObjColor(g, RED)
+        -- 角撑底面同样与标准箱底齐平。
+        sim.setObjectPosition(g, -1, {c[1], c[2], boxBottomZ + 0.0125})
         sim.setObjectParent(g, boxB, true)
     end
     print('[OK] Corner gussets: 4')

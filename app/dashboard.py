@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Callable, Iterable, Mapping, Optional
 
 from interfaces.types import Order, Task, TaskResult, TaskStatus
+from app.process_display import process_label
 from scheduler.experiment import DiscreteEventExperiment, ExperimentResult
 
 
@@ -209,6 +210,7 @@ class SchedulingDashboard:
         self.colors.update(colors or {})
         self.last_baseline: Optional[ExperimentResult] = None
         self.last_proposed: Optional[ExperimentResult] = None
+        self._kpi_labels: dict[str, dict[str, object]] = {}
         self._build()
 
     def _build(self) -> None:
@@ -217,7 +219,7 @@ class SchedulingDashboard:
         toolbar.pack(fill=tk.X, padx=6, pady=(5, 3))
         tk.Label(
             toolbar,
-            text="多订单动态调度分析（不驱动机械臂）",
+            text="多订单动态调度效能分析",
             bg=c["panel"], fg=c["accent"], font=("Microsoft YaHei", 11, "bold"),
         ).pack(side=tk.LEFT, padx=12)
         tk.Button(
@@ -235,18 +237,66 @@ class SchedulingDashboard:
         comparison.pack(fill=tk.X, padx=6, pady=3)
         comparison_inner = tk.Frame(comparison, bg=c["panel"])
         comparison_inner.pack(fill=tk.X, padx=1, pady=1)
-        columns = ("mode", "makespan", "waiting", "tardiness", "conflicts", "efficiency")
-        self.comparison_tree = ttk.Treeview(
-            comparison_inner, columns=columns, show="headings", height=2
+
+        cards = tk.Frame(comparison_inner, bg=c["panel"])
+        cards.pack(fill=tk.X, padx=8, pady=(8, 4))
+        card_specs = (
+            ("makespan", "总完成时间", "s"),
+            ("waiting", "平均等待", "s"),
+            ("tardiness", "加权延期", ""),
+            ("conflicts", "调度冲突", "次"),
+            ("efficiency", "并行效率", "%"),
         )
-        for key, label, width in (
-            ("mode", "方案", 130), ("makespan", "总完成时间/s", 130),
-            ("waiting", "平均等待/s", 120), ("tardiness", "加权延期", 120),
-            ("conflicts", "冲突", 80), ("efficiency", "并行效率", 120),
-        ):
-            self.comparison_tree.heading(key, text=label)
-            self.comparison_tree.column(key, width=width, anchor=tk.CENTER)
-        self.comparison_tree.pack(fill=tk.X, padx=10, pady=10)
+        for key, title, unit in card_specs:
+            card = tk.Frame(cards, bg=c["bg"], highlightbackground=c["border"], highlightthickness=1)
+            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3)
+            tk.Label(
+                card, text=title, bg=c["bg"], fg=c["dim"],
+                font=("Microsoft YaHei", 9, "bold"),
+            ).pack(anchor=tk.W, padx=10, pady=(7, 0))
+            value = tk.Label(
+                card, text="--", bg=c["bg"], fg=c["green"],
+                font=("Consolas", 18, "bold"),
+            )
+            value.pack(anchor=tk.W, padx=10)
+            baseline = tk.Label(
+                card, text="基准 --", bg=c["bg"], fg=c["dim"],
+                font=("Microsoft YaHei", 8),
+            )
+            baseline.pack(anchor=tk.W, padx=10)
+            improvement = tk.Label(
+                card, text="等待分析", bg=c["bg"], fg=c["blue"],
+                font=("Consolas", 8, "bold"),
+            )
+            improvement.pack(anchor=tk.W, padx=10, pady=(0, 7))
+            self._kpi_labels[key] = {
+                "value": value,
+                "baseline": baseline,
+                "improvement": improvement,
+                "unit": unit,
+            }
+
+        chart_header = tk.Frame(comparison_inner, bg=c["panel"])
+        chart_header.pack(fill=tk.X, padx=12, pady=(2, 0))
+        tk.Label(
+            chart_header, text="方案关键指标对比",
+            bg=c["panel"], fg=c["accent"],
+            font=("Microsoft YaHei", 9, "bold"),
+        ).pack(side=tk.LEFT)
+        tk.Label(
+            chart_header, text="■ Baseline   ■ Proposed",
+            bg=c["panel"], fg=c["dim"], font=("Consolas", 8),
+        ).pack(side=tk.RIGHT)
+        self.comparison_canvas = tk.Canvas(
+            comparison_inner,
+            height=116,
+            bg=c["panel"],
+            highlightthickness=0,
+        )
+        self.comparison_canvas.pack(fill=tk.X, padx=10, pady=(1, 7))
+        self.comparison_canvas.bind(
+            "<Configure>", lambda _event: self._draw_comparison_chart()
+        )
 
         schedule = tk.Frame(self.parent, bg=c["border"])
         schedule.pack(fill=tk.BOTH, expand=True, padx=6, pady=(3, 6))
@@ -294,17 +344,8 @@ class SchedulingDashboard:
 
     def _render(self) -> None:
         assert self.last_baseline is not None and self.last_proposed is not None
-        for item in self.comparison_tree.get_children():
-            self.comparison_tree.delete(item)
-        for label, result in (
-            ("Baseline 串行", self.last_baseline),
-            ("Proposed 动态", self.last_proposed),
-        ):
-            self.comparison_tree.insert("", self.tk.END, values=(
-                label, f"{result.makespan:.1f}", f"{result.average_waiting_time:.1f}",
-                f"{result.weighted_tardiness:.1f}", result.conflict_count,
-                f"{result.parallel_efficiency * 100:.1f}%",
-            ))
+        self._render_kpi_cards()
+        self._draw_comparison_chart()
         for item in self.schedule_tree.get_children():
             self.schedule_tree.delete(item)
         for record in sorted(
@@ -312,9 +353,100 @@ class SchedulingDashboard:
             key=lambda item: (item.start_time, item.end_time, item.task_id),
         ):
             self.schedule_tree.insert("", self.tk.END, values=(
-                record.task_id, record.order_id, record.process, record.robot_id,
+                record.task_id, record.order_id,
+                process_label(record.process, record.product_type), record.robot_id,
                 f"{record.start_time:.1f}", f"{record.end_time:.1f}", f"{record.wait_time:.1f}",
             ))
+
+    @staticmethod
+    def _change_text(old: float, new: float, higher_is_better: bool = False) -> tuple[str, bool]:
+        if abs(old) < 1e-12:
+            return ("持平" if abs(new) < 1e-12 else "新增数据", abs(new) < 1e-12)
+        change = ((new - old) / old * 100.0) if higher_is_better else ((old - new) / old * 100.0)
+        if abs(change) < 0.05:
+            return "持平", True
+        return f"{'改善' if change > 0 else '下降'} {abs(change):.1f}%", change >= 0
+
+    def _render_kpi_cards(self) -> None:
+        assert self.last_baseline is not None and self.last_proposed is not None
+        baseline, proposed = self.last_baseline, self.last_proposed
+        values = {
+            "makespan": (baseline.makespan, proposed.makespan, False),
+            "waiting": (baseline.average_waiting_time, proposed.average_waiting_time, False),
+            "tardiness": (baseline.weighted_tardiness, proposed.weighted_tardiness, False),
+            "conflicts": (float(baseline.conflict_count), float(proposed.conflict_count), False),
+            "efficiency": (
+                baseline.parallel_efficiency * 100.0,
+                proposed.parallel_efficiency * 100.0,
+                True,
+            ),
+        }
+        for key, (old, new, higher_is_better) in values.items():
+            widgets = self._kpi_labels[key]
+            unit = str(widgets["unit"])
+            decimals = 0 if key == "conflicts" else 1
+            value_text = f"{new:.{decimals}f}{unit}"
+            baseline_text = f"基准 {old:.{decimals}f}{unit}"
+            change_text, positive = self._change_text(old, new, higher_is_better)
+            widgets["value"].configure(text=value_text)
+            widgets["baseline"].configure(text=baseline_text)
+            widgets["improvement"].configure(
+                text=change_text,
+                fg=self.colors["green"] if positive else "#f85149",
+            )
+
+    def _draw_comparison_chart(self) -> None:
+        canvas = getattr(self, "comparison_canvas", None)
+        if canvas is None:
+            return
+        canvas.delete("all")
+        if self.last_baseline is None or self.last_proposed is None:
+            canvas.create_text(
+                12, 48, anchor="w", text="分析订单后显示方案对比",
+                fill=self.colors["dim"], font=("Microsoft YaHei", 9),
+            )
+            return
+        width = max(canvas.winfo_width(), 760)
+        label_width = 95
+        value_width = 95
+        bar_left = label_width + 48
+        bar_right = width - value_width
+        available = max(bar_right - bar_left, 120)
+        rows = (
+            ("总完成时间", self.last_baseline.makespan, self.last_proposed.makespan, "s"),
+            ("平均等待", self.last_baseline.average_waiting_time, self.last_proposed.average_waiting_time, "s"),
+            (
+                "并行效率",
+                self.last_baseline.parallel_efficiency * 100.0,
+                self.last_proposed.parallel_efficiency * 100.0,
+                "%",
+            ),
+        )
+        for row, (label, old, new, unit) in enumerate(rows):
+            y = 13 + row * 35
+            scale = max(old, new, 1e-9)
+            old_width = max(2, available * old / scale)
+            new_width = max(2, available * new / scale)
+            canvas.create_text(
+                6, y + 10, anchor="w", text=label,
+                fill=self.colors["text"], font=("Microsoft YaHei", 8, "bold"),
+            )
+            canvas.create_rectangle(
+                bar_left, y, bar_left + old_width, y + 8,
+                fill="#6e7681", outline="",
+            )
+            canvas.create_rectangle(
+                bar_left, y + 12, bar_left + new_width, y + 20,
+                fill=self.colors["blue"], outline="",
+            )
+            canvas.create_text(
+                width - 6, y + 4, anchor="e", text=f"{old:.1f}{unit}",
+                fill="#8b949e", font=("Consolas", 8),
+            )
+            canvas.create_text(
+                width - 6, y + 16, anchor="e", text=f"{new:.1f}{unit}",
+                fill=self.colors["blue"], font=("Consolas", 8, "bold"),
+            )
 
     def mark_stale(self) -> None:
         if self.last_proposed is not None:
@@ -323,9 +455,13 @@ class SchedulingDashboard:
     def reset(self) -> None:
         self.last_baseline = None
         self.last_proposed = None
-        for tree in (self.comparison_tree, self.schedule_tree):
-            for item in tree.get_children():
-                tree.delete(item)
+        for item in self.schedule_tree.get_children():
+            self.schedule_tree.delete(item)
+        for widgets in self._kpi_labels.values():
+            widgets["value"].configure(text="--")
+            widgets["baseline"].configure(text="基准 --")
+            widgets["improvement"].configure(text="等待分析", fg=self.colors["blue"])
+        self._draw_comparison_chart()
         self.status_label.configure(text="请先在‘仿真执行’页加入订单", fg=self.colors["dim"])
 
     def export_data(self) -> Optional[dict]:

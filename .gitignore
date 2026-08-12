@@ -22,6 +22,10 @@ dist/
 .agents/
 .codex/
 
+# Historical branch exports and superseded scene copies
+change/
+scenes/compact_cell1ttt.ttt
+
 # Large binary data (experimental results)
 src/*/data/20*/
 src/*/data/260*/

@@ -534,7 +534,7 @@ class DynamicOrderWindow:
             scene = Path(os.environ["CR5_SCENE_PATH"])
             if scene.exists():
                 return scene
-        for scene in [ROOT / "scenes" / "compact_cell1ttt.ttt", ROOT / "scenes" / "compact_cell.ttt"]:
+        for scene in [ROOT / "scenes" / "compact_cell.ttt"]:
             if scene.exists():
                 return scene
         return None

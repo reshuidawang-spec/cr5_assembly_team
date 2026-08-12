@@ -59,13 +59,8 @@ B:
       duration: 7
       required_areas: [box_supply_area, assembly_fixture]
       scene_done_cmd: R1_BOX_PLACED
-    - process: pcb_install
-      area: pcb_supply_area
-      point: R2_PCB_PLACE_TCP
-      available_robots: [R2]
-      duration: 10
-      required_areas: [pcb_supply_area, assembly_fixture]
-      scene_done_cmd: R2_PCB_PLACED
+    # B uses a pre-integrated PCB/module assembly.  R2 therefore remains at
+    # its safe wait pose and no standalone PCB-install task is generated.
     - process: terminal_install
       area: terminal_supply_area
       point: R1_TERMINAL_PLACE_TCP
@@ -93,7 +88,7 @@ B:
       available_robots: [CAMERA]
       duration: 6
       required_areas: [inspection_platform_area, camera_area]
-  component_count: 4
+  component_count: 3
   screw_count: 4
   inspection_points: 1
 

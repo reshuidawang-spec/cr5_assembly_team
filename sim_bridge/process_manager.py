@@ -34,7 +34,7 @@ class CoppeliaProcessManager:
             )
         ).expanduser()
         scene = Path(
-            config.get("scene", "scenes/compact_cell1ttt.ttt")
+            config.get("scene", "scenes/compact_cell.ttt")
         ).expanduser()
         if not scene.is_absolute():
             scene = REPO_ROOT / scene

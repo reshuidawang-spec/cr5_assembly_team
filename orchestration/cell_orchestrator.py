@@ -161,14 +161,39 @@ class CellOrchestrator:
                     continue
 
                 with self._lock:
-                    if any(
-                        task.status == TaskStatus.FAILED.value
+                    failed_tasks = [
+                        task
                         for task in self.tasks
-                    ):
+                        if task.status == TaskStatus.FAILED.value
+                    ]
+                    if failed_tasks:
                         should_fail = True
+                        failure_details = []
+                        for task in failed_tasks:
+                            result = self._results_by_task.get(task.task_id)
+                            detail = (
+                                result.message.strip()
+                                if result is not None and result.message.strip()
+                                else "executor reported a failed task"
+                            )
+                            robot_id = (
+                                result.robot_id
+                                if result is not None and result.robot_id
+                                else (
+                                    task.available_robots[0]
+                                    if task.available_robots
+                                    else "unassigned"
+                                )
+                            )
+                            failure_details.append(
+                                f"{task.task_id} order={task.order_id} "
+                                f"process={task.process} robot={robot_id}: {detail}"
+                            )
+                        failure_message = " | ".join(failure_details)
                         to_dispatch: list[Task] = []
                     else:
                         should_fail = False
+                        failure_message = ""
                         robots = self.executor.get_robot_states()
                         self.tasks = self.scheduler.schedule(
                             self.tasks, robots
@@ -192,7 +217,7 @@ class CellOrchestrator:
                         )
 
                 if should_fail:
-                    self._finish("failed", "one or more tasks failed")
+                    self._finish("failed", failure_message)
                     return
                 if complete:
                     self._finish("finished", "all tasks finished")

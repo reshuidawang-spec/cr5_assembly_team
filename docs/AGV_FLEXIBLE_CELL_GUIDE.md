@@ -32,7 +32,7 @@ ROS2 Bridge (V3)
 ```
 
 B 产品在 `/FiveCR5A_Cell/PartsB/` 下：
-- `Box_Blank_B` — 蓝色箱体 + 黑色端盖
+- `Box_Blank_B` — 红色箱体（装配时开口朝上）
 - `PCB_Supply_B` — 红橙色 PCB
 - `Control_Module_Supply_B` — 深蓝色模块
 - `Terminal_Block_Supply_B` — 橙黄色端子排

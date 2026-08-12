@@ -44,7 +44,7 @@ R5_WAIT_POINT = "R5_WAIT_POINT"
 PLAN_VERSION = 1
 PLAN_PATH = Path(__file__).with_name("plans") / "r5_sort_cycle_plan.json"
 ROBOT_ID = "R5"
-SCENE_NAME = "compact_cell1ttt.ttt"
+SCENE_NAME = "compact_cell.ttt"
 TARGET_NAMES = (
     "R5_HOME_REF",
     "R5_PRODUCT_PICK_APP",

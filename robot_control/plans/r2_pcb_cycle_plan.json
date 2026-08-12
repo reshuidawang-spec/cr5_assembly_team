@@ -3931,7 +3931,7 @@
   },
   "new_layout_20260728": {
    "scene_fingerprint_refreshed_after_save": true,
-   "note": "Scene fingerprint refreshed to the saved compact_cell1ttt.ttt baseline. R1/R2 left/front target geometry is unchanged by the right-side layout save; R3 product transfer path was already replanned/revalidated for the saved inspection target."
+   "note": "Scene fingerprint refreshed to the saved compact_cell.ttt baseline. R1/R2 left/front target geometry is unchanged by the right-side layout save; R3 product transfer path was already replanned/revalidated for the saved inspection target."
   },
   "r2_new_safe_wait_20260728": {
    "updated_at": "2026-07-28T21:17:25",
