@@ -20,6 +20,7 @@ from robot_control.r3_motion import (
 from robot_control.scene_aware_executor import SceneAwareExecutor
 from robot_control.simulation_executor import SimulationCellExecutor
 from scheduler.scheduler import Scheduler
+from scheduler.task_generator import TaskGenerator
 from sim_bridge.coppelia_client import SimBridge
 from sim_bridge.process_manager import CoppeliaProcessManager
 from sim_bridge.scene_objects import POINTS
@@ -48,6 +49,11 @@ class InstantExecutor(IRobotExecutor):
             robot_id=robot_id,
             status=status,
             quality_result=self.quality if task.process == "inspect" else "",
+            message=(
+                "deliberate executor failure"
+                if status == TaskStatus.FAILED.value
+                else ""
+            ),
         )
 
     def execute_task_async(self, task, callback):
@@ -244,9 +250,20 @@ class RuntimeIntegrationTests(unittest.TestCase):
     def test_orchestrator_stops_on_failed_task(self):
         executor = InstantExecutor("NG", fail_process="pcb_install")
         orchestrator = CellOrchestrator(Scheduler(), executor, 0.005)
+        terminal_events = []
+        orchestrator.add_event_callback(
+            lambda event: terminal_events.append(event)
+            if event.kind == "failed"
+            else None
+        )
         orchestrator.start([Order("A100", "A", 1)])
         self.assertEqual(orchestrator.wait(2.0), "failed")
         self.assertEqual(executor.calls, ["T0001", "T0002"])
+        self.assertEqual(len(terminal_events), 1)
+        self.assertIn("T0002", terminal_events[0].message)
+        self.assertIn("order=A100", terminal_events[0].message)
+        self.assertIn("process=pcb_install", terminal_events[0].message)
+        self.assertIn("deliberate executor failure", terminal_events[0].message)
 
     def test_orchestrator_accepts_a_live_urgent_order(self):
         executor = GatedExecutor()
@@ -257,7 +274,11 @@ class RuntimeIntegrationTests(unittest.TestCase):
             Order("B900", "B", 10),
             urgent=True,
         )
-        self.assertEqual(len(added), 6)
+        self.assertEqual(len(added), 5)
+        self.assertNotIn("pcb_install", {task.process for task in added})
+        self.assertFalse(
+            any("R2" in task.available_robots for task in added)
+        )
         executor.release.set()
         self.assertEqual(orchestrator.wait(4.0), "finished")
         self.assertIn("B900", {task.order_id for task in orchestrator.tasks})
@@ -385,6 +406,44 @@ class RuntimeIntegrationTests(unittest.TestCase):
         self.assertEqual(calls[0][1]["cwd"], str(executable.parent))
         self.assertTrue(calls[0][1]["start_new_session"])
 
+    def test_coppelia_process_manager_terminates_only_owned_process(self):
+        class FakeProcess:
+            def __init__(self):
+                self.returncode = None
+                self.terminated = False
+
+            def poll(self):
+                return self.returncode
+
+            def terminate(self):
+                self.terminated = True
+                self.returncode = 0
+
+        fake_process = FakeProcess()
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            executable = root / "coppeliaSim.sh"
+            scene = root / "cell.ttt"
+            executable.write_text("#!/bin/sh\n", encoding="utf-8")
+            scene.write_bytes(b"scene")
+            config = root / "runtime.yaml"
+            config.write_text(
+                "coppeliasim:\n"
+                f"  executable: {executable}\n"
+                f"  scene: {scene}\n",
+                encoding="utf-8",
+            )
+            manager = CoppeliaProcessManager(
+                config,
+                lambda *_args, **_kwargs: fake_process,
+            )
+            manager.launch()
+            manager.terminate_owned_process()
+
+        self.assertTrue(fake_process.terminated)
+        self.assertFalse(manager.is_owned_process_running())
+
     def test_coordinated_executor_covers_one_unit_scheduler_chain(self):
         client = FakeClient()
         bridge = SimBridge(
@@ -443,6 +502,46 @@ class RuntimeIntegrationTests(unittest.TestCase):
         self.assertEqual(inspection_result.quality_result, "OK")
         self.assertEqual(
             executor.execute_task(screw).status,
+            TaskStatus.FINISHED.value,
+        )
+
+    def test_generated_three_unit_batch_triggers_coordinated_pipeline(self):
+        client = FakeClient()
+        bridge = SimBridge(
+            client_factory=lambda **kwargs: client,
+            validate_contract=False,
+        )
+        self.assertTrue(bridge.connect("localhost", 23000))
+        order_ids = ["A001-01", "A001-02", "A001-03"]
+        executor = SimulationCellExecutor(
+            bridge,
+            coordinated_cycle=True,
+            front_half_only=False,
+            coordinated_order_ids=order_ids,
+            coordinated_order_types=["A", "A", "A"],
+        )
+        executor.prepare_cycle()
+        tasks = TaskGenerator().generate(
+            [Order("A001", "A", 1, quantity=3)]
+        )
+        first = tasks[0]
+        later = next(
+            task
+            for task in tasks
+            if task.order_id == "A001-03" and task.process == "module_install"
+        )
+
+        self.assertEqual(first.scene_command, "R1_BOX_PLACED")
+        with patch(
+            "robot_control.coordinated_engine.CoordinatedEngine.run_cycle",
+            return_value={"status": "ok", "message": "three A units done"},
+        ) as run_cycle:
+            first_result = executor.execute_task(first)
+
+        self.assertEqual(first_result.status, TaskStatus.FINISHED.value)
+        run_cycle.assert_called_once_with(quality="good", order_count=3)
+        self.assertEqual(
+            executor.execute_task(later).status,
             TaskStatus.FINISHED.value,
         )
 

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Callable, Iterable, Mapping, Optional
 
 from interfaces.types import Order, Task, TaskResult, TaskStatus
+from app.process_display import process_label
 from scheduler.experiment import DiscreteEventExperiment, ExperimentResult
 
 
@@ -352,7 +353,8 @@ class SchedulingDashboard:
             key=lambda item: (item.start_time, item.end_time, item.task_id),
         ):
             self.schedule_tree.insert("", self.tk.END, values=(
-                record.task_id, record.order_id, record.process, record.robot_id,
+                record.task_id, record.order_id,
+                process_label(record.process, record.product_type), record.robot_id,
                 f"{record.start_time:.1f}", f"{record.end_time:.1f}", f"{record.wait_time:.1f}",
             ))
 

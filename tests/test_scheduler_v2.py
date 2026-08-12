@@ -17,6 +17,7 @@ from scheduler.experiment import DiscreteEventExperiment
 from scheduler.scheduler import Scheduler
 from scheduler.task_generator import TaskGenerator
 from scripts.run_coppelia_order_demo import product_color_for, shell_groups_for_process
+from app.process_display import process_label
 
 
 class SchedulerV2Tests(unittest.TestCase):
@@ -44,11 +45,23 @@ class SchedulerV2Tests(unittest.TestCase):
         tasks = TaskGenerator().generate([Order("A100", "A", 1)])
         by_process = {task.process: task for task in tasks}
         self.assertEqual(by_process["box_feed"].target_point, "R1_BOX_PLACE_TCP")
+        self.assertEqual(by_process["box_feed"].scene_command, "R1_BOX_PLACED")
         self.assertEqual(by_process["pcb_install"].target_point, "R2_PCB_PLACE_TCP")
+        self.assertEqual(by_process["pcb_install"].scene_command, "R2_PCB_PLACED")
         self.assertEqual(by_process["module_install"].target_point, "R3_MODULE_PLACE_TCP")
+        self.assertEqual(by_process["module_install"].scene_command, "R3_MODULE_PLACED")
         self.assertEqual(by_process["terminal_install"].target_point, "R1_TERMINAL_PLACE_TCP")
+        self.assertEqual(
+            by_process["terminal_install"].scene_command,
+            "R1_TERMINAL_PLACED",
+        )
         self.assertEqual(by_process["transfer_to_inspection"].target_point, "R3_PRODUCT_PLACE_INSPECTION_TCP")
+        self.assertEqual(
+            by_process["transfer_to_inspection"].scene_command,
+            "R3_PRODUCT_TO_INSPECTION",
+        )
         self.assertEqual(by_process["inspect"].target_point, "CAMERA_INSPECTION_CENTER")
+        self.assertEqual(by_process["inspect"].scene_command, "")
         self.assertNotIn("screw", by_process)
         self.assertIn("assembly_fixture", by_process["box_feed"].required_areas)
         self.assertIn("inspection_platform_area", by_process["inspect"].required_areas)
@@ -57,8 +70,28 @@ class SchedulerV2Tests(unittest.TestCase):
         ng_branch = TaskGenerator().build_post_inspection_task(by_process["inspect"], "NG")
         self.assertEqual(ok_branch.process, "screw")
         self.assertEqual(ok_branch.available_robots, ["R4"])
+        self.assertEqual(ok_branch.scene_command, "R4_SCREW_DONE")
         self.assertEqual(ng_branch.process, "sort_defect")
         self.assertEqual(ng_branch.available_robots, ["R5"])
+        self.assertEqual(ng_branch.scene_command, "R5_SORT_DEFECT_DONE")
+
+    def test_b_uses_integrated_module_route_without_r2_pcb_task(self):
+        tasks = TaskGenerator().generate([Order("B100", "B", 5)])
+        processes = [task.process for task in tasks]
+        self.assertEqual(
+            processes,
+            [
+                "box_feed",
+                "terminal_install",
+                "module_install",
+                "transfer_to_inspection",
+                "inspect",
+            ],
+        )
+        self.assertNotIn("pcb_install", processes)
+        self.assertFalse(any("R2" in task.available_robots for task in tasks))
+        self.assertEqual(process_label("module_install", "B"), "一体化模块安装")
+        self.assertEqual(process_label("screw", "B"), "加强锁付")
 
     def test_waiting_aging_increases_task_score(self):
         generator = TaskGenerator()

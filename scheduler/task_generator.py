@@ -112,6 +112,7 @@ class TaskGenerator:
             priority=priority,
             status=TaskStatus.PENDING.value if not predecessor else TaskStatus.WAITING.value,
             required_areas=list(step.get("required_areas", [])),
+            scene_command=str(step.get("scene_done_cmd", "")).strip(),
         )
         self.task_due_times[task_id] = due_time
         self.task_arrival_times[task_id] = arrival_time

@@ -10,11 +10,13 @@ import threading
 import time
 import queue
 from datetime import datetime
+from pathlib import Path
 from typing import List, Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from interfaces.types import Order, Task, TaskStatus
+from app.process_display import process_label
 from mock.mock_robot_executor import MockRobotExecutor
 from mock.mock_sim_bridge import MockSimBridge
 from orchestration.cell_orchestrator import CellOrchestrator, OrchestratorEvent
@@ -61,14 +63,6 @@ STATUS_COLORS = {
     "finished": C_GREEN, "failed": C_RED,
     "waiting": C_ORANGE, "idle": C_GREEN,
     "busy": C_AMBER, "fault": C_RED,
-}
-
-PROCESS_LABELS = {
-    "box_feed": "箱体上料", "pcb_install": "PCB安装",
-    "module_install": "模块安装", "terminal_install": "端子安装",
-    "transfer_to_inspection": "转移检测", "screw": "锁付",
-    "inspect": "检测", "sort_good": "良品分拣",
-    "sort_defect": "不良品分拣",
 }
 
 FONT_MONO = "Consolas"
@@ -160,6 +154,11 @@ class Cr5AssemblyApp:
         self._scene_preparation_in_progress = False
         self._scene_ready = False
         self._order_counter = 0
+        runtime_log_dir = Path(__file__).resolve().parents[1] / "log" / "runtime"
+        runtime_log_dir.mkdir(parents=True, exist_ok=True)
+        self.runtime_log_path = runtime_log_dir / (
+            "gui_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".log"
+        )
 
         # ---- 构建界面 ----
         self._build_header()
@@ -711,6 +710,13 @@ class Cr5AssemblyApp:
         self.log_text.insert(tk.END, line, level)
         self.log_text.see(tk.END)
         self.log_text.configure(state=tk.DISABLED)
+        try:
+            with self.runtime_log_path.open("a", encoding="utf-8") as stream:
+                stream.write(f"[{level.upper()}] {line}")
+        except OSError:
+            # The on-screen log remains available if the filesystem is full
+            # or temporarily unavailable.
+            pass
 
     # ============================================================
     # 订单操作
@@ -762,6 +768,12 @@ class Cr5AssemblyApp:
             self._log(
                 f"ORDER QUEUED: {order.order_id} TYPE={order.product_type} "
                 f"QTY={order.quantity} PRI={order.priority}"
+            )
+        if order.product_type == "B":
+            self._log(
+                "B ROUTE: 跳过R2独立PCB安装 → R3一体化模块安装 → "
+                "R4加强锁付",
+                "warn" if urgent else "info",
             )
         self._refresh_order_list()
         self._refresh_task_tree()
@@ -1018,7 +1030,64 @@ class Cr5AssemblyApp:
         self._connection_label.configure(text="COP: ERROR", fg=C_RED)
         self.status_bar.configure(text="COPPELIASIM ERROR", fg=C_RED)
         self._log(f"COPPELIASIM ERROR: {message}", "error")
+        self._cleanup_failed_scene_async("connection/preparation failure")
         messagebox.showerror("CoppeliaSim 连接失败", message)
+
+    def _cleanup_failed_scene_async(self, reason: str) -> None:
+        """Stop simulation and close only the CoppeliaSim owned by this GUI."""
+        bridge = self.sim_bridge
+        manager = self.coppelia_manager
+        self._log(f"FAILURE CLEANUP STARTED — {reason}", "warn")
+
+        def cleanup():
+            cleanup_errors = []
+            try:
+                if bridge.is_connected():
+                    if not bridge.stop_simulation():
+                        cleanup_errors.append(
+                            bridge.last_error or "could not stop simulation"
+                        )
+            except Exception as exc:
+                cleanup_errors.append(f"stop simulation: {exc}")
+            try:
+                if manager.is_owned_process_running():
+                    manager.terminate_owned_process()
+            except Exception as exc:
+                cleanup_errors.append(f"close CoppeliaSim: {exc}")
+            try:
+                bridge.disconnect()
+            except Exception as exc:
+                cleanup_errors.append(f"disconnect: {exc}")
+            self._scene_ready = False
+            if cleanup_errors:
+                self._ui_queue.put(
+                    (
+                        "log",
+                        (
+                            "FAILURE CLEANUP WARNING — "
+                            + " | ".join(cleanup_errors)
+                            + "\n",
+                            "error",
+                        ),
+                    )
+                )
+            else:
+                self._ui_queue.put(
+                    (
+                        "log",
+                        (
+                            "FAILURE CLEANUP COMPLETE — simulation stopped; "
+                            "owned CoppeliaSim closed\n",
+                            "ok",
+                        ),
+                    )
+                )
+
+        threading.Thread(
+            target=cleanup,
+            name="failed-scene-cleanup",
+            daemon=True,
+        ).start()
 
     def _stop_scene_async(self):
         if not self.scene_linked or not self._scene_ready:
@@ -1249,7 +1318,7 @@ class Cr5AssemblyApp:
             )
             if task is not None:
                 robot = task.available_robots[0] if task.available_robots else "-"
-                process = PROCESS_LABELS.get(task.process, task.process)
+                process = process_label(task.process, task.product_type)
                 self._log(
                     f"DISPATCH {task.task_id} → {robot}  {process} "
                     f"[{task.target_point}]"
@@ -1264,7 +1333,12 @@ class Cr5AssemblyApp:
             level = "ok" if result.status == TaskStatus.FINISHED.value else "error"
             self._log(
                 f"DONE {result.task_id} [{result.robot_id}] "
-                f"STATUS={result.status}{quality}",
+                f"STATUS={result.status}{quality}"
+                + (
+                    f" DETAIL={result.message}"
+                    if result.status == TaskStatus.FAILED.value and result.message
+                    else ""
+                ),
                 level,
             )
         elif event.kind == "order_added":
@@ -1319,7 +1393,7 @@ class Cr5AssemblyApp:
             robot = task.available_robots[0] if task.available_robots else "-"
             self.task_tree.insert("", tk.END, values=(
                 task.task_id, task.order_id,
-                PROCESS_LABELS.get(task.process, task.process),
+                process_label(task.process, task.product_type),
                 robot, task.target_point, task.status,
             ))
 
@@ -1396,7 +1470,9 @@ class Cr5AssemblyApp:
         )
         self._refresh_order_list()
         self._update_metrics()
-        if not (
+        if status == "failed":
+            self._cleanup_failed_scene_async(message or "execution failed")
+        elif not (
             self.scene_linked
             and self.coppelia_manager.is_owned_process_running()
         ):

@@ -43,6 +43,13 @@ B_MODULE_LABEL = [1.0, 1.0, 1.0]
 B_TERMINAL_BODY = [0.10, 0.70, 0.25]
 B_TERMINAL_SLOT = [0.02, 0.15, 0.05]
 B_TERMINAL_SCREW = [0.90, 0.90, 0.92]
+DEFECT_CONVEYOR_TRAVEL_M = 0.45
+DEFECT_CONVEYOR_STEPS = 45
+DEFECT_CONVEYOR_SETTLE_STEPS = 8
+# R5 carries a completed cabinet through the longest path and has a 3.2 deg
+# boundary at the pickup descent.  A denser runtime interpolation removes the
+# visible catch while it lifts and follows the validated wait/place routes.
+R5_PIPELINE_STEP_DEG = 2.0
 
 
 def parse_args() -> argparse.Namespace:
@@ -161,6 +168,13 @@ def cabinet_opening_is_up(sim, box: int) -> tuple[bool, float, float]:
     return wall_center_z > bottom_center_z, bottom_center_z, wall_center_z
 
 
+def defect_conveyor_target(release_position: list[float]) -> list[float]:
+    """Move a released defect from the right entry toward the belt center."""
+    target = [float(value) for value in release_position]
+    target[0] -= DEFECT_CONVEYOR_TRAVEL_M
+    return target
+
+
 def _b_assembled_shape_color(alias: str) -> list[float] | None:
     """Return the saved B-supply appearance for an assembled-product shape."""
     if "_Shell" in alias:
@@ -233,7 +247,11 @@ def clone_product(sim, source: int, parent: int, unit_number: int) -> int:
     return root
 
 
-def front_sequences(first: bool) -> dict[str, list[tuple[str, int]]]:
+def front_sequences(
+    first: bool,
+    product_type: str = "A",
+) -> dict[str, list[tuple[str, int]]]:
+    product_type = str(product_type).strip().upper()
     r1 = [] if not first else [("r1_initial_to_box_pick_app", 1)]
     r1 += [
         ("r1_box_descend", 1),
@@ -255,17 +273,19 @@ def front_sequences(first: bool) -> dict[str, list[tuple[str, int]]]:
         ("r1_terminal_place_descend", -1),
         ("r1_return_home", 1),
     ]
-    r2 = [
-        ("r2_initial_to_pick_app", 1)
-        if first
-        else ("r2_safe_wait_to_pick_app", 1),
-        ("r2_pick_descend", 1),
-        ("r2_pick_to_safe_wait", 1),
-        ("r2_safe_wait_to_place_app", 1),
-        ("r2_place_descend", 1),
-        ("r2_place_descend", -1),
-        ("r2_place_to_safe_wait", 1),
-    ]
+    r2 = []
+    if product_type != "B":
+        r2 = [
+            ("r2_initial_to_pick_app", 1)
+            if first
+            else ("r2_safe_wait_to_pick_app", 1),
+            ("r2_pick_descend", 1),
+            ("r2_pick_to_safe_wait", 1),
+            ("r2_safe_wait_to_place_app", 1),
+            ("r2_place_descend", 1),
+            ("r2_place_descend", -1),
+            ("r2_place_to_safe_wait", 1),
+        ]
     r3 = [] if not first else [("r3_initial_to_module_pick_app", 1)]
     r3 += [
         ("r3_module_pick_descend", 1),
@@ -284,19 +304,20 @@ def front_sequences(first: bool) -> dict[str, list[tuple[str, int]]]:
 
 
 def back_sequences(defect: bool = False) -> dict[str, list[tuple[str, int]]]:
-    r5_transfer = (
-        [
-            ("pick_to_defect_high", 1),
-            ("defect_high_to_place_final", 1),
-            ("defect_place_to_wait_new", 1),
-        ]
-        if defect
-        else [
-            ("pick_to_good_app_avoid_r4wait", 1),
-            ("good_app_to_place_zfixed2", 1),
-            ("good_place_to_wait_new", 1),
-        ]
+    # After gripping, first reverse the vertical pickup path so the TCP visibly
+    # rises away from the inspection fixture.  Then return through R5's safe
+    # wait pose and run the already validated place-to-wait route backwards.
+    # Replaying the same route forwards after release makes the loaded and
+    # empty motions symmetric and avoids introducing another unvalidated arc.
+    place_to_wait = (
+        "defect_place_to_wait_new" if defect else "good_place_to_wait_new"
     )
+    r5_transfer = [
+        ("r5_pick_descend", -1),
+        ("r5_wait_to_pick_app", -1),
+        (place_to_wait, -1),
+        (place_to_wait, 1),
+    ]
     return {
         "R4": [
             ("r4_wait_to_app", 1),
@@ -430,7 +451,13 @@ def main() -> int:
             "R2": Arm(bridge, sim, "R2", joints["R2"], step_deg=8.0),
             "R3": Arm(bridge, sim, "R3", joints["R3"]),
             "R4": Arm(bridge, sim, "R4", joints["R4"]),
-            "R5": Arm(bridge, sim, "R5", joints["R5"]),
+            "R5": Arm(
+                bridge,
+                sim,
+                "R5",
+                joints["R5"],
+                step_deg=R5_PIPELINE_STEP_DEG,
+            ),
         }
         # Move downstream robots to their persistent wait positions while the
         # first product is assembled.
@@ -501,6 +528,13 @@ def main() -> int:
                     set_visible(sim, handle, False)
             for name, handle in supply.items():
                 position, quaternion = SUPPLY_POSES[name]
+                if product_type == "B" and name == "pcb":
+                    # B's PCB is already integrated into the R3 module.
+                    sim.setObjectParent(handle, parts_root, True)
+                    sim.setObjectPosition(handle, -1, list(position))
+                    sim.setObjectQuaternion(handle, -1, list(quaternion))
+                    set_visible(sim, handle, False)
+                    continue
                 if product_type == "B" and name == "box":
                     # The checked-in B branch has the opposite local shell
                     # orientation from A.  Identity keeps its opening upward;
@@ -530,15 +564,26 @@ def main() -> int:
                 module=False,
                 product=False,
             )
-            sequences = front_sequences(first=unit == 0)
+            product_type = unit_type(unit)
+            sequences = front_sequences(
+                first=unit == 0,
+                product_type=product_type,
+            )
             for robot_id in ("R1", "R2", "R3"):
                 arms[robot_id].set_sequence(sequences[robot_id])
             front_index = unit
             front_active = True
-            print(
-                f"[订单 {unit_label(unit)}] R1/R2/R3 开始前段装配",
-                flush=True,
-            )
+            if product_type == "B":
+                print(
+                    f"[订单 {unit_label(unit)}] B型一体化模块工艺："
+                    "跳过R2独立PCB安装，R2保持安全等待",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[订单 {unit_label(unit)}] R1/R2/R3 开始前段装配",
+                    flush=True,
+                )
 
         def start_back(unit: int) -> None:
             nonlocal back_index, back_active
@@ -607,12 +652,19 @@ def main() -> int:
                         )
                     attached["box"] = False
                     fire("BOX_PLACED", unit)
+                    if unit_type(unit) == "B":
+                        events.add(event("PCB_STAGE_READY", unit))
+                        print(
+                            f"[订单 {unit_label(unit)}] R2工序已跳过；"
+                            "B型预集成PCB/模块就绪",
+                            flush=True,
+                        )
                 elif name == "r1_terminal_descend" and direction == 1 and not attached["term"]:
                     bridge.set_gripper_gap("R1", 0.046)
                     attach_handle(bridge, sim, supply["term"], "R1")
                     attached["term"] = True
                 elif name == "r1_terminal_mid_to_place_app" and direction == 1:
-                    arm.wait_event = event("PCB_PLACED", unit)
+                    arm.wait_event = event("PCB_STAGE_READY", unit)
                 elif name == "r1_terminal_place_descend" and direction == 1 and attached["term"]:
                     bridge.detach_object(supply["term"])
                     attached["term"] = False
@@ -637,6 +689,7 @@ def main() -> int:
                     bridge.detach_object(supply["pcb"])
                     attached["pcb"] = False
                     fire("PCB_PLACED", unit)
+                    events.add(event("PCB_STAGE_READY", unit))
             elif arm.robot_id == "R3":
                 product = product_for(unit)
                 if name == "r3_module_pick_descend" and direction == 1 and not attached["module"]:
@@ -690,7 +743,14 @@ def main() -> int:
             product = product_for(unit)
             if arm.robot_id == "R4":
                 if name == "r4_tcp_to_press" and direction == 1:
-                    arm.delay_frames = 20
+                    if unit_type(unit) == "B":
+                        arm.delay_frames = 50
+                        print(
+                            f"[订单 {unit_label(unit)}] B型加强锁付",
+                            flush=True,
+                        )
+                    else:
+                        arm.delay_frames = 20
                 elif name == "r4_press_to_app" and direction == 1:
                     fire("R4_SCREW_DONE", unit)
                 elif name == "r4_app_to_wait" and direction == 1:
@@ -705,11 +765,11 @@ def main() -> int:
                 elif (
                     name
                     == (
-                        "defect_high_to_place_final"
+                        "defect_place_to_wait_new"
                         if is_defect
-                        else "good_app_to_place_zfixed2"
+                        else "good_place_to_wait_new"
                     )
-                    and direction == 1
+                    and direction == -1
                     and attached["r5_product"]
                 ):
                     bridge.set_gripper_gap("R5", 0.158)
@@ -717,10 +777,14 @@ def main() -> int:
                     attached["r5_product"] = False
                     start = list(sim.getObjectPosition(product, -1))
                     if is_defect:
-                        target = [-0.15, -1.12, 0.270]
+                        release_target = [-0.15, -1.12, 0.270]
                     else:
                         distance = 0.70 + 0.12 * unit
-                        target = [start[0], start[1] - distance, start[2]]
+                        release_target = [
+                            start[0],
+                            start[1] - distance,
+                            start[2],
+                        ]
                     for step in range(1, 21):
                         ratio = step / 20
                         sim.setObjectPosition(
@@ -728,13 +792,41 @@ def main() -> int:
                             -1,
                             [
                                 start[index]
-                                + (target[index] - start[index]) * ratio
+                                + (
+                                    release_target[index] - start[index]
+                                ) * ratio
                                 for index in range(3)
                             ],
                         )
                         bridge.step()
                     if is_defect:
-                        defect_product_position = list(target)
+                        for _ in range(DEFECT_CONVEYOR_SETTLE_STEPS):
+                            bridge.step()
+                        conveyor_target = defect_conveyor_target(release_target)
+                        print(
+                            f"[订单 {unit_label(unit)}] 不良品传送带启动："
+                            f"沿X轴输送 {DEFECT_CONVEYOR_TRAVEL_M:.2f}m",
+                            flush=True,
+                        )
+                        for step in range(1, DEFECT_CONVEYOR_STEPS + 1):
+                            ratio = step / DEFECT_CONVEYOR_STEPS
+                            # Smooth start/stop makes the short belt motion
+                            # visible without an abrupt object jump.
+                            eased = ratio * ratio * (3.0 - 2.0 * ratio)
+                            sim.setObjectPosition(
+                                product,
+                                -1,
+                                [
+                                    release_target[index]
+                                    + (
+                                        conveyor_target[index]
+                                        - release_target[index]
+                                    ) * eased
+                                    for index in range(3)
+                                ],
+                            )
+                            bridge.step()
+                        defect_product_position = list(conveyor_target)
 
         # Runtime collision collections for all ten robot pairs.
         collections = {}

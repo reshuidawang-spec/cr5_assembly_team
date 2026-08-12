@@ -20,6 +20,7 @@ import sys
 import tempfile
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
@@ -79,6 +80,32 @@ class CoordinatedEngine:
                             json.dumps(request, ensure_ascii=False) + "\n"
                         )
 
+    @staticmethod
+    def _persist_execution_log(
+        command: list[str],
+        returncode: int | str,
+        stdout: str = "",
+        stderr: str = "",
+    ) -> Path:
+        """Persist complete child-process output for post-failure diagnosis."""
+        log_dir = ROOT / "log" / "runtime"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        path = log_dir / (
+            "coordinated_"
+            + datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            + ".log"
+        )
+        path.write_text(
+            "COMMAND: " + " ".join(command) + "\n"
+            + f"RETURN CODE: {returncode}\n"
+            + "\nSTDOUT\n"
+            + (stdout or "")
+            + "\nSTDERR\n"
+            + (stderr or ""),
+            encoding="utf-8",
+        )
+        return path
+
     # ------------------------------------------------------------------
     # 主入口: 运行一轮完整协调
     # ------------------------------------------------------------------
@@ -134,23 +161,46 @@ class CoordinatedEngine:
                     env=env,
                 )
             ok = result.returncode == 0
-            stdout_tail = result.stdout[-500:] if result.stdout else ""
-            stderr_tail = result.stderr[-500:] if result.stderr else ""
+            log_path = self._persist_execution_log(
+                cmd,
+                result.returncode,
+                result.stdout or "",
+                result.stderr or "",
+            )
+            stdout_tail = result.stdout[-2000:] if result.stdout else ""
+            stderr_tail = result.stderr[-2000:] if result.stderr else ""
+            detail = stdout_tail if ok else (stderr_tail or stdout_tail)
             self._last_result = {
                 "status": "ok" if ok else "failed",
                 "phase": PHASES[-1] if ok else "error",
                 "returncode": result.returncode,
-                "message": stdout_tail if ok else (stderr_tail or stdout_tail),
+                "message": detail + f"\nfull log: {log_path}",
                 "stdout": stdout_tail,
                 "stderr": stderr_tail,
+                "log_path": str(log_path),
                 "order_count": count,
                 "defect_order_index": defect_index,
             }
             return self._last_result
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
+            stdout = exc.stdout or ""
+            stderr = exc.stderr or ""
+            if isinstance(stdout, bytes):
+                stdout = stdout.decode(errors="replace")
+            if isinstance(stderr, bytes):
+                stderr = stderr.decode(errors="replace")
+            log_path = self._persist_execution_log(
+                cmd,
+                "timeout",
+                stdout,
+                stderr,
+            )
             self._last_result = {
                 "status": "timeout", "phase": "error",
-                "message": f"协调流程超过 {timeout_s}s",
+                "message": (
+                    f"协调流程超过 {timeout_s}s；full log: {log_path}"
+                ),
+                "log_path": str(log_path),
             }
             return self._last_result
         finally:
